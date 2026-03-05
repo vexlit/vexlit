@@ -20,10 +20,6 @@ const XSS_PATTERNS: { name: string; pattern: RegExp }[] = [
     name: "dangerouslySetInnerHTML",
     pattern: /dangerouslySetInnerHTML/,
   },
-  {
-    name: "eval with variable",
-    pattern: /\beval\s*\(\s*[^"'`\d)]/,
-  },
 ];
 
 function hasInnerHtmlAssignmentAtLine(ast: AST, line: number): boolean {
@@ -42,27 +38,6 @@ function hasInnerHtmlAssignmentAtLine(ast: AST, line: number): boolean {
     ) {
       // Only flag if right side is NOT a static string literal
       if (node.right.type !== "Literal") {
-        found = true;
-      }
-    }
-  });
-  return found;
-}
-
-function hasEvalCallAtLine(ast: AST, line: number): boolean {
-  let found = false;
-  walkAST(ast, (node: TSESTree.Node) => {
-    if (found) return;
-
-    if (
-      node.type === "CallExpression" &&
-      node.loc &&
-      node.loc.start.line === line &&
-      node.callee.type === "Identifier" &&
-      node.callee.name === "eval"
-    ) {
-      // Flag if argument is not a static string literal
-      if (node.arguments.length > 0 && node.arguments[0].type !== "Literal") {
         found = true;
       }
     }
@@ -147,8 +122,6 @@ export const xssRule: Rule = {
         if (ast) {
           if (name === "innerHTML assignment" || name === "outerHTML assignment") {
             confirmed = hasInnerHtmlAssignmentAtLine(ast, lineNum);
-          } else if (name === "eval with variable") {
-            confirmed = hasEvalCallAtLine(ast, lineNum);
           } else if (name === "document.write usage") {
             confirmed = hasDocumentWriteAtLine(ast, lineNum);
           } else if (name === "dangerouslySetInnerHTML") {

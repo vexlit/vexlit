@@ -1,5 +1,6 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
+import { ScanPolling } from "@/components/scan-polling";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Scan, Vulnerability } from "@/lib/types";
@@ -222,13 +223,3 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-function ScanPolling({ scanId }: { scanId: string }) {
-  return (
-    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-center">
-      <p className="text-blue-400 text-sm">
-        Scan is in progress... Refresh this page to see results.
-      </p>
-      <p className="text-gray-500 text-xs mt-1">Scan ID: {scanId}</p>
-    </div>
-  );
-}

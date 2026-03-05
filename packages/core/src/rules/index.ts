@@ -21,6 +21,7 @@ import { debuggerStatementRule } from "./debugger-statement.js";
 import { unsafeDeserializationRule } from "./unsafe-deserialization.js";
 import { pathTraversalRule } from "./path-traversal.js";
 import { commandInjectionRule } from "./command-injection.js";
+import { evalInjectionRule } from "./eval-injection.js";
 
 export const allRules: Rule[] = [
   hardcodedSecretsRule,
@@ -45,6 +46,7 @@ export const allRules: Rule[] = [
   unsafeDeserializationRule,
   pathTraversalRule,
   commandInjectionRule,
+  evalInjectionRule,
 ];
 
 export {
@@ -70,4 +72,5 @@ export {
   unsafeDeserializationRule,
   pathTraversalRule,
   commandInjectionRule,
+  evalInjectionRule,
 };

@@ -92,9 +92,8 @@ export async function POST(request: Request) {
     }
   }
 
-  // Execute scan in background (worker pattern)
-  // We use waitUntil-like pattern: fire and don't await
-  executeScan(scan.id, fileContents, admin).catch(console.error);
+  // Execute scan synchronously — fast enough for file uploads
+  await executeScan(scan.id, fileContents, admin);
 
   return NextResponse.json({ scanId: scan.id });
 }
