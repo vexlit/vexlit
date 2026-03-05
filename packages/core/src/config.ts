@@ -19,11 +19,17 @@ export function loadConfig(rootDir: string): VexlitConfig {
     }
 
     if (fileName.endsWith(".js")) {
-      // For .js config, read and parse as JSON-like module.exports
       const content = fs.readFileSync(filePath, "utf-8");
-      const match = content.match(/module\.exports\s*=\s*(\{[\s\S]*\})/);
-      if (match) {
-        const fn = new Function(`return ${match[1]}`);
+      // Support: export default { ... }
+      const exportDefaultMatch = content.match(/export\s+default\s+(\{[\s\S]*\})/);
+      if (exportDefaultMatch) {
+        const fn = new Function(`return ${exportDefaultMatch[1]}`);
+        return fn() as VexlitConfig;
+      }
+      // Support: module.exports = { ... }
+      const cjsMatch = content.match(/module\.exports\s*=\s*(\{[\s\S]*\})/);
+      if (cjsMatch) {
+        const fn = new Function(`return ${cjsMatch[1]}`);
         return fn() as VexlitConfig;
       }
     }

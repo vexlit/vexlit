@@ -80,7 +80,7 @@ function formatSarif(results: ScanResult[]): string {
         tool: {
           driver: {
             name: "VEXLIT",
-            version: "0.0.1",
+            version: "0.1.0",
             informationUri: "https://github.com/vexlit/vexlit",
             rules: Array.from(rulesMap.values()).map((v) => ({
               id: v.ruleId,
@@ -138,7 +138,7 @@ const program = new Command();
 program
   .name("vexlit")
   .description("AI-powered code security vulnerability scanner")
-  .version("0.0.1");
+  .version("0.1.0");
 
 program
   .command("scan")
