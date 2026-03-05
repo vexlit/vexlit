@@ -1,0 +1,54 @@
+# Example workflow: Run VEXLIT security scan on every push and PR
+# Users of VEXLIT can copy this file to their own repo's .github/workflows/
+
+name: VEXLIT Security Scan
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  security-events: write
+  contents: read
+
+jobs:
+  security-scan:
+    name: VEXLIT Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Option 1: Use VEXLIT as a GitHub Action (when published)
+      # - name: Run VEXLIT
+      #   uses: vexlit/vexlit@v1
+      #   with:
+      #     paths: "."
+      #     fail-on: "critical"
+      #     upload-sarif: "true"
+
+      # Option 2: Install and run directly (current approach)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build VEXLIT
+        run: npm run build
+
+      - name: Run VEXLIT scan
+        run: |
+          node packages/cli/dist/index.js scan . --sarif > vexlit-results.sarif || true
+          node packages/cli/dist/index.js scan . --format table || true
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: vexlit-results.sarif
+          wait-for-processing: true

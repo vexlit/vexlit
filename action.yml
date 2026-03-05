@@ -1,0 +1,155 @@
+name: "VEXLIT Security Scanner"
+description: "AI-powered code security vulnerability scanner with 22 rules, AST analysis, and SARIF output"
+author: "VEXLIT"
+branding:
+  icon: "shield"
+  color: "red"
+
+inputs:
+  paths:
+    description: "Paths to scan (space-separated)"
+    required: false
+    default: "."
+  format:
+    description: "Output format: table, json, sarif"
+    required: false
+    default: "sarif"
+  fail-on:
+    description: "Minimum severity to cause failure: critical, warning, info, none"
+    required: false
+    default: "critical"
+  upload-sarif:
+    description: "Upload SARIF results to GitHub Code Scanning"
+    required: false
+    default: "true"
+  sarif-file:
+    description: "Path for SARIF output file"
+    required: false
+    default: "vexlit-results.sarif"
+  node-version:
+    description: "Node.js version to use"
+    required: false
+    default: "20"
+
+outputs:
+  sarif-file:
+    description: "Path to the generated SARIF file"
+    value: ${{ steps.scan.outputs.sarif-file }}
+  total:
+    description: "Total vulnerabilities found"
+    value: ${{ steps.scan.outputs.total }}
+  critical:
+    description: "Number of critical vulnerabilities"
+    value: ${{ steps.scan.outputs.critical }}
+  warning:
+    description: "Number of warning vulnerabilities"
+    value: ${{ steps.scan.outputs.warning }}
+  info:
+    description: "Number of info vulnerabilities"
+    value: ${{ steps.scan.outputs.info }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install and build VEXLIT
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+        npm run build
+
+    - name: Run VEXLIT scan
+      id: scan
+      shell: bash
+      env:
+        VEXLIT_ACTION_PATH: ${{ github.action_path }}
+        VEXLIT_PATHS: ${{ inputs.paths }}
+        VEXLIT_FORMAT: ${{ inputs.format }}
+        VEXLIT_FAIL_ON: ${{ inputs.fail-on }}
+        VEXLIT_SARIF_FILE: ${{ inputs.sarif-file }}
+      run: |
+        SCAN_PATHS="${VEXLIT_PATHS}"
+        CLI_PATH="${VEXLIT_ACTION_PATH}/packages/cli/dist/index.js"
+        SARIF_OUT="${VEXLIT_SARIF_FILE}"
+
+        # Run scan with SARIF output to file
+        set +e
+        node "${CLI_PATH}" scan ${SCAN_PATHS} --sarif > "${SARIF_OUT}" 2>/dev/null
+        SCAN_EXIT=$?
+        set -e
+
+        # Parse SARIF results for counts
+        if [ -f "${SARIF_OUT}" ]; then
+          TOTAL=$(node -e "
+            const fs = require('fs');
+            try {
+              const sarif = JSON.parse(fs.readFileSync('${SARIF_OUT}', 'utf8'));
+              const results = sarif.runs[0].results || [];
+              let critical = 0, warning = 0, info = 0;
+              for (const r of results) {
+                if (r.level === 'error') critical++;
+                else if (r.level === 'warning') warning++;
+                else info++;
+              }
+              console.log(results.length + '|' + critical + '|' + warning + '|' + info);
+            } catch { console.log('0|0|0|0'); }
+          ")
+
+          IFS='|' read -r COUNT CRIT WARN INF <<< "${TOTAL}"
+
+          echo "sarif-file=${SARIF_OUT}" >> $GITHUB_OUTPUT
+          echo "total=${COUNT}" >> $GITHUB_OUTPUT
+          echo "critical=${CRIT}" >> $GITHUB_OUTPUT
+          echo "warning=${WARN}" >> $GITHUB_OUTPUT
+          echo "info=${INF}" >> $GITHUB_OUTPUT
+
+          echo "::group::VEXLIT Scan Summary"
+          echo "Total: ${COUNT} vulnerabilities (${CRIT} critical, ${WARN} warning, ${INF} info)"
+          echo "::endgroup::"
+        else
+          echo "sarif-file=" >> $GITHUB_OUTPUT
+          echo "total=0" >> $GITHUB_OUTPUT
+          echo "critical=0" >> $GITHUB_OUTPUT
+          echo "warning=0" >> $GITHUB_OUTPUT
+          echo "info=0" >> $GITHUB_OUTPUT
+        fi
+
+        # Also output in requested format to console
+        if [ "${VEXLIT_FORMAT}" != "sarif" ]; then
+          node "${CLI_PATH}" scan ${SCAN_PATHS} --format "${VEXLIT_FORMAT}" 2>/dev/null || true
+        fi
+
+        # Determine exit code based on fail-on level
+        FAIL_ON="${VEXLIT_FAIL_ON}"
+        EXIT_CODE=0
+
+        if [ "${FAIL_ON}" = "none" ]; then
+          EXIT_CODE=0
+        elif [ "${FAIL_ON}" = "info" ] && [ "${COUNT:-0}" -gt 0 ]; then
+          EXIT_CODE=1
+        elif [ "${FAIL_ON}" = "warning" ]; then
+          FAIL_COUNT=$((${CRIT:-0} + ${WARN:-0}))
+          if [ "${FAIL_COUNT}" -gt 0 ]; then
+            EXIT_CODE=1
+          fi
+        elif [ "${FAIL_ON}" = "critical" ] && [ "${CRIT:-0}" -gt 0 ]; then
+          EXIT_CODE=1
+        fi
+
+        if [ "${EXIT_CODE}" -ne 0 ]; then
+          echo "::error::VEXLIT found vulnerabilities at or above '${FAIL_ON}' severity"
+        fi
+
+        exit ${EXIT_CODE}
+
+    - name: Upload SARIF to GitHub Code Scanning
+      if: inputs.upload-sarif == 'true' && always() && steps.scan.outputs.sarif-file != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+        wait-for-processing: true

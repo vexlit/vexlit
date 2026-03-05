@@ -1,0 +1,36 @@
+{
+  "name": "@vexlit/cli",
+  "version": "0.1.0",
+  "description": "VEXLIT CLI — AI-powered code security vulnerability scanner",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "vexlit": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true})\""
+  },
+  "keywords": ["security", "vulnerability", "scanner", "cli", "sast", "sarif"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vexlit/vexlit",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/vexlit/vexlit",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@vexlit/core": "0.1.0",
+    "commander": "^13.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}

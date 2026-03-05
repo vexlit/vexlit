@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Project planning docs (not for public repo)
+계획 순서.md
+chatgpt 대화 내용.md
+Phase1 초기세팅.md

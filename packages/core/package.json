@@ -1,0 +1,34 @@
+{
+  "name": "@vexlit/core",
+  "version": "0.1.0",
+  "description": "VEXLIT core analysis engine — AI-powered code security vulnerability scanner",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true})\""
+  },
+  "keywords": ["security", "vulnerability", "scanner", "sast", "ast", "code-analysis", "sarif"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vexlit/vexlit",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/vexlit/vexlit",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@typescript-eslint/parser": "^8.56.1",
+    "@typescript-eslint/typescript-estree": "^8.56.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}
