@@ -55,7 +55,6 @@ const MAX_SCANNABLE_FILES = 200;
 const SKIP_DIRECTORIES = [
   "node_modules",
   "dist",
-  "build",
   "out",
   "target",
   "tmp",

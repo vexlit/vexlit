@@ -3,6 +3,7 @@ import { PublicScanClient } from "@/components/public-scan-client";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
+import { LandingNav } from "@/components/landing/landing-nav";
 import type { Scan, Vulnerability } from "@/lib/types";
 
 export default async function PublicScanPage({
@@ -29,14 +30,7 @@ export default async function PublicScanPage({
   if (typedScan.status === "pending" || typedScan.status === "running") {
     return (
       <div className="min-h-screen bg-gray-950 text-white">
-        <nav className="fixed top-0 w-full z-50 border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <Link href="/" className="text-xl font-bold text-white">VEXLIT</Link>
-            <Link href="/login" className="text-gray-400 hover:text-white text-sm transition-colors">
-              {tNav("signIn")}
-            </Link>
-          </div>
-        </nav>
+        <LandingNav />
         <div className="max-w-4xl mx-auto px-6 pt-24 pb-16">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-white">{typedScan.projects?.name ?? t("scanResults")}</h1>
@@ -70,22 +64,7 @@ export default async function PublicScanPage({
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <nav className="fixed top-0 w-full z-50 border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-white">VEXLIT</Link>
-          <div className="flex gap-4 items-center">
-            <Link href="/login" className="text-gray-400 hover:text-white text-sm transition-colors">
-              {tNav("signInForFeatures")}
-            </Link>
-            <Link
-              href="/login"
-              className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-            >
-              {tNav("getStarted")}
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <LandingNav />
 
       <div className="max-w-4xl mx-auto px-6 pt-24 pb-16 space-y-6 animate-fade-in">
         {/* Header */}

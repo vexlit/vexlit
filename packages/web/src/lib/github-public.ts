@@ -10,7 +10,7 @@ const MAX_FILE_SIZE = 1_000_000; // 1MB per file
 const MAX_SCANNABLE_FILES = 200;
 
 const SKIP_DIRECTORIES = [
-  "node_modules", "dist", "build", "out", "target", "tmp",
+  "node_modules", "dist", "out", "target", "tmp",
   ".cache", ".next", "coverage", ".git", "vendor", "__pycache__", ".venv", "venv",
 ];
 
