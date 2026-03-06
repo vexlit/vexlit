@@ -75,6 +75,7 @@ export function LiveDemo() {
   const [fullResults, setFullResults] = useState<DemoVuln[] | null>(null);
   const [scanning, setScanning] = useState(false);
   const [fullScanning, setFullScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const handleScan = async () => {
@@ -84,6 +85,7 @@ export function LiveDemo() {
     setScanning(true);
     setQuickResults(null);
     setFullResults(null);
+    setScanError(null);
 
     // Phase 1: instant client-side scan
     setTimeout(() => {
@@ -109,14 +111,15 @@ export function LiveDemo() {
       if (!controller.signal.aborted) {
         if (res.ok && data.vulnerabilities) {
           setFullResults(data.vulnerabilities);
+        } else if (res.status === 429) {
+          setScanError("Too many requests. Please wait a moment.");
         } else {
-          console.error("[LiveDemo] API error:", data);
+          setScanError("Full scan unavailable. Showing quick results.");
         }
       }
     } catch (err) {
-      // Log non-abort errors for debugging
       if (err instanceof Error && err.name !== "AbortError") {
-        console.error("[LiveDemo] Full engine scan failed:", err);
+        setScanError("Full scan unavailable. Showing quick results.");
       }
     } finally {
       setFullScanning(false);
@@ -157,7 +160,7 @@ export function LiveDemo() {
         <div className="relative">
           <textarea
             value={code}
-            onChange={(e) => { setCode(e.target.value); setQuickResults(null); setFullResults(null); }}
+            onChange={(e) => { setCode(e.target.value); setQuickResults(null); setFullResults(null); setScanError(null); }}
             className="w-full h-64 md:h-80 bg-transparent text-gray-300 font-mono text-sm p-4 resize-none focus:outline-none"
             spellCheck={false}
             placeholder="Paste your code here..."
@@ -200,6 +203,11 @@ export function LiveDemo() {
                   </span>
                 )}
               </div>
+              {scanError && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 text-yellow-400 text-xs">
+                  {scanError}
+                </div>
+              )}
               {displayResults.map((v, i) => (
                 <div
                   key={i}
