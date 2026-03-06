@@ -78,8 +78,8 @@ export function LandingClient({
         </FadeIn>
         <FadeIn delay={0.2}>
           <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Static analysis + AI security explanations for modern codebases.
-            Scan JavaScript, TypeScript, and Python with AST-level precision.
+            Scan your code for security issues with static analysis
+            and AI-powered explanations developers can actually understand.
           </p>
         </FadeIn>
         <FadeIn delay={0.3}>
