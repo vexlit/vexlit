@@ -7,10 +7,12 @@ export function AnimatedCounter({
   end,
   suffix = "",
   label,
+  decimals = 0,
 }: {
   end: number;
   suffix?: string;
   label: string;
+  decimals?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true });
@@ -21,19 +23,19 @@ export function AnimatedCounter({
     let frame: number;
     const duration = 1500;
     const startTime = performance.now();
+    const multiplier = Math.pow(10, decimals);
 
     function tick(now: number) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * end));
+      setCount(Math.round(eased * end * multiplier) / multiplier);
       if (progress < 1) frame = requestAnimationFrame(tick);
     }
 
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [inView, end]);
+  }, [inView, end, decimals]);
 
   return (
     <motion.div
@@ -44,7 +46,7 @@ export function AnimatedCounter({
       className="text-center"
     >
       <p className="text-4xl md:text-5xl font-bold text-white">
-        {count.toLocaleString()}
+        {decimals > 0 ? count.toFixed(decimals) : count.toLocaleString()}
         {suffix}
       </p>
       <p className="text-gray-400 text-sm mt-2">{label}</p>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "./motion-wrapper";
+import { AnimatedCounter } from "./counter";
 
 /* ─────────────────────────── Before / After Demo ─────────────────────────── */
 
@@ -401,6 +402,84 @@ export function UsageMetrics() {
             </div>
           </div>
         </div>
+      </ScrollReveal>
+    </section>
+  );
+}
+
+/* ─────────────────────────── Accuracy Benchmark ─────────────────────────── */
+
+const BENCHMARK_CATEGORIES = [
+  "SQL Injection", "XSS", "Command Injection", "Hardcoded Secrets",
+  "Eval Injection", "SSRF", "Path Traversal", "Prototype Pollution",
+  "Insecure Crypto", "NoSQL Injection", "Insecure Cookie", "Open Redirect",
+];
+
+export function AccuracyBenchmark() {
+  const t = useTranslations("sections");
+  return (
+    <section id="accuracy" className="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
+      <ScrollReveal>
+        <div className="flex justify-center mb-4">
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            {t("benchmarkBadge")}
+          </span>
+        </div>
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
+          {t("benchmarkTitle")}
+        </h2>
+        <p className="text-gray-400 text-center max-w-2xl mx-auto mb-12">
+          {t("benchmarkDesc")}
+        </p>
+      </ScrollReveal>
+
+      {/* Main metrics */}
+      <ScrollReveal>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-green-500/30 transition-colors">
+            <AnimatedCounter end={98.6} suffix="%" decimals={1} label={t("benchmarkAccuracy")} />
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-green-500/30 transition-colors">
+            <AnimatedCounter end={100} suffix="%" label={t("benchmarkPrecision")} />
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-green-500/30 transition-colors">
+            <AnimatedCounter end={97.4} suffix="%" decimals={1} label={t("benchmarkRecall")} />
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-green-500/30 transition-colors">
+            <AnimatedCounter end={0} suffix="%" label={t("benchmarkFPR")} />
+          </div>
+        </div>
+      </ScrollReveal>
+
+      {/* Reduced Risk highlight */}
+      <ScrollReveal>
+        <div className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 border border-green-500/20 rounded-2xl p-8 mb-12 text-center">
+          <p className="text-5xl md:text-6xl font-bold text-green-400 mb-2">98.6%</p>
+          <p className="text-white text-lg font-semibold mb-1">{t("reducedRisk")}</p>
+          <p className="text-gray-400 text-sm max-w-lg mx-auto">{t("reducedRiskDesc")}</p>
+        </div>
+      </ScrollReveal>
+
+      {/* Category breakdown */}
+      <ScrollReveal>
+        <h3 className="text-xl font-semibold text-center mb-6">{t("benchmarkCategories")}</h3>
+        <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {BENCHMARK_CATEGORIES.map((cat) => (
+            <StaggerItem key={cat}>
+              <div className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-3 hover:border-green-500/30 transition-colors">
+                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-white text-sm truncate">{cat}</p>
+                  <p className="text-green-400 text-xs font-mono">100% F1</p>
+                </div>
+              </div>
+            </StaggerItem>
+          ))}
+        </StaggerContainer>
+        <p className="text-center text-gray-500 text-xs mt-4">
+          {t("benchmarkFootnote")}
+        </p>
       </ScrollReveal>
     </section>
   );

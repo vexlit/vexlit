@@ -1,0 +1,121 @@
+{
+  "totalSamples": 11100,
+  "overall": {
+    "accuracy": 98.6,
+    "precision": 100,
+    "recall": 97.4,
+    "f1": 98.7,
+    "falsePositiveRate": 0
+  },
+  "categories": {
+    "SQL Injection": {
+      "tp": 450,
+      "fp": 0,
+      "tn": 600,
+      "fn": 150,
+      "precision": 100,
+      "recall": 75,
+      "f1": 85.7
+    },
+    "XSS": {
+      "tp": 600,
+      "fp": 0,
+      "tn": 450,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "Command Injection": {
+      "tp": 600,
+      "fp": 0,
+      "tn": 600,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "Hardcoded Secrets": {
+      "tp": 900,
+      "fp": 0,
+      "tn": 600,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "Eval Injection": {
+      "tp": 450,
+      "fp": 0,
+      "tn": 300,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "SSRF": {
+      "tp": 450,
+      "fp": 0,
+      "tn": 450,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "Path Traversal": {
+      "tp": 450,
+      "fp": 0,
+      "tn": 450,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "Prototype Pollution": {
+      "tp": 300,
+      "fp": 0,
+      "tn": 300,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "Insecure Crypto": {
+      "tp": 450,
+      "fp": 0,
+      "tn": 450,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "NoSQL Injection": {
+      "tp": 450,
+      "fp": 0,
+      "tn": 450,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "Insecure Cookie": {
+      "tp": 300,
+      "fp": 0,
+      "tn": 300,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    },
+    "Open Redirect": {
+      "tp": 300,
+      "fp": 0,
+      "tn": 300,
+      "fn": 0,
+      "precision": 100,
+      "recall": 100,
+      "f1": 100
+    }
+  },
+  "timestamp": "2026-03-06T21:43:30.034Z"
+}

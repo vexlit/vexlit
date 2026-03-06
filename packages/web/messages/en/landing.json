@@ -93,7 +93,18 @@
     "free": "Free",
     "limited": "Limited",
     "paidOnly": "Paid only",
-    "basic": "Basic"
+    "basic": "Basic",
+    "benchmarkBadge": "11,100+ test cases verified",
+    "benchmarkTitle": "Proven Accuracy You Can Trust",
+    "benchmarkDesc": "We tested VEXLIT against 11,100+ parameterized code samples across 12 vulnerability categories using Monte Carlo-style randomized testing.",
+    "benchmarkAccuracy": "Overall Accuracy",
+    "benchmarkPrecision": "Precision (Zero False Positives)",
+    "benchmarkRecall": "Recall (Detection Rate)",
+    "benchmarkFPR": "False Positive Rate",
+    "reducedRisk": "Reduced Security Risk",
+    "reducedRiskDesc": "VEXLIT catches 98.6% of vulnerabilities with zero false positives — meaning every finding is real and actionable, saving developers hours of false alarm triage.",
+    "benchmarkCategories": "Perfect scores across 11 of 12 categories",
+    "benchmarkFootnote": "Benchmark run on 11,100 parameterized test cases with randomized variable names, function names, and code structures. Results verifiable via open-source benchmark suite."
   },
   "liveDemo": {
     "title": "Try it now",

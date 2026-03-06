@@ -14,6 +14,7 @@ import {
   ComparisonTable,
   UsageMetrics,
   ScanOutputPreview,
+  AccuracyBenchmark,
 } from "./landing-sections";
 
 interface Rule {
@@ -151,6 +152,9 @@ export function LandingClient({
 
       {/* Usage Metrics */}
       <UsageMetrics />
+
+      {/* Accuracy Benchmark */}
+      <AccuracyBenchmark />
 
       {/* Features */}
       <section id="features" className="max-w-7xl mx-auto px-6 py-20 scroll-mt-20">
