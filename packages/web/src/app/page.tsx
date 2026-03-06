@@ -25,9 +25,9 @@ const FEATURES = [
     icon: "tree",
   },
   {
-    title: "263 Security Rules",
+    title: "85+ SAST Rules",
     description:
-      "Covers OWASP Top 10 including SQL Injection, XSS, SSRF, Command Injection, Prototype Pollution, and 200+ secret patterns.",
+      "Covers OWASP Top 10 including SQL Injection, XSS, SSRF, Command Injection, Prototype Pollution. Plus 200+ secret detectors.",
     icon: "shield",
   },
   {

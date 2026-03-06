@@ -85,7 +85,7 @@ export function LandingClient({
         <FadeIn>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            263 security rules &middot; 3 languages
+            85+ SAST rules &middot; 200+ secret detectors
           </div>
         </FadeIn>
         <FadeIn delay={0.1}>
@@ -211,7 +211,7 @@ export function LandingClient({
         </StaggerContainer>
         <ScrollReveal>
           <p className="text-center text-gray-500 text-sm mt-4">
-            + 251 more rules including 200 secret patterns
+            + 70 more SAST rules and 200+ secret detectors
           </p>
         </ScrollReveal>
       </section>

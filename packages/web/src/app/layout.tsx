@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "VEXLIT - AI-Powered Code Security Scanner",
   description:
-    "Find security vulnerabilities before attackers do. AST-based static analysis with 263 rules covering OWASP Top 10.",
+    "Find security vulnerabilities before attackers do. AST-based static analysis with 85+ SAST rules and 200+ secret detectors covering OWASP Top 10.",
 };
 
 export default function RootLayout({
