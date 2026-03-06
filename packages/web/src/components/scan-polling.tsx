@@ -51,8 +51,8 @@ export function ScanPolling({
           return;
         }
 
-        // If still running (more chunks), call again after short delay
-        if (data.status === "running" && data.remaining > 0) {
+        // If still running (more chunks or fetching), call again after short delay
+        if (data.status === "running" && (data.remaining > 0 || data.phase)) {
           executing.current = false;
           if (!stopped) setTimeout(runExecute, 500);
           return;

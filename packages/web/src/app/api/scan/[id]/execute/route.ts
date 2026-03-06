@@ -1,9 +1,20 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { fetchRepoTree, fetchFileContentsBatch } from "@/lib/github";
 import { NextResponse } from "next/server";
 
 // Process files in chunks to stay within serverless timeout
 const CHUNK_SIZE = 10;
+// Fetch files from GitHub in batches per execute call
+const GITHUB_FETCH_BATCH = 40;
+
+interface GithubMeta {
+  owner: string;
+  repo: string;
+  branch: string;
+  paths?: string[];
+  fetch_cursor?: number;
+}
 
 export async function POST(
   _request: Request,
@@ -12,10 +23,10 @@ export async function POST(
   const { id } = await params;
   const supabase = await createSupabaseServer();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,7 +35,9 @@ export async function POST(
   // Get scan with file contents and verify ownership
   const { data: scan } = await admin
     .from("scans")
-    .select("id, status, file_contents, project_id, projects(user_id)")
+    .select(
+      "id, status, file_contents, github_meta, project_id, projects(user_id)"
+    )
     .eq("id", id)
     .single();
 
@@ -33,7 +46,7 @@ export async function POST(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((scan as any).projects?.user_id !== user.id) {
+  if ((scan as any).projects?.user_id !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -42,33 +55,176 @@ export async function POST(
     return NextResponse.json({ status: scan.status });
   }
 
-  // Allow re-entry for "running" status — this enables chunk continuation
-  // The client calls execute repeatedly; each call processes the next chunk
-
-  const files = (scan.file_contents ?? []) as {
-    path: string;
-    content: string;
-  }[];
-
-  if (!files.length) {
-    await admin
-      .from("scans")
-      .update({
-        status: scan.status === "pending" ? "failed" : "completed",
-        error_message: scan.status === "pending" ? "No files to scan" : null,
-        file_contents: null,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", id);
-    return NextResponse.json({
-      status: scan.status === "pending" ? "failed" : "completed",
-    });
-  }
+  // Debug: log scan state for troubleshooting
+  console.log("[execute] scan state:", {
+    id: scan.id,
+    status: scan.status,
+    hasGithubMeta: !!scan.github_meta,
+    githubMeta: scan.github_meta,
+    hasFileContents: !!scan.file_contents,
+    fileContentsLength: Array.isArray(scan.file_contents)
+      ? scan.file_contents.length
+      : null,
+    hasProviderToken: !!session.provider_token,
+  });
 
   const startTime = Date.now();
 
   try {
-    // Mark as running (only on first chunk) with atomic check to prevent race condition
+    // ── Phase 1: GitHub file fetching (cursor-based) ──
+    const githubMeta = scan.github_meta as GithubMeta | null;
+
+    if (githubMeta) {
+      const providerToken = session.provider_token;
+      if (!providerToken) {
+        await admin
+          .from("scans")
+          .update({
+            status: "failed",
+            error_message: "GitHub token expired. Please re-login and retry.",
+            github_meta: null,
+          })
+          .eq("id", id);
+        return NextResponse.json({ status: "failed" });
+      }
+
+      // Atomic pending → running transition
+      if (scan.status === "pending") {
+        const { data: updated } = await admin
+          .from("scans")
+          .update({ status: "running" })
+          .eq("id", id)
+          .eq("status", "pending")
+          .select("id");
+
+        if (!updated || updated.length === 0) {
+          return NextResponse.json({ status: "running" });
+        }
+      }
+
+      const { owner, repo, branch } = githubMeta;
+
+      // First call: fetch tree, store all paths with cursor = 0
+      if (!githubMeta.paths) {
+        const paths = await fetchRepoTree(owner, repo, branch, providerToken);
+
+        if (!paths.length) {
+          await admin
+            .from("scans")
+            .update({
+              status: "failed",
+              error_message: "No scannable files found in this repository",
+              github_meta: null,
+              completed_at: new Date().toISOString(),
+            })
+            .eq("id", id);
+          return NextResponse.json({ status: "failed" });
+        }
+
+        // Fetch first batch
+        const batchPaths = paths.slice(0, GITHUB_FETCH_BATCH);
+        const files = await fetchFileContentsBatch(
+          owner,
+          repo,
+          branch,
+          batchPaths,
+          providerToken
+        );
+
+        const nextCursor = Math.min(GITHUB_FETCH_BATCH, paths.length);
+        const done = nextCursor >= paths.length;
+
+        await admin
+          .from("scans")
+          .update({
+            file_contents: files,
+            github_meta: done
+              ? null
+              : { owner, repo, branch, paths, fetch_cursor: nextCursor },
+          })
+          .eq("id", id);
+
+        return NextResponse.json({
+          status: "running",
+          phase: done ? "scanning" : "fetching",
+          fetched: files.length,
+          remaining: done ? files.length : paths.length - nextCursor,
+        });
+      }
+
+      // Subsequent calls: use cursor to fetch next batch
+      const cursor = githubMeta.fetch_cursor ?? 0;
+      const batchPaths = githubMeta.paths.slice(
+        cursor,
+        cursor + GITHUB_FETCH_BATCH
+      );
+
+      const files = await fetchFileContentsBatch(
+        owner,
+        repo,
+        branch,
+        batchPaths,
+        providerToken
+      );
+
+      const existingFiles = (scan.file_contents ?? []) as {
+        path: string;
+        content: string;
+      }[];
+      const allFiles = [...existingFiles, ...files];
+      const nextCursor = cursor + GITHUB_FETCH_BATCH;
+      const done = nextCursor >= githubMeta.paths.length;
+
+      await admin
+        .from("scans")
+        .update({
+          file_contents: allFiles,
+          github_meta: done
+            ? null
+            : {
+                owner,
+                repo,
+                branch,
+                paths: githubMeta.paths,
+                fetch_cursor: nextCursor,
+              },
+        })
+        .eq("id", id);
+
+      return NextResponse.json({
+        status: "running",
+        phase: done ? "scanning" : "fetching",
+        fetched: files.length,
+        remaining: done
+          ? allFiles.length
+          : githubMeta.paths.length - nextCursor,
+      });
+    }
+
+    // ── Phase 2: Scan processing (existing chunk logic) ──
+
+    const files = (scan.file_contents ?? []) as {
+      path: string;
+      content: string;
+    }[];
+
+    if (!files.length) {
+      const debugInfo = `No files to scan | status=${scan.status} | github_meta=${JSON.stringify(scan.github_meta)} | has_provider_token=${!!session.provider_token} | file_contents_type=${typeof scan.file_contents}`;
+      await admin
+        .from("scans")
+        .update({
+          status: scan.status === "pending" ? "failed" : "completed",
+          error_message: scan.status === "pending" ? debugInfo : null,
+          file_contents: null,
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      return NextResponse.json({
+        status: scan.status === "pending" ? "failed" : "completed",
+      });
+    }
+
+    // Mark as running (only on first chunk) with atomic check
     if (scan.status === "pending") {
       const { data: updated } = await admin
         .from("scans")
@@ -77,7 +233,6 @@ export async function POST(
         .eq("status", "pending")
         .select("id");
 
-      // Another request already started processing
       if (!updated || updated.length === 0) {
         return NextResponse.json({ status: "running" });
       }
@@ -86,7 +241,6 @@ export async function POST(
     const { RuleEngine } = await import("@vexlit/core");
     const engine = new RuleEngine();
 
-    // Take only a chunk of files to process within timeout
     const chunk = files.slice(0, CHUNK_SIZE);
     const remaining = files.slice(CHUNK_SIZE);
 
@@ -140,13 +294,11 @@ export async function POST(
       }
     }
 
-    // Insert this chunk's vulnerabilities
     if (chunkVulnerabilities.length > 0) {
       await admin.from("vulnerabilities").insert(chunkVulnerabilities);
     }
 
     if (remaining.length > 0) {
-      // More files to process — update remaining files, keep status as running
       await admin
         .from("scans")
         .update({ file_contents: remaining })
@@ -160,7 +312,6 @@ export async function POST(
     }
 
     // All files processed — finalize scan
-    // Count all vulnerabilities for this scan
     const { count: totalCount } = await admin
       .from("vulnerabilities")
       .select("*", { count: "exact", head: true })
@@ -203,6 +354,7 @@ export async function POST(
         status: "failed",
         error_message: message,
         duration_ms: Date.now() - startTime,
+        github_meta: null,
       })
       .eq("id", id);
     return NextResponse.json({ status: "failed" });

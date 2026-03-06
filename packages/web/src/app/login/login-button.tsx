@@ -9,6 +9,7 @@ export function LoginButton() {
       provider: "github",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: "repo",
       },
     });
   };
