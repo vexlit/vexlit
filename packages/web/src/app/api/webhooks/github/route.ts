@@ -1,7 +1,6 @@
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import {
   fetchPublicDefaultBranch,
-  fetchPublicRepoTree,
   fetchPublicFilesBatch,
 } from "@/lib/github-public";
 import { NextResponse } from "next/server";
@@ -76,15 +75,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Fetch and scan the head branch
-    const branch = headBranch || await fetchPublicDefaultBranch(owner, repoName);
-    const paths = await fetchPublicRepoTree(owner, repoName, branch);
+    const token = process.env.GITHUB_APP_TOKEN || process.env.GITHUB_TOKEN;
 
-    if (!paths.length) {
+    // Fetch only changed files from the PR
+    const branch = headBranch || await fetchPublicDefaultBranch(owner, repoName);
+    const changedPaths = await fetchPRChangedFiles(owner, repoName, prNumber, token);
+
+    if (!changedPaths.length) {
       return NextResponse.json({ ok: true, skipped: true, reason: "no scannable files" });
     }
 
-    const files = await fetchPublicFilesBatch(owner, repoName, branch, paths);
+    const files = await fetchPublicFilesBatch(owner, repoName, branch, changedPaths);
 
     // Create scan record
     const { data: scan } = await admin
@@ -180,8 +181,7 @@ export async function POST(request: Request) {
       })
       .eq("id", scan.id);
 
-    // Post PR comment
-    const token = process.env.GITHUB_APP_TOKEN || process.env.GITHUB_TOKEN;
+    // Post or update PR comment
     if (token) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://vexlit.com";
       const reportUrl = `${appUrl}/dashboard/scans/${scan.id}`;
@@ -218,18 +218,36 @@ export async function POST(request: Request) {
         commentBody += `[View Full Report](${reportUrl})`;
       }
 
-      await fetch(
-        `https://api.github.com/repos/${owner}/${repoName}/issues/${prNumber}/comments`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-          body: JSON.stringify({ body: commentBody }),
-        }
-      );
+      // Find existing VEXLIT comment to update instead of creating a new one
+      const existingCommentId = await findExistingComment(owner, repoName, prNumber, token);
+
+      if (existingCommentId) {
+        await fetch(
+          `https://api.github.com/repos/${owner}/${repoName}/issues/comments/${existingCommentId}`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+            },
+            body: JSON.stringify({ body: commentBody }),
+          }
+        );
+      } else {
+        await fetch(
+          `https://api.github.com/repos/${owner}/${repoName}/issues/${prNumber}/comments`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+            },
+            body: JSON.stringify({ body: commentBody }),
+          }
+        );
+      }
     }
 
     // Create notification
@@ -250,4 +268,61 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+const SCANNABLE_EXTS = new Set([".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py"]);
+
+/** Fetch only changed file paths from a PR */
+async function fetchPRChangedFiles(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  token: string | undefined
+): Promise<string[]> {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/files?per_page=100`,
+    { headers }
+  );
+
+  if (!res.ok) return [];
+
+  const files = (await res.json()) as { filename: string; status: string }[];
+  return files
+    .filter((f) => f.status !== "removed")
+    .map((f) => f.filename)
+    .filter((p) => {
+      const ext = "." + p.split(".").pop()?.toLowerCase();
+      return SCANNABLE_EXTS.has(ext);
+    });
+}
+
+/** Find existing VEXLIT comment on a PR to update instead of creating a new one */
+async function findExistingComment(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  token: string
+): Promise<number | null> {
+  const res = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/issues/${prNumber}/comments?per_page=100`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    }
+  );
+
+  if (!res.ok) return null;
+
+  const comments = (await res.json()) as { id: number; body: string }[];
+  const existing = comments.find((c) => c.body.includes("## VEXLIT Security Report"));
+  return existing?.id ?? null;
 }

@@ -57,6 +57,20 @@ export async function GET(request: Request) {
         continue;
       }
 
+      // Skip if last scan is still running (duplicate prevention)
+      const { data: lastScan } = await admin
+        .from("scans")
+        .select("status")
+        .eq("project_id", project.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (lastScan?.status === "running") {
+        results.push({ project: project.name, status: "skipped: scan already running" });
+        continue;
+      }
+
       const owner = match[1];
       const repo = match[2].replace(/\.git$/, "");
 
@@ -193,6 +207,27 @@ export async function GET(request: Request) {
   return NextResponse.json({ ok: true, scanned: results.length, results });
 }
 
+/** Validate webhook URL to prevent SSRF */
+function isValidWebhookUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      (parsed.hostname === "hooks.slack.com" ||
+        (parsed.hostname === "discord.com" && parsed.pathname.startsWith("/api/webhooks/")))
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Fetch with timeout using AbortController */
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 /** Send Slack/Discord webhooks for scan completion */
 async function sendWebhooks(
   admin: ReturnType<typeof createSupabaseAdmin>,
@@ -218,9 +253,9 @@ async function sendWebhooks(
   const link = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://vexlit.com"}/dashboard/scans/${scanId}`;
 
   // Slack webhook
-  if (profile.slack_webhook_url) {
+  if (profile.slack_webhook_url && isValidWebhookUrl(profile.slack_webhook_url)) {
     try {
-      await fetch(profile.slack_webhook_url, {
+      await fetchWithTimeout(profile.slack_webhook_url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -239,9 +274,9 @@ async function sendWebhooks(
   }
 
   // Discord webhook
-  if (profile.discord_webhook_url) {
+  if (profile.discord_webhook_url && isValidWebhookUrl(profile.discord_webhook_url)) {
     try {
-      await fetch(profile.discord_webhook_url, {
+      await fetchWithTimeout(profile.discord_webhook_url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
