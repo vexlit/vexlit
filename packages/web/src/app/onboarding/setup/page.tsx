@@ -11,15 +11,15 @@ const FEATURES = [
     comingSoon: true,
   },
   {
-    key: "feature_auto_fix_pr",
-    label: "Auto Fix PR",
-    description: "Generate fix PRs when vulnerabilities are found",
+    key: "feature_scheduled_scan",
+    label: "Scheduled Security Scan",
+    description: "Run daily or weekly scans automatically",
     comingSoon: true,
   },
   {
-    key: "feature_dep_upgrade",
-    label: "Dependency Upgrade PR",
-    description: "Auto-create PRs to update outdated packages",
+    key: "feature_security_alerts",
+    label: "Security Alerts",
+    description: "Receive alerts in Slack, Discord, or email",
     comingSoon: true,
   },
   {
@@ -35,8 +35,8 @@ export default function OnboardingSetupPage() {
   const [repoScope, setRepoScope] = useState<"public_only" | "all">("public_only");
   const [features, setFeatures] = useState<Record<string, boolean>>({
     feature_pr_check: true,
-    feature_auto_fix_pr: true,
-    feature_dep_upgrade: true,
+    feature_scheduled_scan: true,
+    feature_security_alerts: true,
     feature_code_analysis: true,
   });
   const [loading, setLoading] = useState(false);

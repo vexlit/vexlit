@@ -7,8 +7,8 @@ import { toast } from "sonner";
 
 const FEATURES = [
   { key: "feature_pr_check", label: "PR Security Check", comingSoon: true },
-  { key: "feature_auto_fix_pr", label: "Auto Fix PR", comingSoon: true },
-  { key: "feature_dep_upgrade", label: "Dependency Upgrade PR", comingSoon: true },
+  { key: "feature_scheduled_scan", label: "Scheduled Security Scan", comingSoon: true },
+  { key: "feature_security_alerts", label: "Security Alerts", comingSoon: true },
   { key: "feature_code_analysis", label: "Static Code Analysis", comingSoon: false },
 ] as const;
 
@@ -25,8 +25,8 @@ export function SettingsClient({
   );
   const [features, setFeatures] = useState<Record<string, boolean>>({
     feature_pr_check: profile?.feature_pr_check ?? true,
-    feature_auto_fix_pr: profile?.feature_auto_fix_pr ?? true,
-    feature_dep_upgrade: profile?.feature_dep_upgrade ?? true,
+    feature_scheduled_scan: profile?.feature_scheduled_scan ?? true,
+    feature_security_alerts: profile?.feature_security_alerts ?? true,
     feature_code_analysis: profile?.feature_code_analysis ?? true,
   });
   const [marketing, setMarketing] = useState(profile?.marketing_consent ?? false);

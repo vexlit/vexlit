@@ -6,8 +6,8 @@ export interface Profile {
   marketing_consent: boolean;
   repo_scope: "public_only" | "all";
   feature_pr_check: boolean;
-  feature_auto_fix_pr: boolean;
-  feature_dep_upgrade: boolean;
+  feature_scheduled_scan: boolean;
+  feature_security_alerts: boolean;
   feature_code_analysis: boolean;
   created_at: string;
   updated_at: string;
