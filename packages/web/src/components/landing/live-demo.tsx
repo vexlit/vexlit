@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const DEMO_CODE = `const express = require("express");
 const app = express();
@@ -19,52 +19,93 @@ const API_KEY = "sk_live_51HxGz2CjpKJds9sK3n";
 
 interface DemoVuln {
   line: number;
-  severity: "critical" | "warning";
+  severity: "critical" | "warning" | "info";
   rule: string;
   message: string;
+  confidence?: string;
+  cwe?: string;
+  suggestion?: string;
 }
 
-const DEMO_RESULTS: DemoVuln[] = [
-  { line: 6, severity: "critical", rule: "SQL Injection", message: "String concatenation in SQL query" },
-  { line: 10, severity: "critical", rule: "Command Injection", message: "Unsanitized user input in exec()" },
-  { line: 13, severity: "critical", rule: "Hardcoded Secret", message: "Stripe API key detected" },
-];
+// Client-side quick scan patterns (instant, ~5 rules)
+function quickScan(code: string): DemoVuln[] {
+  const vulns: DemoVuln[] = [];
+  const lines = code.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/query\s*\(.*\+/.test(line)) {
+      vulns.push({ line: i + 1, severity: "critical", rule: "SQL Injection", message: "String concatenation in SQL query" });
+    }
+    if (/exec\s*\(.*req\./.test(line) || /exec\s*\(.*body/.test(line)) {
+      vulns.push({ line: i + 1, severity: "critical", rule: "Command Injection", message: "Unsanitized user input in exec()" });
+    }
+    if (/sk_live_|sk_test_|ghp_|AKIA[A-Z0-9]/.test(line)) {
+      vulns.push({ line: i + 1, severity: "critical", rule: "Hardcoded Secret", message: "API key or secret detected in source code" });
+    }
+    if (/eval\s*\(/.test(line)) {
+      vulns.push({ line: i + 1, severity: "critical", rule: "Eval Injection", message: "Dynamic code execution via eval()" });
+    }
+    if (/\.innerHTML\s*=|document\.write/.test(line)) {
+      vulns.push({ line: i + 1, severity: "critical", rule: "XSS", message: "Unsanitized DOM manipulation" });
+    }
+  }
+  return vulns;
+}
 
 export function LiveDemo() {
   const [code, setCode] = useState(DEMO_CODE);
-  const [results, setResults] = useState<DemoVuln[] | null>(null);
+  const [quickResults, setQuickResults] = useState<DemoVuln[] | null>(null);
+  const [fullResults, setFullResults] = useState<DemoVuln[] | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [fullScanning, setFullScanning] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const handleScan = () => {
+  const handleScan = async () => {
+    // Abort any previous full scan
+    abortRef.current?.abort();
+
     setScanning(true);
-    setResults(null);
-    // Simulate scan with realistic delay
+    setQuickResults(null);
+    setFullResults(null);
+
+    // Phase 1: instant client-side scan
     setTimeout(() => {
-      // Simple client-side pattern matching for demo
-      const vulns: DemoVuln[] = [];
-      const lines = code.split("\n");
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (/query\s*\(.*\+/.test(line)) {
-          vulns.push({ line: i + 1, severity: "critical", rule: "SQL Injection", message: "String concatenation in SQL query" });
-        }
-        if (/exec\s*\(.*req\./.test(line) || /exec\s*\(.*body/.test(line)) {
-          vulns.push({ line: i + 1, severity: "critical", rule: "Command Injection", message: "Unsanitized user input in exec()" });
-        }
-        if (/sk_live_|sk_test_|ghp_|AKIA[A-Z0-9]/.test(line)) {
-          vulns.push({ line: i + 1, severity: "critical", rule: "Hardcoded Secret", message: "API key or secret detected in source code" });
-        }
-        if (/eval\s*\(/.test(line)) {
-          vulns.push({ line: i + 1, severity: "critical", rule: "Eval Injection", message: "Dynamic code execution via eval()" });
-        }
-        if (/document\.innerHTML|document\.write/.test(line)) {
-          vulns.push({ line: i + 1, severity: "critical", rule: "XSS", message: "Unsanitized DOM manipulation" });
+      const quick = quickScan(code);
+      setQuickResults(quick);
+      setScanning(false);
+    }, 300);
+
+    // Phase 2: real engine scan (parallel)
+    setFullScanning(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const res = await fetch("/api/scan/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, language: "javascript" }),
+        signal: controller.signal,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (!controller.signal.aborted) {
+          setFullResults(data.vulnerabilities);
         }
       }
-      setResults(vulns.length > 0 ? vulns : DEMO_RESULTS);
-      setScanning(false);
-    }, 800);
+    } catch {
+      // Aborted or network error — silent
+    } finally {
+      if (!controller.signal.aborted) {
+        setFullScanning(false);
+      }
+    }
   };
+
+  // Show full results if available, otherwise quick results
+  const displayResults = fullResults ?? quickResults;
+  const isFullEngine = fullResults !== null;
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
@@ -96,7 +137,7 @@ export function LiveDemo() {
         <div className="relative">
           <textarea
             value={code}
-            onChange={(e) => { setCode(e.target.value); setResults(null); }}
+            onChange={(e) => { setCode(e.target.value); setQuickResults(null); setFullResults(null); }}
             className="w-full h-64 md:h-80 bg-transparent text-gray-300 font-mono text-sm p-4 resize-none focus:outline-none"
             spellCheck={false}
             placeholder="Paste your code here..."
@@ -105,12 +146,12 @@ export function LiveDemo() {
 
         {/* Results */}
         <div className="h-64 md:h-80 overflow-y-auto p-4">
-          {!results && !scanning && (
+          {!displayResults && !scanning && (
             <div className="flex items-center justify-center h-full text-gray-500 text-sm">
               Click &ldquo;Scan Code&rdquo; to analyze
             </div>
           )}
-          {scanning && (
+          {scanning && !displayResults && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -118,12 +159,28 @@ export function LiveDemo() {
               </div>
             </div>
           )}
-          {results && (
+          {displayResults && (
             <div className="space-y-3">
-              <p className="text-white text-sm font-medium">
-                {results.length} vulnerabilit{results.length === 1 ? "y" : "ies"} found
-              </p>
-              {results.map((v, i) => (
+              <div className="flex items-center justify-between">
+                <p className="text-white text-sm font-medium">
+                  {displayResults.length} vulnerabilit{displayResults.length === 1 ? "y" : "ies"} found
+                </p>
+                {isFullEngine ? (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-medium">
+                    Full Engine
+                  </span>
+                ) : fullScanning ? (
+                  <span className="flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 font-medium">
+                    <span className="w-2 h-2 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                    Deep scanning...
+                  </span>
+                ) : (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-400 font-medium">
+                    Quick Scan
+                  </span>
+                )}
+              </div>
+              {displayResults.map((v, i) => (
                 <div
                   key={i}
                   className="bg-gray-950 border border-gray-800 rounded-lg p-3"
@@ -132,7 +189,9 @@ export function LiveDemo() {
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
                       v.severity === "critical"
                         ? "bg-red-500/20 text-red-400"
-                        : "bg-yellow-500/20 text-yellow-400"
+                        : v.severity === "warning"
+                        ? "bg-yellow-500/20 text-yellow-400"
+                        : "bg-blue-500/20 text-blue-400"
                     }`}>
                       {v.severity}
                     </span>
@@ -140,6 +199,9 @@ export function LiveDemo() {
                     <span className="text-gray-600 text-xs">Line {v.line}</span>
                   </div>
                   <p className="text-gray-400 text-xs mt-1">{v.message}</p>
+                  {isFullEngine && v.cwe && (
+                    <p className="text-gray-600 text-[10px] mt-1">{v.cwe}</p>
+                  )}
                 </div>
               ))}
             </div>
