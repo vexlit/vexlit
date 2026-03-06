@@ -152,7 +152,7 @@ export function LandingClient({
       <UsageMetrics />
 
       {/* Features */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      <section id="features" className="max-w-7xl mx-auto px-6 py-20 scroll-mt-20">
         <ScrollReveal>
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Why VEXLIT?
@@ -182,7 +182,7 @@ export function LandingClient({
       </section>
 
       {/* Rules preview */}
-      <section className="max-w-4xl mx-auto px-6 py-16 border-t border-gray-800">
+      <section id="rules" className="max-w-4xl mx-auto px-6 py-16 border-t border-gray-800 scroll-mt-20">
         <ScrollReveal>
           <h2 className="text-3xl font-bold text-center mb-3">
             Security Rules
@@ -222,8 +222,8 @@ export function LandingClient({
       {/* Comparison Table */}
       <ComparisonTable />
 
-      {/* CTA */}
-      <section className="max-w-4xl mx-auto px-6 py-20">
+      {/* CTA / Pricing */}
+      <section id="pricing" className="max-w-4xl mx-auto px-6 py-20 scroll-mt-20">
         <ScrollReveal>
           <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 border border-red-500/20 rounded-2xl p-8 md:p-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">

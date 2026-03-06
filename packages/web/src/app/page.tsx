@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LandingClient } from "@/components/landing/landing-client";
-import { LandingNavActions } from "@/components/landing/landing-nav-actions";
+import { LandingNav } from "@/components/landing/landing-nav";
 
 const RULES_PREVIEW = [
   { id: "VEXLIT-001", name: "Hardcoded Secrets", severity: "critical" },
@@ -60,14 +60,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Nav */}
-      <nav className="fixed top-0 w-full z-50 border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-white">
-            VEXLIT
-          </Link>
-          <LandingNavActions />
-        </div>
-      </nav>
+      <LandingNav />
 
       <LandingClient
         rules={RULES_PREVIEW}
