@@ -66,9 +66,10 @@ export async function POST(request: Request) {
         suggestion: v.suggestion,
       })),
     });
-  } catch {
+  } catch (err) {
+    console.error("[scan/demo] Engine error:", err);
     return NextResponse.json(
-      { error: "Scan engine error" },
+      { error: "Scan engine error", detail: err instanceof Error ? err.message : String(err) },
       { status: 500 }
     );
   }

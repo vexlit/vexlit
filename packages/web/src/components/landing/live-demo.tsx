@@ -88,18 +88,21 @@ export function LiveDemo() {
         signal: controller.signal,
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (!controller.signal.aborted) {
+      const data = await res.json();
+      if (!controller.signal.aborted) {
+        if (res.ok && data.vulnerabilities) {
           setFullResults(data.vulnerabilities);
+        } else {
+          console.error("[LiveDemo] API error:", data);
         }
       }
-    } catch {
-      // Aborted or network error — silent
-    } finally {
-      if (!controller.signal.aborted) {
-        setFullScanning(false);
+    } catch (err) {
+      // Log non-abort errors for debugging
+      if (err instanceof Error && err.name !== "AbortError") {
+        console.error("[LiveDemo] Full engine scan failed:", err);
       }
+    } finally {
+      setFullScanning(false);
     }
   };
 
