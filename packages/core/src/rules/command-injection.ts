@@ -8,7 +8,7 @@ import { walkTreeSitter } from "../tree-sitter.js";
 // ── JS/TS detection ──
 
 const CMD_INJECTION_REGEX =
-  /(?:exec|execSync|spawn|spawnSync|execFile|execFileSync|fork)\s*\(\s*(?:req\.|request\.|params\.|query\.|body\.|`)/;
+  /(?:exec|execSync|spawn|spawnSync|execFile|execFileSync|fork)\s*\(\s*(?:req\.|request\.|params\.|query\.|body\.|`|["'][^"']*["']\s*\+)/;
 
 const SHELL_EXEC_METHODS = new Set([
   "exec", "execSync", "execFile", "execFileSync",

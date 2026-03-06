@@ -26,6 +26,10 @@ const XSS_PATTERNS: { name: string; pattern: RegExp }[] = [
     name: "Express response injection",
     pattern: /res\.send\s*\(\s*`/,
   },
+  {
+    name: "Express response HTML concatenation",
+    pattern: /res\.send\s*\(\s*["']<[^"']*["']\s*\+/,
+  },
 ];
 
 function hasInnerHtmlAssignmentAtLine(ast: AST, line: number): boolean {
@@ -106,7 +110,6 @@ function hasResSendWithTemplateAtLine(ast: AST, line: number): boolean {
   walkAST(ast, (node: TSESTree.Node) => {
     if (found) return;
 
-    // res.send(`...${expr}...`)
     if (
       node.type === "CallExpression" &&
       node.loc &&
@@ -114,14 +117,34 @@ function hasResSendWithTemplateAtLine(ast: AST, line: number): boolean {
       node.callee.type === "MemberExpression" &&
       node.callee.property.type === "Identifier" &&
       node.callee.property.name === "send" &&
-      node.arguments.length > 0 &&
-      node.arguments[0].type === "TemplateLiteral" &&
-      node.arguments[0].expressions.length > 0
+      node.arguments.length > 0
     ) {
-      found = true;
+      const firstArg = node.arguments[0];
+      // res.send(`...${expr}...`)
+      if (firstArg.type === "TemplateLiteral" && firstArg.expressions.length > 0) {
+        found = true;
+        return;
+      }
+      // res.send("<h1>" + name + "</h1>")
+      if (firstArg.type === "BinaryExpression" && firstArg.operator === "+") {
+        if (containsHtmlLiteral(firstArg)) {
+          found = true;
+          return;
+        }
+      }
     }
   });
   return found;
+}
+
+function containsHtmlLiteral(node: TSESTree.Node): boolean {
+  if (node.type === "Literal" && typeof node.value === "string") {
+    return /<[a-zA-Z]/.test(node.value);
+  }
+  if (node.type === "BinaryExpression" && node.operator === "+") {
+    return containsHtmlLiteral(node.left) || containsHtmlLiteral(node.right);
+  }
+  return false;
 }
 
 // ── Python XSS detection ──
@@ -276,7 +299,7 @@ export const xssRule: Rule = {
             confirmed = hasDocumentWriteAtLine(ast, lineNum);
           } else if (name === "dangerouslySetInnerHTML") {
             confirmed = hasDangerouslySetInnerHTMLAtLine(ast, lineNum);
-          } else if (name === "Express response injection") {
+          } else if (name === "Express response injection" || name === "Express response HTML concatenation") {
             confirmed = hasResSendWithTemplateAtLine(ast, lineNum);
           }
         }
