@@ -5,7 +5,7 @@
 const GITHUB_API = "https://api.github.com";
 
 const SUPPORTED_EXTENSIONS = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py"];
-const SCA_FILES = new Set(["package.json", "requirements.txt", "Pipfile", "go.mod", "Cargo.toml"]);
+const SCA_FILES = new Set(["package.json", "package-lock.json", "requirements.txt", "Pipfile", "go.mod", "go.sum", "Cargo.toml", "Cargo.lock"]);
 const MAX_FILE_SIZE = 1_000_000; // 1MB per file
 const MAX_SCANNABLE_FILES = 200;
 
@@ -62,11 +62,11 @@ export async function fetchPublicRepoTree(owner: string, repo: string, branch: s
   return tree.tree
     .filter((item) => {
       if (item.type !== "blob") return false;
-      if (item.size && item.size > MAX_FILE_SIZE) return false;
       const parts = item.path.split("/");
       if (parts.some((p) => SKIP_DIRECTORIES.includes(p))) return false;
       const fileName = item.path.split("/").pop() ?? "";
       if (SCA_FILES.has(fileName)) return true;
+      if (item.size && item.size > MAX_FILE_SIZE) return false;
       const ext = "." + fileName.split(".").pop()?.toLowerCase();
       return SUPPORTED_EXTENSIONS.includes(ext);
     })

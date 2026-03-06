@@ -37,13 +37,16 @@ const SUPPORTED_EXTENSIONS = [
   ".py",
 ];
 
-/** Dependency manifest files to include for SCA */
+/** Dependency manifest and lockfiles to include for SCA */
 const SCA_FILES = new Set([
   "package.json",
+  "package-lock.json",
   "requirements.txt",
   "Pipfile",
   "go.mod",
+  "go.sum",
   "Cargo.toml",
+  "Cargo.lock",
 ]);
 
 const MAX_FILE_SIZE = 100_000; // 100KB per file
@@ -134,12 +137,12 @@ export async function fetchRepoTree(
   return tree.tree
     .filter((item) => {
       if (item.type !== "blob") return false;
-      if (item.size && item.size > MAX_FILE_SIZE) return false;
-      // Skip common non-source directories
       const parts = item.path.split("/");
       if (parts.some((p) => SKIP_DIRECTORIES.includes(p))) return false;
       const fileName = item.path.split("/").pop() ?? "";
+      // Always include dependency files regardless of size (lockfiles can be large)
       if (SCA_FILES.has(fileName)) return true;
+      if (item.size && item.size > MAX_FILE_SIZE) return false;
       const ext = "." + fileName.split(".").pop()?.toLowerCase();
       return SUPPORTED_EXTENSIONS.includes(ext);
     })

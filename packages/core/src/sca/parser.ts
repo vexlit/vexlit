@@ -3,10 +3,13 @@ import type { Dependency } from "./types.js";
 /** Files that contain dependency declarations */
 export const DEPENDENCY_FILES = new Set([
   "package.json",
+  "package-lock.json",
   "requirements.txt",
   "Pipfile",
   "go.mod",
+  "go.sum",
   "Cargo.toml",
+  "Cargo.lock",
 ]);
 
 /** Check if a file path is a dependency manifest */
@@ -23,10 +26,13 @@ export function parseDependencies(
   const fileName = filePath.split("/").pop() ?? "";
 
   if (fileName === "package.json") return parsePackageJson(filePath, content);
+  if (fileName === "package-lock.json") return parsePackageLockJson(filePath, content);
   if (fileName === "requirements.txt") return parseRequirementsTxt(filePath, content);
   if (fileName === "Pipfile") return parsePipfile(filePath, content);
   if (fileName === "go.mod") return parseGoMod(filePath, content);
+  if (fileName === "go.sum") return parseGoSum(filePath, content);
   if (fileName === "Cargo.toml") return parseCargoToml(filePath, content);
+  if (fileName === "Cargo.lock") return parseCargoLock(filePath, content);
 
   return [];
 }
@@ -280,6 +286,149 @@ function parseCargoToml(filePath: string, content: string): Dependency[] {
       }
     }
   }
+
+  return deps;
+}
+
+/** Parse package-lock.json for exact resolved versions (including transitive) */
+function parsePackageLockJson(filePath: string, content: string): Dependency[] {
+  const deps: Dependency[] = [];
+
+  try {
+    const lock = JSON.parse(content);
+
+    // lockfileVersion 2/3: "packages" field
+    if (lock.packages && typeof lock.packages === "object") {
+      for (const [pkgPath, info] of Object.entries(lock.packages)) {
+        if (!pkgPath) continue; // skip root entry ""
+        const meta = info as { version?: string; dev?: boolean };
+        if (!meta.version) continue;
+        // Extract name from "node_modules/@scope/pkg" or "node_modules/pkg"
+        const name = pkgPath.replace(/^.*node_modules\//, "");
+        if (!name) continue;
+
+        deps.push({
+          name,
+          version: meta.version,
+          ecosystem: "npm",
+          source: filePath,
+          line: 1,
+          dev: meta.dev ?? false,
+        });
+      }
+    }
+    // lockfileVersion 1 fallback: "dependencies" field
+    else if (lock.dependencies && typeof lock.dependencies === "object") {
+      const walk = (
+        depsObj: Record<string, { version?: string; dev?: boolean; dependencies?: Record<string, unknown> }>,
+      ) => {
+        for (const [name, info] of Object.entries(depsObj)) {
+          if (!info.version) continue;
+          deps.push({
+            name,
+            version: info.version,
+            ecosystem: "npm",
+            source: filePath,
+            line: 1,
+            dev: info.dev ?? false,
+          });
+          // Nested dependencies (hoisting)
+          if (info.dependencies) {
+            walk(info.dependencies as typeof depsObj);
+          }
+        }
+      };
+      walk(lock.dependencies);
+    }
+  } catch {
+    // Invalid JSON
+  }
+
+  return deps;
+}
+
+/** Parse go.sum for exact resolved versions (including transitive) */
+function parseGoSum(filePath: string, content: string): Dependency[] {
+  const deps: Dependency[] = [];
+  const seen = new Set<string>();
+  const lines = content.split("\n");
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // Skip /go.mod checksum lines — only keep module checksum lines
+    if (line.includes("/go.mod ")) continue;
+
+    // Format: module version h1:hash=
+    const match = line.match(/^(\S+)\s+(v[^\s/]+)\s+h1:/);
+    if (!match) continue;
+
+    const name = match[1];
+    const version = match[2];
+    const key = `${name}@${version}`;
+
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    deps.push({
+      name,
+      version,
+      ecosystem: "Go",
+      source: filePath,
+      line: i + 1,
+      dev: false,
+    });
+  }
+
+  return deps;
+}
+
+/** Parse Cargo.lock for exact resolved versions (including transitive) */
+function parseCargoLock(filePath: string, content: string): Dependency[] {
+  const deps: Dependency[] = [];
+  const lines = content.split("\n");
+
+  let currentName: string | null = null;
+  let currentVersion: string | null = null;
+  let blockLine = 0;
+
+  const flush = () => {
+    if (currentName && currentVersion) {
+      deps.push({
+        name: currentName,
+        version: currentVersion,
+        ecosystem: "crates.io",
+        source: filePath,
+        line: blockLine,
+        dev: false,
+      });
+    }
+    currentName = null;
+    currentVersion = null;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (line === "[[package]]") {
+      flush();
+      blockLine = i + 1;
+      continue;
+    }
+
+    const nameMatch = line.match(/^name\s*=\s*"([^"]+)"/);
+    if (nameMatch) {
+      currentName = nameMatch[1];
+      continue;
+    }
+
+    const versionMatch = line.match(/^version\s*=\s*"([^"]+)"/);
+    if (versionMatch) {
+      currentVersion = versionMatch[1];
+    }
+  }
+  flush();
 
   return deps;
 }
