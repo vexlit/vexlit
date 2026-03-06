@@ -4,6 +4,9 @@ import { allSecretPatterns } from "./patterns.js";
 const SAFE_ENV_PATTERNS =
   /process\.env|os\.environ|import\.meta\.env|System\.getenv|getenv|dotenv/;
 
+const ALLOWLIST =
+  /EXAMPLE|DUMMY|TEST|PLACEHOLDER|YOUR[_-]?KEY|INSERT[_-]?HERE|CHANGE[_-]?ME|TODO|XXXX|0{8,}|1{8,}|sample|fakek?ey/i;
+
 export const secretPatternRules: Rule[] = allSecretPatterns.map((sp) => ({
   id: `VEXLIT-SEC-${sp.id}`,
   name: sp.name,
@@ -29,6 +32,9 @@ export const secretPatternRules: Rule[] = allSecretPatterns.map((sp) => ({
       // Skip comments
       const trimmed = line.trimStart();
       if (trimmed.startsWith("//") || trimmed.startsWith("#") || trimmed.startsWith("*")) continue;
+
+      // Skip example/test/placeholder values
+      if (ALLOWLIST.test(line)) continue;
 
       vulns.push({
         ruleId: this.id,

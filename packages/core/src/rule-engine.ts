@@ -64,6 +64,31 @@ export class RuleEngine {
       vulnerabilities.push(...results);
     }
 
-    return vulnerabilities;
+    return RuleEngine.deduplicate(vulnerabilities);
+  }
+
+  private static readonly SEVERITY_RANK: Record<string, number> = {
+    critical: 0,
+    warning: 1,
+    info: 2,
+  };
+
+  private static deduplicate(vulns: Vulnerability[]): Vulnerability[] {
+    const seen = new Map<string, Vulnerability>();
+    for (const v of vulns) {
+      const key = `${v.filePath}:${v.line}`;
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, v);
+        continue;
+      }
+      // Keep higher severity; on tie, prefer more specific rule (longer ruleId)
+      const rank = RuleEngine.SEVERITY_RANK[v.severity] ?? 2;
+      const existingRank = RuleEngine.SEVERITY_RANK[existing.severity] ?? 2;
+      if (rank < existingRank || (rank === existingRank && v.ruleId.length > existing.ruleId.length)) {
+        seen.set(key, v);
+      }
+    }
+    return Array.from(seen.values());
   }
 }

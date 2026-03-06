@@ -1,5 +1,6 @@
 import { Rule } from "../types.js";
 import { secretPatternRules } from "../secrets/index.js";
+import { jsExtendedRules } from "./js-extended.js";
 import { hardcodedSecretsRule } from "./hardcoded-secrets.js";
 import { sqlInjectionRule } from "./sql-injection.js";
 import { xssRule } from "./xss.js";
@@ -49,6 +50,7 @@ export const allRules: Rule[] = [
   commandInjectionRule,
   evalInjectionRule,
   unsafeFileAccessRule,
+  ...jsExtendedRules,
   ...secretPatternRules,
 ];
 
