@@ -1,6 +1,6 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
-import { TrendChart } from "@/components/charts/trend-chart";
+import { LazyTrendChart as TrendChart } from "@/components/charts/lazy-trend-chart";
 import { QuickRescan } from "@/components/quick-rescan";
 import { notFound } from "next/navigation";
 import Link from "next/link";

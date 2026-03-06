@@ -2,7 +2,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { ScanPolling } from "@/components/scan-polling";
 import { AiReportButton } from "@/components/ai-report-button";
 import { ScanResultsClient } from "@/components/scan-results-client";
-import { SeverityDonut } from "@/components/charts/severity-donut";
+import { LazySeverityDonut as SeverityDonut } from "@/components/charts/lazy-severity-donut";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Scan, Vulnerability } from "@/lib/types";

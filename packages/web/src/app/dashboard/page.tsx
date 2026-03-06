@@ -1,7 +1,7 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
-import { SeverityDonut } from "@/components/charts/severity-donut";
-import { TrendChart } from "@/components/charts/trend-chart";
+import { LazySeverityDonut as SeverityDonut } from "@/components/charts/lazy-severity-donut";
+import { LazyTrendChart as TrendChart } from "@/components/charts/lazy-trend-chart";
 import Link from "next/link";
 import type { Project, Scan } from "@/lib/types";
 

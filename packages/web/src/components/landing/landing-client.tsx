@@ -69,17 +69,17 @@ export function LandingClient({
         </FadeIn>
         <FadeIn delay={0.1}>
           <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
-            Find vulnerabilities
+            Find Critical Security
             <br />
             <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-              before attackers do
+              Vulnerabilities in Seconds
             </span>
           </h1>
         </FadeIn>
         <FadeIn delay={0.2}>
           <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            AI-powered static analysis with AST-based detection and tree-sitter parsing.
-            263 security rules covering OWASP Top 10 and 200+ secret patterns.
+            Static analysis + AI security explanations for modern codebases.
+            Scan JavaScript, TypeScript, and Python with AST-level precision.
           </p>
         </FadeIn>
         <FadeIn delay={0.3}>

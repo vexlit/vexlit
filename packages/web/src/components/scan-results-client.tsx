@@ -20,23 +20,46 @@ function ConfidenceBadge({ confidence }: { confidence: "high" | "medium" | "low"
   );
 }
 
-function CodeSnippet({ line, code }: { line: number; code: string }) {
-  // Simple syntax highlighting
-  const highlighted = code
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    // Strings
-    .replace(/(["'`])(?:(?!\1|\\).|\\.)*?\1/g, '<span class="text-green-400">$&</span>')
-    // Keywords
-    .replace(/\b(const|let|var|function|return|if|else|for|while|import|export|from|require|new|async|await|class|extends)\b/g, '<span class="text-purple-400">$&</span>')
-    // Numbers
-    .replace(/\b(\d+)\b/g, '<span class="text-orange-400">$&</span>');
+const KEYWORDS = new Set([
+  "const","let","var","function","return","if","else","for","while",
+  "import","export","from","require","new","async","await","class","extends",
+]);
 
+function tokenize(code: string): { text: string; type: "keyword" | "string" | "number" | "plain" }[] {
+  const tokens: { text: string; type: "keyword" | "string" | "number" | "plain" }[] = [];
+  // Match strings, keywords, numbers, or anything else
+  const regex = /(["'`])(?:(?!\1|\\).|\\.)*?\1|\b[a-zA-Z_]\w*\b|\b\d+\b|[^"'`\w]+/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(code)) !== null) {
+    const t = match[0];
+    if (/^["'`]/.test(t)) {
+      tokens.push({ text: t, type: "string" });
+    } else if (KEYWORDS.has(t)) {
+      tokens.push({ text: t, type: "keyword" });
+    } else if (/^\d+$/.test(t)) {
+      tokens.push({ text: t, type: "number" });
+    } else {
+      tokens.push({ text: t, type: "plain" });
+    }
+  }
+  return tokens;
+}
+
+const TOKEN_COLORS = {
+  keyword: "text-purple-400",
+  string: "text-green-400",
+  number: "text-orange-400",
+  plain: "text-gray-300",
+};
+
+function CodeSnippet({ line, code }: { line: number; code: string }) {
+  const tokens = tokenize(code);
   return (
     <pre className="mt-2 px-3 py-2 bg-gray-950 rounded text-sm font-mono overflow-x-auto">
       <span className="text-gray-600 select-none">{line} | </span>
-      <span dangerouslySetInnerHTML={{ __html: highlighted }} />
+      {tokens.map((t, i) => (
+        <span key={i} className={TOKEN_COLORS[t.type]}>{t.text}</span>
+      ))}
     </pre>
   );
 }
@@ -52,15 +75,22 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [fileFilter, setFileFilter] = useState<string>("all");
   const [ruleFilter, setRuleFilter] = useState<string>("all");
+  const [exploitableOnly, setExploitableOnly] = useState(false);
   const [expandedVuln, setExpandedVuln] = useState<string | null>(null);
 
   // Unique values for filter dropdowns
   const files = useMemo(() => [...new Set(vulns.map((v) => v.file_path))], [vulns]);
   const rules = useMemo(() => [...new Set(vulns.map((v) => v.rule_name))], [vulns]);
 
+  const exploitableCount = useMemo(
+    () => vulns.filter((v) => v.severity === "critical" && v.confidence === "high").length,
+    [vulns]
+  );
+
   // Filtered + searched vulns
   const filtered = useMemo(() => {
     return vulns.filter((v) => {
+      if (exploitableOnly && (v.severity !== "critical" || v.confidence !== "high")) return false;
       if (severityFilter !== "all" && v.severity !== severityFilter) return false;
       if (fileFilter !== "all" && v.file_path !== fileFilter) return false;
       if (ruleFilter !== "all" && v.rule_name !== ruleFilter) return false;
@@ -77,7 +107,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
       }
       return true;
     });
-  }, [vulns, severityFilter, fileFilter, ruleFilter, search]);
+  }, [vulns, severityFilter, fileFilter, ruleFilter, search, exploitableOnly]);
 
   // Group by file
   const fileGroups = useMemo(() => {
@@ -109,6 +139,23 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Exploitable only toggle */}
+      {exploitableCount > 0 && (
+        <button
+          onClick={() => setExploitableOnly(!exploitableOnly)}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all w-fit ${
+            exploitableOnly
+              ? "bg-red-600 text-white shadow-lg shadow-red-600/20"
+              : "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          Show exploitable only ({exploitableCount})
+        </button>
+      )}
+
       {/* Filter bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
