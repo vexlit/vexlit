@@ -77,6 +77,12 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
   const [ruleFilter, setRuleFilter] = useState<string>("all");
   const [exploitableOnly, setExploitableOnly] = useState(false);
   const [expandedVuln, setExpandedVuln] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "sast" | "sca">("all");
+  const [hideDevDeps, setHideDevDeps] = useState(false);
+
+  // Separate SCA and SAST vulns
+  const scaVulns = useMemo(() => vulns.filter((v) => v.rule_id.startsWith("SCA-")), [vulns]);
+  const sastVulns = useMemo(() => vulns.filter((v) => !v.rule_id.startsWith("SCA-")), [vulns]);
 
   // Unique values for filter dropdowns
   const files = useMemo(() => [...new Set(vulns.map((v) => v.file_path))], [vulns]);
@@ -89,11 +95,13 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
 
   // Filtered + searched vulns
   const filtered = useMemo(() => {
-    return vulns.filter((v) => {
+    const base = activeTab === "sast" ? sastVulns : activeTab === "sca" ? scaVulns : vulns;
+    return base.filter((v) => {
       if (exploitableOnly && (v.severity !== "critical" || v.confidence !== "high")) return false;
       if (severityFilter !== "all" && v.severity !== severityFilter) return false;
       if (fileFilter !== "all" && v.file_path !== fileFilter) return false;
       if (ruleFilter !== "all" && v.rule_name !== ruleFilter) return false;
+      if (hideDevDeps && v.rule_id.startsWith("SCA-") && v.rule_name.includes("(dev)")) return false;
       if (search) {
         const q = search.toLowerCase();
         return (
@@ -107,18 +115,34 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
       }
       return true;
     });
-  }, [vulns, severityFilter, fileFilter, ruleFilter, search, exploitableOnly]);
+  }, [vulns, sastVulns, scaVulns, activeTab, severityFilter, fileFilter, ruleFilter, search, exploitableOnly, hideDevDeps]);
 
-  // Group by file
+  // Split filtered into SAST (group by file) and SCA (group by package)
+  const filteredSast = useMemo(() => filtered.filter((v) => !v.rule_id.startsWith("SCA-")), [filtered]);
+  const filteredSca = useMemo(() => filtered.filter((v) => v.rule_id.startsWith("SCA-")), [filtered]);
+
+  // Group SAST by file
   const fileGroups = useMemo(() => {
     const groups = new Map<string, Vulnerability[]>();
-    for (const v of filtered) {
+    for (const v of filteredSast) {
       const existing = groups.get(v.file_path) ?? [];
       existing.push(v);
       groups.set(v.file_path, existing);
     }
     return groups;
-  }, [filtered]);
+  }, [filteredSast]);
+
+  // Group SCA by package name (extracted from rule_name: "Vulnerable dependency: lodash" or "Vulnerable dependency: lodash (dev)")
+  const scaPackageGroups = useMemo(() => {
+    const groups = new Map<string, Vulnerability[]>();
+    for (const v of filteredSca) {
+      const pkgName = v.rule_name.replace("Vulnerable dependency: ", "").replace(" (dev)", "");
+      const existing = groups.get(pkgName) ?? [];
+      existing.push(v);
+      groups.set(pkgName, existing);
+    }
+    return groups;
+  }, [filteredSca]);
 
   const handleSarifDownload = () => {
     if (!sarifJson) {
@@ -139,6 +163,42 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* SAST / SCA tabs */}
+      {scaVulns.length > 0 && (
+        <div className="flex items-center gap-2">
+          {(["all", "sast", "sca"] as const).map((tab) => {
+            const label = tab === "all" ? `All (${vulns.length})` : tab === "sast" ? `SAST (${sastVulns.length})` : `SCA (${scaVulns.length})`;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === tab
+                    ? "bg-white/10 text-white"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+
+          {/* Hide dev deps toggle (only when SCA vulns exist) */}
+          {scaVulns.some((v) => v.rule_name.includes("(dev)")) && (
+            <button
+              onClick={() => setHideDevDeps(!hideDevDeps)}
+              className={`ml-auto px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                hideDevDeps
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-500 border border-gray-800 hover:text-gray-300"
+              }`}
+            >
+              {hideDevDeps ? "Dev deps hidden" : "Hide dev deps"}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Exploitable only toggle */}
       {exploitableCount > 0 && (
         <button
@@ -234,126 +294,253 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
         Showing {filtered.length} of {vulns.length} vulnerabilities
       </p>
 
-      {/* Results by file */}
+      {/* Results */}
       {filtered.length === 0 && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
           <p className="text-gray-400">No vulnerabilities match your filters.</p>
         </div>
       )}
 
-      {Array.from(fileGroups.entries()).map(([filePath, fileVulns]) => (
-        <div
-          key={filePath}
-          className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden"
-        >
-          <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
-            <div>
-              <span className="text-gray-300 text-sm font-mono">{filePath}</span>
-              <span className="text-gray-600 text-xs ml-2">
-                {fileVulns.length} issue{fileVulns.length > 1 ? "s" : ""}
+      {/* SCA results grouped by package */}
+      {filteredSca.length > 0 && (activeTab === "all" || activeTab === "sca") && (
+        <>
+          {activeTab === "all" && filteredSast.length > 0 && (
+            <div className="flex items-center gap-2 pt-2">
+              <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              <span className="text-sm font-medium text-gray-300">
+                SCA — Vulnerable Dependencies ({filteredSca.length})
               </span>
             </div>
-          </div>
+          )}
+          {Array.from(scaPackageGroups.entries()).map(([pkgName, pkgVulns]) => {
+            const isDev = pkgVulns.some((v) => v.rule_name.includes("(dev)"));
+            const versions = [...new Set(pkgVulns.map((v) => {
+              const match = v.message.match(/^[^@]+@([^\s(]+)/);
+              return match?.[1] ?? "";
+            }))].filter(Boolean);
+            const maxSeverity = pkgVulns.some((v) => v.severity === "critical") ? "critical"
+              : pkgVulns.some((v) => v.severity === "warning") ? "warning" : "info";
 
-          <div className="divide-y divide-gray-800">
-            {fileVulns.map((v) => {
-              const isExpanded = expandedVuln === v.id;
-              return (
-                <div key={v.id} className="px-4 py-4">
-                  <div
-                    className="flex items-start gap-3 cursor-pointer"
-                    onClick={() => setExpandedVuln(isExpanded ? null : v.id)}
-                  >
-                    <SeverityBadge severity={v.severity} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-white text-sm font-medium">
-                          {v.rule_name}
-                        </span>
-                        <ConfidenceBadge confidence={v.confidence} />
-                        <span className="text-gray-600 text-xs">
-                          Line {v.line}:{v.column}
-                        </span>
-                        <svg
-                          className={`w-4 h-4 text-gray-500 transition-transform ml-auto ${isExpanded ? "rotate-180" : ""}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                      <p className="text-gray-400 text-sm mt-1">{v.message}</p>
-
-                      {v.snippet && <CodeSnippet line={v.line} code={v.snippet} />}
-                    </div>
+            return (
+              <div
+                key={pkgName}
+                className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden"
+              >
+                <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <SeverityBadge severity={maxSeverity} />
+                    <span className="text-gray-200 text-sm font-medium">{pkgName}</span>
+                    {versions.length > 0 && (
+                      <span className="text-gray-500 text-xs font-mono">@{versions.join(", @")}</span>
+                    )}
+                    {isDev && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-900/40 text-purple-400 border border-purple-800">
+                        dev
+                      </span>
+                    )}
                   </div>
+                  <span className="text-gray-600 text-xs">
+                    {pkgVulns.length} CVE{pkgVulns.length > 1 ? "s" : ""}
+                  </span>
+                </div>
 
-                  {/* Expanded detail panel */}
-                  {isExpanded && (
-                    <div className="mt-4 ml-10 space-y-3 border-l-2 border-gray-800 pl-4">
-                      {v.suggestion && (
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase font-medium mb-1">Fix Suggestion</p>
-                          <p className="text-sm text-green-400/80">{v.suggestion}</p>
+                <div className="divide-y divide-gray-800">
+                  {pkgVulns.map((v) => {
+                    const isExpanded = expandedVuln === v.id;
+                    const cveId = v.rule_id.replace("SCA-", "");
+                    return (
+                      <div key={v.id} className="px-4 py-3">
+                        <div
+                          className="flex items-start gap-3 cursor-pointer"
+                          onClick={() => setExpandedVuln(isExpanded ? null : v.id)}
+                        >
+                          <SeverityBadge severity={v.severity} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-white text-sm font-medium font-mono">{cveId}</span>
+                              <span className="text-gray-600 text-xs">{v.file_path}:{v.line}</span>
+                              <svg
+                                className={`w-4 h-4 text-gray-500 transition-transform ml-auto ${isExpanded ? "rotate-180" : ""}`}
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                            <p className="text-gray-400 text-sm mt-1">{v.message}</p>
+                          </div>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="mt-3 ml-10 space-y-3 border-l-2 border-gray-800 pl-4">
+                            {v.suggestion && (
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Remediation</p>
+                                <p className="text-sm text-green-400/80">{v.suggestion}</p>
+                              </div>
+                            )}
+                            <div className="flex gap-4">
+                              {v.cwe && (
+                                <div>
+                                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">CWE</p>
+                                  <a
+                                    href={`https://cwe.mitre.org/data/definitions/${v.cwe.replace("CWE-", "")}.html`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-400 hover:underline"
+                                  >
+                                    {v.cwe}
+                                  </a>
+                                </div>
+                              )}
+                              {v.owasp && (
+                                <div>
+                                  <p className="text-xs text-gray-500 uppercase font-medium mb-1">OWASP</p>
+                                  <span className="text-sm text-gray-300">{v.owasp}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {/* SAST results grouped by file */}
+      {filteredSast.length > 0 && (activeTab === "all" || activeTab === "sast") && (
+        <>
+          {activeTab === "all" && filteredSca.length > 0 && (
+            <div className="flex items-center gap-2 pt-2">
+              <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+              </svg>
+              <span className="text-sm font-medium text-gray-300">
+                SAST — Code Vulnerabilities ({filteredSast.length})
+              </span>
+            </div>
+          )}
+          {Array.from(fileGroups.entries()).map(([filePath, fileVulns]) => (
+            <div
+              key={filePath}
+              className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden"
+            >
+              <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
+                <div>
+                  <span className="text-gray-300 text-sm font-mono">{filePath}</span>
+                  <span className="text-gray-600 text-xs ml-2">
+                    {fileVulns.length} issue{fileVulns.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+              </div>
+
+              <div className="divide-y divide-gray-800">
+                {fileVulns.map((v) => {
+                  const isExpanded = expandedVuln === v.id;
+                  return (
+                    <div key={v.id} className="px-4 py-4">
+                      <div
+                        className="flex items-start gap-3 cursor-pointer"
+                        onClick={() => setExpandedVuln(isExpanded ? null : v.id)}
+                      >
+                        <SeverityBadge severity={v.severity} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-white text-sm font-medium">
+                              {v.rule_name}
+                            </span>
+                            <ConfidenceBadge confidence={v.confidence} />
+                            <span className="text-gray-600 text-xs">
+                              Line {v.line}:{v.column}
+                            </span>
+                            <svg
+                              className={`w-4 h-4 text-gray-500 transition-transform ml-auto ${isExpanded ? "rotate-180" : ""}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                          <p className="text-gray-400 text-sm mt-1">{v.message}</p>
+
+                          {v.snippet && <CodeSnippet line={v.line} code={v.snippet} />}
+                        </div>
+                      </div>
+
+                      {/* Expanded detail panel */}
+                      {isExpanded && (
+                        <div className="mt-4 ml-10 space-y-3 border-l-2 border-gray-800 pl-4">
+                          {v.suggestion && (
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase font-medium mb-1">Fix Suggestion</p>
+                              <p className="text-sm text-green-400/80">{v.suggestion}</p>
+                            </div>
+                          )}
+                          <div className="flex gap-4">
+                            {v.cwe && (
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase font-medium mb-1">CWE</p>
+                                <a
+                                  href={`https://cwe.mitre.org/data/definitions/${v.cwe.replace("CWE-", "")}.html`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-400 hover:underline"
+                                >
+                                  {v.cwe}
+                                </a>
+                              </div>
+                            )}
+                            {v.owasp && (
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase font-medium mb-1">OWASP</p>
+                                <span className="text-sm text-gray-300">{v.owasp}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* AI buttons */}
+                          <div className="flex gap-2 pt-2">
+                            <AiExplainButton
+                              scanId={scanId}
+                              vulnId={v.id}
+                              ruleName={v.rule_name}
+                              severity={v.severity}
+                              message={v.message}
+                              filePath={v.file_path}
+                              line={v.line}
+                              snippet={v.snippet}
+                              cwe={v.cwe}
+                              owasp={v.owasp}
+                            />
+                            <AiFixButton
+                              scanId={scanId}
+                              vulnId={v.id}
+                              ruleName={v.rule_name}
+                              message={v.message}
+                              filePath={v.file_path}
+                              line={v.line}
+                              snippet={v.snippet}
+                              suggestion={v.suggestion}
+                            />
+                          </div>
                         </div>
                       )}
-                      <div className="flex gap-4">
-                        {v.cwe && (
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase font-medium mb-1">CWE</p>
-                            <a
-                              href={`https://cwe.mitre.org/data/definitions/${v.cwe.replace("CWE-", "")}.html`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-400 hover:underline"
-                            >
-                              {v.cwe}
-                            </a>
-                          </div>
-                        )}
-                        {v.owasp && (
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase font-medium mb-1">OWASP</p>
-                            <span className="text-sm text-gray-300">{v.owasp}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* AI buttons */}
-                      <div className="flex gap-2 pt-2">
-                        <AiExplainButton
-                          scanId={scanId}
-                          vulnId={v.id}
-                          ruleName={v.rule_name}
-                          severity={v.severity}
-                          message={v.message}
-                          filePath={v.file_path}
-                          line={v.line}
-                          snippet={v.snippet}
-                          cwe={v.cwe}
-                          owasp={v.owasp}
-                        />
-                        <AiFixButton
-                          scanId={scanId}
-                          vulnId={v.id}
-                          ruleName={v.rule_name}
-                          message={v.message}
-                          filePath={v.file_path}
-                          line={v.line}
-                          snippet={v.snippet}
-                          suggestion={v.suggestion}
-                        />
-                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }

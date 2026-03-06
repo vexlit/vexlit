@@ -120,32 +120,99 @@ export default async function PublicScanPage({
             <h2 className="text-lg font-semibold text-white">
               {t("vulnCount", { count: vulns.length })}
             </h2>
-            {vulns.map((v, i) => (
-              <div
-                key={i}
-                className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <SeverityDot severity={v.severity} />
-                      <span className="text-white text-sm font-medium">{v.rule_name}</span>
-                      <span className="text-gray-600 text-xs font-mono">{v.rule_id}</span>
-                    </div>
-                    <p className="text-gray-400 text-sm">{v.message}</p>
-                    <p className="text-gray-600 text-xs mt-1">
-                      {v.file_path}:{v.line}
-                      {v.cwe && <span className="ml-2">{v.cwe}</span>}
-                    </p>
-                    {v.snippet && (
-                      <pre className="mt-2 text-xs bg-gray-950 border border-gray-800 rounded px-3 py-2 overflow-x-auto text-gray-300">
-                        {v.snippet}
-                      </pre>
-                    )}
+
+            {/* SCA results grouped by package */}
+            {(() => {
+              const scaVulns = vulns.filter((v) => v.rule_id.startsWith("SCA-"));
+              if (!scaVulns.length) return null;
+
+              const pkgGroups = new Map<string, Vulnerability[]>();
+              for (const v of scaVulns) {
+                const pkg = v.rule_name.replace("Vulnerable dependency: ", "").replace(" (dev)", "");
+                const arr = pkgGroups.get(pkg) ?? [];
+                arr.push(v);
+                pkgGroups.set(pkg, arr);
+              }
+
+              return (
+                <>
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-xs font-medium text-orange-400 uppercase tracking-wide">SCA</span>
+                    <span className="text-gray-600 text-xs">({scaVulns.length})</span>
                   </div>
-                </div>
-              </div>
-            ))}
+                  {Array.from(pkgGroups.entries()).map(([pkg, pvulns]) => {
+                    const isDev = pvulns.some((v) => v.rule_name.includes("(dev)"));
+                    return (
+                      <div key={pkg} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                        <div className="px-4 py-2.5 border-b border-gray-800 bg-gray-900/50 flex items-center gap-2">
+                          <SeverityDot severity={pvulns.some((v) => v.severity === "critical") ? "critical" : pvulns.some((v) => v.severity === "warning") ? "warning" : "info"} />
+                          <span className="text-gray-200 text-sm font-medium">{pkg}</span>
+                          {isDev && <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-900/40 text-purple-400 border border-purple-800">dev</span>}
+                          <span className="text-gray-600 text-xs ml-auto">{pvulns.length} CVE{pvulns.length > 1 ? "s" : ""}</span>
+                        </div>
+                        <div className="divide-y divide-gray-800">
+                          {pvulns.map((v, i) => (
+                            <div key={i} className="px-4 py-2.5">
+                              <div className="flex items-center gap-2 mb-1">
+                                <SeverityDot severity={v.severity} />
+                                <span className="text-white text-sm font-mono">{v.rule_id.replace("SCA-", "")}</span>
+                              </div>
+                              <p className="text-gray-400 text-sm">{v.message}</p>
+                              {v.suggestion && <p className="text-green-400/70 text-xs mt-1">{v.suggestion}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              );
+            })()}
+
+            {/* SAST results */}
+            {(() => {
+              const sastVulns = vulns.filter((v) => !v.rule_id.startsWith("SCA-"));
+              if (!sastVulns.length) return null;
+
+              const scaExists = vulns.some((v) => v.rule_id.startsWith("SCA-"));
+
+              return (
+                <>
+                  {scaExists && (
+                    <div className="flex items-center gap-2 pt-2">
+                      <span className="text-xs font-medium text-blue-400 uppercase tracking-wide">SAST</span>
+                      <span className="text-gray-600 text-xs">({sastVulns.length})</span>
+                    </div>
+                  )}
+                  {sastVulns.map((v, i) => (
+                    <div
+                      key={i}
+                      className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <SeverityDot severity={v.severity} />
+                            <span className="text-white text-sm font-medium">{v.rule_name}</span>
+                            <span className="text-gray-600 text-xs font-mono">{v.rule_id}</span>
+                          </div>
+                          <p className="text-gray-400 text-sm">{v.message}</p>
+                          <p className="text-gray-600 text-xs mt-1">
+                            {v.file_path}:{v.line}
+                            {v.cwe && <span className="ml-2">{v.cwe}</span>}
+                          </p>
+                          {v.snippet && (
+                            <pre className="mt-2 text-xs bg-gray-950 border border-gray-800 rounded px-3 py-2 overflow-x-auto text-gray-300">
+                              {v.snippet}
+                            </pre>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
           </div>
         )}
 

@@ -49,12 +49,13 @@ export async function scaDependencies(
         ? ` Upgrade to ${adv.fixedVersion} or later.`
         : " Check the advisory for remediation steps.";
 
+      const devLabel = dep.dev ? " (dev)" : "";
       vulnerabilities.push({
         ruleId: `SCA-${adv.id}`,
-        ruleName: `Vulnerable dependency: ${dep.name}`,
+        ruleName: `Vulnerable dependency: ${dep.name}${devLabel}`,
         severity: adv.severity,
         confidence: "high",
-        message: `${dep.name}@${dep.version} has a known vulnerability: ${adv.summary} (${cveAlias})`,
+        message: `${dep.name}@${dep.version}${devLabel} has a known vulnerability: ${adv.summary} (${cveAlias})`,
         filePath: dep.source,
         line: dep.line,
         column: 1,
