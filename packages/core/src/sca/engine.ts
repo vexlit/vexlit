@@ -21,10 +21,21 @@ export async function scaDependencies(
 
   if (!allDeps.length) return [];
 
-  // Step 2: Query OSV for known vulnerabilities
-  const advisoryMap = await queryOsv(allDeps);
+  // Step 2: Deduplicate — same package may appear in multiple manifests
+  const seen = new Map<string, Dependency>();
+  const uniqueDeps: Dependency[] = [];
+  for (const dep of allDeps) {
+    const key = `${dep.ecosystem}:${dep.name}@${dep.version}`;
+    if (!seen.has(key)) {
+      seen.set(key, dep);
+      uniqueDeps.push(dep);
+    }
+  }
 
-  // Step 3: Convert to Vulnerability[]
+  // Step 3: Query OSV for known vulnerabilities (deduplicated)
+  const advisoryMap = await queryOsv(uniqueDeps);
+
+  // Step 4: Convert to Vulnerability[] (report against all source files)
   const vulnerabilities: Vulnerability[] = [];
 
   for (const dep of allDeps) {

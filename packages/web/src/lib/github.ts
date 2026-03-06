@@ -42,6 +42,8 @@ const SCA_FILES = new Set([
   "package.json",
   "requirements.txt",
   "Pipfile",
+  "go.mod",
+  "Cargo.toml",
 ]);
 
 const MAX_FILE_SIZE = 100_000; // 100KB per file

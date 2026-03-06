@@ -2,8 +2,8 @@
 export interface Dependency {
   name: string;
   version: string;
-  /** npm, PyPI, etc. */
-  ecosystem: "npm" | "PyPI";
+  /** npm, PyPI, Go, crates.io */
+  ecosystem: "npm" | "PyPI" | "Go" | "crates.io";
   /** The file this dependency was found in */
   source: string;
   /** Line number in the manifest file (1-indexed) */
