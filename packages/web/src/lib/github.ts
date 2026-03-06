@@ -37,6 +37,13 @@ const SUPPORTED_EXTENSIONS = [
   ".py",
 ];
 
+/** Dependency manifest files to include for SCA */
+const SCA_FILES = new Set([
+  "package.json",
+  "requirements.txt",
+  "Pipfile",
+]);
+
 const MAX_FILE_SIZE = 100_000; // 100KB per file
 const MAX_SCANNABLE_FILES = 200;
 
@@ -129,7 +136,9 @@ export async function fetchRepoTree(
       // Skip common non-source directories
       const parts = item.path.split("/");
       if (parts.some((p) => SKIP_DIRECTORIES.includes(p))) return false;
-      const ext = "." + item.path.split(".").pop()?.toLowerCase();
+      const fileName = item.path.split("/").pop() ?? "";
+      if (SCA_FILES.has(fileName)) return true;
+      const ext = "." + fileName.split(".").pop()?.toLowerCase();
       return SUPPORTED_EXTENSIONS.includes(ext);
     })
     .slice(0, MAX_SCANNABLE_FILES)

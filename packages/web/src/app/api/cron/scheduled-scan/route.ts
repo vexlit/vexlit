@@ -116,8 +116,8 @@ export async function GET(request: Request) {
         continue;
       }
 
-      // Run scan engine
-      const { RuleEngine } = await import("@vexlit/core");
+      // Run scan engine + SCA
+      const { RuleEngine, scaDependencies } = await import("@vexlit/core");
       const engine = new RuleEngine();
       const startTime = Date.now();
 
@@ -166,6 +166,26 @@ export async function GET(request: Request) {
             confidence: v.confidence ?? "medium",
           });
         }
+      }
+
+      // Run SCA on dependency files
+      const scaVulns = await scaDependencies(files);
+      for (const v of scaVulns) {
+        allVulns.push({
+          scan_id: scan.id,
+          rule_id: v.ruleId,
+          rule_name: v.ruleName,
+          severity: v.severity,
+          message: v.message,
+          file_path: v.filePath,
+          line: v.line,
+          column: v.column,
+          snippet: v.snippet ?? null,
+          cwe: v.cwe ?? null,
+          owasp: v.owasp ?? null,
+          suggestion: v.suggestion ?? null,
+          confidence: v.confidence ?? "high",
+        });
       }
 
       if (allVulns.length > 0) {

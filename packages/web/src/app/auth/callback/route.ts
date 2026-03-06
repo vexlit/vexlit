@@ -23,19 +23,20 @@ export async function GET(request: Request) {
     if (user) {
       const admin = createSupabaseAdmin();
 
-      // Save GitHub token to profile (encrypted)
-      if (providerToken) {
-        await admin
+      // Run token save + terms check in parallel
+      const [, { data: profile }] = await Promise.all([
+        providerToken
+          ? admin
+              .from("profiles")
+              .update({ github_access_token: encrypt(providerToken) })
+              .eq("id", user.id)
+          : Promise.resolve(),
+        admin
           .from("profiles")
-          .update({ github_access_token: encrypt(providerToken) })
-          .eq("id", user.id);
-      }
-
-      const { data: profile } = await admin
-        .from("profiles")
-        .select("terms_accepted_at")
-        .eq("id", user.id)
-        .single();
+          .select("terms_accepted_at")
+          .eq("id", user.id)
+          .single(),
+      ]);
 
       if (!profile?.terms_accepted_at) {
         return NextResponse.redirect(`${origin}/onboarding/terms`);

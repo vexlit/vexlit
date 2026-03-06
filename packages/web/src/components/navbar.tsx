@@ -19,7 +19,7 @@ export function Navbar({ email }: { email: string }) {
     <nav className="border-b border-gray-800 bg-gray-950 sticky top-0 z-50 backdrop-blur-sm bg-gray-950/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-14 items-center">
-          <Link href="/dashboard" className="text-xl font-bold text-white">
+          <Link href="/" className="text-xl font-bold text-white">
             VEXLIT
           </Link>
           <div className="flex items-center gap-3">
