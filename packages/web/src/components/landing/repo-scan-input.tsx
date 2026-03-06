@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 export function RepoScanInput() {
   const router = useRouter();
+  const t = useTranslations("repoScan");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -15,7 +17,7 @@ export function RepoScanInput() {
 
     // Basic validation
     if (!trimmed.match(/github\.com\/[^/\s]+\/[^/\s]+/)) {
-      setError("Enter a valid GitHub repository URL");
+      setError(t("invalidUrl"));
       return;
     }
 
@@ -31,13 +33,13 @@ export function RepoScanInput() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Failed to start scan");
+        setError(data.error ?? t("failedToStart"));
         return;
       }
 
       router.push(`/scan/${data.scanId}`);
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -58,6 +60,7 @@ export function RepoScanInput() {
             onChange={(e) => { setUrl(e.target.value); setError(""); }}
             onKeyDown={(e) => { if (e.key === "Enter" && !loading) handleScan(); }}
             placeholder="https://github.com/owner/repo"
+            aria-label="GitHub repository URL"
             className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition-colors text-sm"
             disabled={loading}
           />
@@ -70,14 +73,14 @@ export function RepoScanInput() {
           {loading ? (
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Scanning...
+              {t("scanning")}
             </>
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              Scan Now
+              {t("scanNow")}
             </>
           )}
         </button>
@@ -86,7 +89,7 @@ export function RepoScanInput() {
         <p className="text-red-400 text-sm mt-2 text-left">{error}</p>
       )}
       <p className="text-gray-600 text-xs mt-2">
-        Public repositories only. No sign-in required.
+        {t("publicOnly")}
       </p>
     </div>
   );

@@ -4,8 +4,10 @@ import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { ThemeToggle } from "../theme-toggle";
+import { useTranslations } from "next-intl";
 
 export function LandingNavActions() {
+  const t = useTranslations("nav");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +29,7 @@ export function LandingNavActions() {
           href="/dashboard"
           className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
         >
-          Dashboard
+          {t("dashboard")}
         </Link>
       ) : (
         <>
@@ -35,13 +37,13 @@ export function LandingNavActions() {
             href="/login"
             className="text-gray-400 hover:text-white text-sm transition-colors"
           >
-            Sign in
+            {t("signIn")}
           </Link>
           <Link
             href="/login"
             className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
           >
-            Get Started
+            {t("getStarted")}
           </Link>
         </>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 const DEMO_CODE = `const express = require("express");
 const app = express();
@@ -70,6 +71,7 @@ function quickScan(code: string): DemoVuln[] {
 }
 
 export function LiveDemo() {
+  const t = useTranslations("liveDemo");
   const [code, setCode] = useState(DEMO_CODE);
   const [quickResults, setQuickResults] = useState<DemoVuln[] | null>(null);
   const [fullResults, setFullResults] = useState<DemoVuln[] | null>(null);
@@ -112,9 +114,9 @@ export function LiveDemo() {
         if (res.ok && data.vulnerabilities) {
           setFullResults(data.vulnerabilities);
         } else if (res.status === 429) {
-          setScanError("Too many requests. Please wait a moment.");
+          setScanError(t("tooManyRequests"));
         } else {
-          setScanError("Full scan unavailable. Showing quick results.");
+          setScanError(t("fullScanUnavailable"));
         }
       }
     } catch (err) {
@@ -137,7 +139,7 @@ export function LiveDemo() {
           <div className="w-3 h-3 rounded-full bg-red-500/60" />
           <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
           <div className="w-3 h-3 rounded-full bg-green-500/60" />
-          <span className="text-gray-500 text-xs ml-2">Live Demo</span>
+          <span className="text-gray-500 text-xs ml-2">{t("liveDemoLabel")}</span>
         </div>
         <button
           onClick={handleScan}
@@ -147,10 +149,10 @@ export function LiveDemo() {
           {scanning ? (
             <span className="flex items-center gap-2">
               <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Scanning...
+              {t("scanning")}
             </span>
           ) : (
-            "Scan Code"
+            t("scanButton")
           )}
         </button>
       </div>
@@ -163,7 +165,8 @@ export function LiveDemo() {
             onChange={(e) => { setCode(e.target.value); setQuickResults(null); setFullResults(null); setScanError(null); }}
             className="w-full h-64 md:h-80 bg-transparent text-gray-300 font-mono text-sm p-4 resize-none focus:outline-none"
             spellCheck={false}
-            placeholder="Paste your code here..."
+            aria-label={t("pasteCodeHere")}
+            placeholder={t("pasteCodeHere")}
           />
         </div>
 
@@ -171,14 +174,14 @@ export function LiveDemo() {
         <div className="h-64 md:h-80 overflow-y-auto p-4">
           {!displayResults && !scanning && (
             <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-              Click &ldquo;Scan Code&rdquo; to analyze
+              {t("clickScanCode")}
             </div>
           )}
           {scanning && !displayResults && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-gray-400 text-sm mt-3">Analyzing code...</p>
+                <p className="text-gray-400 text-sm mt-3">{t("analyzingCode")}</p>
               </div>
             </div>
           )}
@@ -186,20 +189,20 @@ export function LiveDemo() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-white text-sm font-medium">
-                  {displayResults.length} vulnerabilit{displayResults.length === 1 ? "y" : "ies"} found
+                  {t("vulnsFound", { count: displayResults.length })}
                 </p>
                 {isFullEngine ? (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-medium">
-                    Full Engine
+                    {t("fullEngine")}
                   </span>
                 ) : fullScanning ? (
                   <span className="flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 font-medium">
                     <span className="w-2 h-2 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
-                    Deep scanning...
+                    {t("deepScanning")}
                   </span>
                 ) : (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-400 font-medium">
-                    Quick Scan
+                    {t("quickScan")}
                   </span>
                 )}
               </div>

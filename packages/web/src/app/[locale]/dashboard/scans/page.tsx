@@ -1,9 +1,11 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
 import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import type { Scan } from "@/lib/types";
 
 export default async function ScansPage() {
+  const t = await getTranslations("scans");
   const supabase = await createSupabaseServer();
 
   const { data: scans } = await supabase
@@ -18,27 +20,27 @@ export default async function ScansPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Scans</h1>
+          <h1 className="text-2xl font-bold text-white">{t("title")}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            All scan history across your projects
+            {t("subtitle")}
           </p>
         </div>
         <Link
           href="/dashboard/new"
           className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-all hover:shadow-lg hover:shadow-red-600/20"
         >
-          New Scan
+          {t("newScan")}
         </Link>
       </div>
 
       {scanList.length === 0 ? (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-          <p className="text-gray-400">No scans yet.</p>
+          <p className="text-gray-400">{t("noScans")}</p>
           <Link
             href="/dashboard/new"
             className="text-red-400 hover:text-red-300 text-sm mt-2 inline-block"
           >
-            Start your first scan
+            {t("startFirst")}
           </Link>
         </div>
       ) : (
@@ -48,11 +50,11 @@ export default async function ScansPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-800">
-                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">Project</th>
-                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">Status</th>
-                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">Vulnerabilities</th>
-                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">Duration</th>
-                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">Date</th>
+                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">{t("project")}</th>
+                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">{t("status")}</th>
+                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">{t("vulnerabilities")}</th>
+                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">{t("duration")}</th>
+                  <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">{t("date")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -69,7 +71,7 @@ export default async function ScansPage() {
                         {scan.critical_count > 0 && <SeverityBadge severity="critical" count={scan.critical_count} />}
                         {scan.warning_count > 0 && <SeverityBadge severity="warning" count={scan.warning_count} />}
                         {scan.info_count > 0 && <SeverityBadge severity="info" count={scan.info_count} />}
-                        {scan.total_vulnerabilities === 0 && scan.status === "completed" && <span className="text-green-400 text-xs">Clean</span>}
+                        {scan.total_vulnerabilities === 0 && scan.status === "completed" && <span className="text-green-400 text-xs">{t("clean")}</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-sm">

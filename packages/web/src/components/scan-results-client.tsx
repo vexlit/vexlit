@@ -174,6 +174,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search vulnerabilities..."
+            aria-label="Search vulnerabilities"
             className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-700"
           />
         </div>

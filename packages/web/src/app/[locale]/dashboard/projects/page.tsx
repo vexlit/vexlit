@@ -3,9 +3,11 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
 import { LazySeverityDonut as SeverityDonut } from "@/components/charts/lazy-severity-donut";
 import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import type { Project, Scan } from "@/lib/types";
 
 export default async function ProjectsPage() {
+  const t = await getTranslations("projectsPage");
   const user = await getUser();
   const supabase = await createSupabaseServer();
 
@@ -34,16 +36,16 @@ export default async function ProjectsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Projects</h1>
+          <h1 className="text-2xl font-bold text-white">{t("title")}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            {(projects ?? []).length} project{(projects ?? []).length !== 1 ? "s" : ""} registered
+            {t("registered", { count: (projects ?? []).length })}
           </p>
         </div>
         <Link
           href="/dashboard/new"
           className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-all hover:shadow-lg hover:shadow-red-600/20"
         >
-          New Scan
+          {t("newScan")}
         </Link>
       </div>
 
@@ -54,12 +56,12 @@ export default async function ProjectsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
             </svg>
           </div>
-          <p className="text-gray-400">No projects yet.</p>
+          <p className="text-gray-400">{t("noProjects")}</p>
           <Link
             href="/dashboard/new"
             className="text-red-400 hover:text-red-300 text-sm mt-2 inline-block"
           >
-            Create your first scan
+            {t("createFirst")}
           </Link>
         </div>
       ) : (
@@ -125,7 +127,7 @@ export default async function ProjectsPage() {
                   </div>
                 ) : (
                   <div className="mt-3 pt-3 border-t border-gray-800">
-                    <span className="text-gray-600 text-xs">No completed scans</span>
+                    <span className="text-gray-600 text-xs">{t("noCompletedScans")}</span>
                   </div>
                 )}
               </Link>

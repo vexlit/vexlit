@@ -2,6 +2,7 @@ import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { PublicScanClient } from "@/components/public-scan-client";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import type { Scan, Vulnerability } from "@/lib/types";
 
 export default async function PublicScanPage({
@@ -10,7 +11,7 @@ export default async function PublicScanPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const admin = createSupabaseAdmin();
+  const [admin, t, tNav] = [createSupabaseAdmin(), await getTranslations("publicScan"), await getTranslations("nav")];
 
   const { data: scan } = await admin
     .from("scans")
@@ -32,13 +33,13 @@ export default async function PublicScanPage({
           <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <Link href="/" className="text-xl font-bold text-white">VEXLIT</Link>
             <Link href="/login" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Sign in
+              {tNav("signIn")}
             </Link>
           </div>
         </nav>
         <div className="max-w-4xl mx-auto px-6 pt-24 pb-16">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white">{typedScan.projects?.name ?? "Scan"}</h1>
+            <h1 className="text-2xl font-bold text-white">{typedScan.projects?.name ?? t("scanResults")}</h1>
             {typedScan.projects?.github_url && (
               <a
                 href={typedScan.projects.github_url}
@@ -74,13 +75,13 @@ export default async function PublicScanPage({
           <Link href="/" className="text-xl font-bold text-white">VEXLIT</Link>
           <div className="flex gap-4 items-center">
             <Link href="/login" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Sign in for full features
+              {tNav("signInForFeatures")}
             </Link>
             <Link
               href="/login"
               className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
             >
-              Get Started
+              {tNav("getStarted")}
             </Link>
           </div>
         </div>
@@ -89,7 +90,7 @@ export default async function PublicScanPage({
       <div className="max-w-4xl mx-auto px-6 pt-24 pb-16 space-y-6 animate-fade-in">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-white">{typedScan.projects?.name ?? "Scan Results"}</h1>
+          <h1 className="text-2xl font-bold text-white">{typedScan.projects?.name ?? t("scanResults")}</h1>
           {typedScan.projects?.github_url && (
             <a
               href={typedScan.projects.github_url}
@@ -113,7 +114,7 @@ export default async function PublicScanPage({
         {/* Duration */}
         {typedScan.duration_ms && (
           <p className="text-gray-500 text-sm">
-            Scanned in {(typedScan.duration_ms / 1000).toFixed(1)}s
+            {t("scannedIn", { time: (typedScan.duration_ms / 1000).toFixed(1) })}
           </p>
         )}
 
@@ -121,7 +122,7 @@ export default async function PublicScanPage({
         {typedScan.status === "failed" && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
             <p className="text-red-400 text-sm">
-              Scan failed: {typedScan.error_message ?? "Unknown error"}
+              {t("scanFailed", { error: typedScan.error_message ?? "Unknown error" })}
             </p>
           </div>
         )}
@@ -129,8 +130,8 @@ export default async function PublicScanPage({
         {/* Clean */}
         {typedScan.status === "completed" && vulns.length === 0 && (
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-8 text-center">
-            <p className="text-green-400 text-lg font-medium">No vulnerabilities found</p>
-            <p className="text-gray-500 text-sm mt-1">This repository looks clean.</p>
+            <p className="text-green-400 text-lg font-medium">{t("noVulns")}</p>
+            <p className="text-gray-500 text-sm mt-1">{t("repoClean")}</p>
           </div>
         )}
 
@@ -138,7 +139,7 @@ export default async function PublicScanPage({
         {vulns.length > 0 && (
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-white">
-              Vulnerabilities ({vulns.length})
+              {t("vulnCount", { count: vulns.length })}
             </h2>
             {vulns.map((v, i) => (
               <div
@@ -172,16 +173,16 @@ export default async function PublicScanPage({
         {/* CTA */}
         <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 border border-red-500/20 rounded-2xl p-6 text-center">
           <h3 className="text-lg font-semibold text-white mb-2">
-            Want AI explanations, trend tracking, and more?
+            {t("ctaTitle")}
           </h3>
           <p className="text-gray-400 text-sm mb-4">
-            Sign in to get AI-powered fix suggestions, scan history, and continuous monitoring.
+            {t("ctaDesc")}
           </p>
           <Link
             href="/login"
             className="inline-block px-6 py-2.5 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
           >
-            Sign In Free
+            {tNav("signInFree")}
           </Link>
         </div>
       </div>

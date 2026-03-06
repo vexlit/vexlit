@@ -28,7 +28,11 @@
     "scanRepo": "저장소 스캔",
     "dashboard": "대시보드",
     "login": "로그인",
-    "startFree": "무료 시작"
+    "startFree": "무료 시작",
+    "signIn": "로그인",
+    "getStarted": "시작하기",
+    "signInForFeatures": "로그인하여 전체 기능 사용",
+    "signInFree": "무료 로그인"
   },
   "landing": {
     "badge": "85개 이상의 SAST 규칙 · 200개 이상의 시크릿 탐지",
@@ -132,7 +136,68 @@
     "scanButton": "코드 스캔",
     "scanning": "스캔 중...",
     "noVulns": "취약점이 발견되지 않았습니다.",
-    "placeholder": "JavaScript 또는 TypeScript 코드를 여기에 붙여넣으세요..."
+    "placeholder": "JavaScript 또는 TypeScript 코드를 여기에 붙여넣으세요...",
+    "liveDemoLabel": "라이브 데모",
+    "analyzingCode": "코드 분석 중...",
+    "deepScanning": "정밀 스캔 중...",
+    "quickScan": "빠른 스캔",
+    "fullEngine": "전체 엔진",
+    "vulnsFound": "{count}개 취약점 발견",
+    "clickScanCode": "\"코드 스캔\"을 클릭하여 분석",
+    "tooManyRequests": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+    "fullScanUnavailable": "전체 스캔을 사용할 수 없습니다. 빠른 결과를 표시합니다.",
+    "pasteCodeHere": "코드를 여기에 붙여넣으세요..."
+  },
+  "repoScan": {
+    "invalidUrl": "유효한 GitHub 저장소 URL을 입력하세요",
+    "failedToStart": "스캔을 시작할 수 없습니다",
+    "networkError": "네트워크 오류. 다시 시도해 주세요.",
+    "scanning": "스캔 중...",
+    "scanNow": "지금 스캔",
+    "publicOnly": "공개 저장소만 가능합니다. 로그인 불필요."
+  },
+  "scans": {
+    "title": "스캔",
+    "subtitle": "모든 프로젝트의 스캔 기록",
+    "newScan": "새 스캔",
+    "noScans": "아직 스캔이 없습니다.",
+    "startFirst": "첫 번째 스캔을 시작하세요",
+    "project": "프로젝트",
+    "status": "상태",
+    "vulnerabilities": "취약점",
+    "duration": "소요 시간",
+    "date": "날짜",
+    "clean": "안전"
+  },
+  "projectsPage": {
+    "title": "프로젝트",
+    "registered": "{count}개 프로젝트 등록됨",
+    "newScan": "새 스캔",
+    "noProjects": "아직 프로젝트가 없습니다.",
+    "createFirst": "첫 번째 스캔을 시작하세요",
+    "noCompletedScans": "완료된 스캔 없음"
+  },
+  "notifications": {
+    "title": "알림",
+    "markAllRead": "모두 읽음",
+    "empty": "아직 알림이 없습니다"
+  },
+  "publicScan": {
+    "scanResults": "스캔 결과",
+    "scannedIn": "{time}초 만에 스캔 완료",
+    "scanFailed": "스캔 실패: {error}",
+    "noVulns": "취약점이 발견되지 않았습니다",
+    "repoClean": "이 저장소는 안전합니다.",
+    "vulnCount": "취약점 ({count}개)",
+    "ctaTitle": "AI 설명, 트렌드 추적 등을 원하시나요?",
+    "ctaDesc": "로그인하여 AI 기반 수정 제안, 스캔 기록, 지속적 모니터링을 이용하세요."
+  },
+  "deleteButton": {
+    "deletedSuccess": "성공적으로 삭제되었습니다",
+    "failedToDelete": "삭제에 실패했습니다",
+    "deleting": "삭제 중...",
+    "confirm": "확인",
+    "cancel": "취소"
   },
   "login": {
     "title": "VEXLIT",

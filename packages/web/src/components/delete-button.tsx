@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface DeleteButtonProps {
   endpoint: string;
@@ -13,6 +14,7 @@ interface DeleteButtonProps {
 
 export function DeleteButton({ endpoint, redirectTo, label, confirmMessage }: DeleteButtonProps) {
   const router = useRouter();
+  const t = useTranslations("deleteButton");
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -21,12 +23,12 @@ export function DeleteButton({ endpoint, redirectTo, label, confirmMessage }: De
     try {
       const res = await fetch(endpoint, { method: "DELETE" });
       if (res.ok) {
-        toast.success("Deleted successfully");
+        toast.success(t("deletedSuccess"));
         router.push(redirectTo);
         router.refresh();
       } else {
         const data = await res.json();
-        toast.error(data.error ?? "Failed to delete");
+        toast.error(data.error ?? t("failedToDelete"));
       }
     } finally {
       setDeleting(false);
@@ -53,13 +55,13 @@ export function DeleteButton({ endpoint, redirectTo, label, confirmMessage }: De
         disabled={deleting}
         className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
       >
-        {deleting ? "Deleting..." : "Confirm"}
+        {deleting ? t("deleting") : t("confirm")}
       </button>
       <button
         onClick={() => setConfirming(false)}
         className="px-3 py-1 bg-gray-800 text-gray-400 text-xs rounded-lg hover:bg-gray-700 transition-colors"
       >
-        Cancel
+        {t("cancel")}
       </button>
     </div>
   );

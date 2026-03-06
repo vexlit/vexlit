@@ -28,7 +28,11 @@
     "scanRepo": "Scan Repo",
     "dashboard": "Dashboard",
     "login": "Log in",
-    "startFree": "Start Free"
+    "startFree": "Start Free",
+    "signIn": "Sign in",
+    "getStarted": "Get Started",
+    "signInForFeatures": "Sign in for full features",
+    "signInFree": "Sign In Free"
   },
   "landing": {
     "badge": "85+ SAST rules · 200+ secret detectors",
@@ -132,7 +136,68 @@
     "scanButton": "Scan Code",
     "scanning": "Scanning...",
     "noVulns": "No vulnerabilities found.",
-    "placeholder": "Paste JavaScript or TypeScript code here..."
+    "placeholder": "Paste JavaScript or TypeScript code here...",
+    "liveDemoLabel": "Live Demo",
+    "analyzingCode": "Analyzing code...",
+    "deepScanning": "Deep scanning...",
+    "quickScan": "Quick Scan",
+    "fullEngine": "Full Engine",
+    "vulnsFound": "{count} vulnerabilit{count, plural, one {y} other {ies}} found",
+    "clickScanCode": "Click \"Scan Code\" to analyze",
+    "tooManyRequests": "Too many requests. Please wait a moment.",
+    "fullScanUnavailable": "Full scan unavailable. Showing quick results.",
+    "pasteCodeHere": "Paste your code here..."
+  },
+  "repoScan": {
+    "invalidUrl": "Enter a valid GitHub repository URL",
+    "failedToStart": "Failed to start scan",
+    "networkError": "Network error. Please try again.",
+    "scanning": "Scanning...",
+    "scanNow": "Scan Now",
+    "publicOnly": "Public repositories only. No sign-in required."
+  },
+  "scans": {
+    "title": "Scans",
+    "subtitle": "All scan history across your projects",
+    "newScan": "New Scan",
+    "noScans": "No scans yet.",
+    "startFirst": "Start your first scan",
+    "project": "Project",
+    "status": "Status",
+    "vulnerabilities": "Vulnerabilities",
+    "duration": "Duration",
+    "date": "Date",
+    "clean": "Clean"
+  },
+  "projectsPage": {
+    "title": "Projects",
+    "registered": "{count} project{count, plural, one {} other {s}} registered",
+    "newScan": "New Scan",
+    "noProjects": "No projects yet.",
+    "createFirst": "Create your first scan",
+    "noCompletedScans": "No completed scans"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet"
+  },
+  "publicScan": {
+    "scanResults": "Scan Results",
+    "scannedIn": "Scanned in {time}s",
+    "scanFailed": "Scan failed: {error}",
+    "noVulns": "No vulnerabilities found",
+    "repoClean": "This repository looks clean.",
+    "vulnCount": "Vulnerabilities ({count})",
+    "ctaTitle": "Want AI explanations, trend tracking, and more?",
+    "ctaDesc": "Sign in to get AI-powered fix suggestions, scan history, and continuous monitoring."
+  },
+  "deleteButton": {
+    "deletedSuccess": "Deleted successfully",
+    "failedToDelete": "Failed to delete",
+    "deleting": "Deleting...",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   },
   "login": {
     "title": "VEXLIT",

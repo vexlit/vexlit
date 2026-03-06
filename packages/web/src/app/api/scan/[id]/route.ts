@@ -1,4 +1,5 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -53,8 +54,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
 
-  // RLS + CASCADE deletes vulnerabilities automatically
-  const { error } = await supabase.from("scans").delete().eq("id", id);
+  // Use admin client to bypass RLS; ownership already verified above
+  const admin = createSupabaseAdmin();
+  const { error } = await admin.from("scans").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { useTranslations } from "next-intl";
 import type { Notification } from "@/lib/types";
 
 export function NotificationBell() {
+  const t = useTranslations("notifications");
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,14 +73,14 @@ export function NotificationBell() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 border border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-            <span className="text-white text-sm font-medium">Notifications</span>
+            <span className="text-white text-sm font-medium">{t("title")}</span>
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
                 disabled={loading}
                 className="text-gray-400 hover:text-white text-xs transition-colors"
               >
-                Mark all read
+                {t("markAllRead")}
               </button>
             )}
           </div>
@@ -86,7 +88,7 @@ export function NotificationBell() {
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                No notifications yet
+                {t("empty")}
               </div>
             ) : (
               notifications.map((n) => (
