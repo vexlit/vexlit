@@ -123,7 +123,7 @@ export function LandingClient({
           </div>
         </FadeIn>
         <FadeIn delay={0.4}>
-          <div className="mt-10 pt-8 border-t border-gray-800/50">
+          <div id="scan-input" className="mt-10 pt-8 border-t border-gray-800/50 scroll-mt-24">
             <p className="text-gray-500 text-sm mb-3">
               Scan any public GitHub repository — no sign-in required
             </p>

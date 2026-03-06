@@ -87,7 +87,7 @@ export function BeforeAfterDemo() {
   const demo = DEMO_TABS[activeTab];
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800">
+    <section id="demo" className="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
           See It in Action
@@ -200,7 +200,7 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="max-w-5xl mx-auto px-6 py-20 border-t border-gray-800">
+    <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
           How It Works
@@ -273,7 +273,7 @@ const LANGUAGES = [
 
 export function SupportedLanguages() {
   return (
-    <section className="max-w-4xl mx-auto px-6 py-20 border-t border-gray-800">
+    <section id="languages" className="max-w-4xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
           Supported Languages
@@ -344,7 +344,7 @@ function CrossIcon() {
 
 export function ComparisonTable() {
   return (
-    <section className="max-w-4xl mx-auto px-6 py-20 border-t border-gray-800">
+    <section id="comparison" className="max-w-4xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
           Why Choose VEXLIT?
