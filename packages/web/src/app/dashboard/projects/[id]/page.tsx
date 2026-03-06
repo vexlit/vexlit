@@ -5,6 +5,7 @@ import { QuickRescan } from "@/components/quick-rescan";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DeleteButton } from "@/components/delete-button";
+import { ProjectSchedule } from "@/components/project-schedule";
 import type { Scan } from "@/lib/types";
 
 export default async function ProjectDetailPage({
@@ -87,6 +88,14 @@ export default async function ProjectDetailPage({
           />
         </div>
       </div>
+
+      {/* Scheduled scan */}
+      {project.github_url && (
+        <ProjectSchedule
+          projectId={id}
+          currentSchedule={project.scan_schedule ?? "none"}
+        />
+      )}
 
       {/* Trend chart */}
       {trendData.length > 1 && <TrendChart data={trendData} />}

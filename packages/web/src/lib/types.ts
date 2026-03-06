@@ -9,6 +9,8 @@ export interface Profile {
   feature_scheduled_scan: boolean;
   feature_security_alerts: boolean;
   feature_code_analysis: boolean;
+  slack_webhook_url: string | null;
+  discord_webhook_url: string | null;
   created_at: string;
   updated_at: string;
 }

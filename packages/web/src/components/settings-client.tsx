@@ -6,10 +6,10 @@ import type { Profile } from "@/lib/types";
 import { toast } from "sonner";
 
 const FEATURES = [
-  { key: "feature_pr_check", label: "PR Security Check", comingSoon: true },
-  { key: "feature_scheduled_scan", label: "Scheduled Security Scan", comingSoon: true },
-  { key: "feature_security_alerts", label: "Security Alerts", comingSoon: true },
-  { key: "feature_code_analysis", label: "Static Code Analysis", comingSoon: false },
+  { key: "feature_pr_check", label: "PR Security Check" },
+  { key: "feature_scheduled_scan", label: "Scheduled Security Scan" },
+  { key: "feature_security_alerts", label: "Security Alerts" },
+  { key: "feature_code_analysis", label: "Static Code Analysis" },
 ] as const;
 
 export function SettingsClient({
@@ -29,6 +29,8 @@ export function SettingsClient({
     feature_security_alerts: profile?.feature_security_alerts ?? true,
     feature_code_analysis: profile?.feature_code_analysis ?? true,
   });
+  const [slackWebhook, setSlackWebhook] = useState(profile?.slack_webhook_url ?? "");
+  const [discordWebhook, setDiscordWebhook] = useState(profile?.discord_webhook_url ?? "");
   const [marketing, setMarketing] = useState(profile?.marketing_consent ?? false);
   const [saving, setSaving] = useState(false);
 
@@ -45,6 +47,8 @@ export function SettingsClient({
         body: JSON.stringify({
           repo_scope: repoScope,
           marketing_consent: marketing,
+          slack_webhook_url: slackWebhook || null,
+          discord_webhook_url: discordWebhook || null,
           ...features,
         }),
       });
@@ -128,36 +132,54 @@ export function SettingsClient({
               key={f.key}
               className="flex items-center justify-between p-3 rounded-lg border border-gray-800"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-white text-sm">{f.label}</span>
-                {f.comingSoon && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-yellow-500/15 text-yellow-400">
-                    Coming Soon
-                  </span>
-                )}
-              </div>
+              <span className="text-white text-sm">{f.label}</span>
               <button
                 type="button"
                 role="switch"
                 aria-checked={features[f.key]}
-                disabled={f.comingSoon}
-                onClick={() => !f.comingSoon && toggleFeature(f.key)}
+                onClick={() => toggleFeature(f.key)}
                 className={`relative w-10 h-6 rounded-full transition-colors ${
-                  f.comingSoon
-                    ? "bg-gray-800 cursor-not-allowed opacity-50"
-                    : features[f.key]
-                      ? "bg-red-600"
-                      : "bg-gray-700"
+                  features[f.key] ? "bg-red-600" : "bg-gray-700"
                 }`}
               >
                 <span
                   className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    !f.comingSoon && features[f.key] ? "translate-x-4" : ""
+                    features[f.key] ? "translate-x-4" : ""
                   }`}
                 />
               </button>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Security Alerts */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <h2 className="text-white font-semibold mb-1">Security Alerts</h2>
+        <p className="text-gray-500 text-xs mb-4">
+          Receive scan results in Slack or Discord
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-gray-500 text-xs">Slack Webhook URL</label>
+            <input
+              type="url"
+              value={slackWebhook}
+              onChange={(e) => setSlackWebhook(e.target.value)}
+              placeholder="https://hooks.slack.com/services/..."
+              className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red-500"
+            />
+          </div>
+          <div>
+            <label className="text-gray-500 text-xs">Discord Webhook URL</label>
+            <input
+              type="url"
+              value={discordWebhook}
+              onChange={(e) => setDiscordWebhook(e.target.value)}
+              placeholder="https://discord.com/api/webhooks/..."
+              className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-red-500"
+            />
+          </div>
         </div>
       </section>
 

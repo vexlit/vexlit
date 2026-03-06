@@ -8,25 +8,21 @@ const FEATURES = [
     key: "feature_pr_check",
     label: "PR Security Check",
     description: "Automatically scan code when a pull request is created",
-    comingSoon: true,
   },
   {
     key: "feature_scheduled_scan",
     label: "Scheduled Security Scan",
     description: "Run daily or weekly scans automatically",
-    comingSoon: true,
   },
   {
     key: "feature_security_alerts",
     label: "Security Alerts",
     description: "Receive alerts in Slack, Discord, or email",
-    comingSoon: true,
   },
   {
     key: "feature_code_analysis",
     label: "Static Code Analysis",
     description: "AST-based vulnerability detection across your codebase",
-    comingSoon: false,
   },
 ] as const;
 
@@ -140,33 +136,21 @@ export default function OnboardingSetupPage() {
                   className="flex items-center justify-between p-3 rounded-lg border border-gray-800"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-white text-sm font-medium">{f.label}</span>
-                      {f.comingSoon && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-yellow-500/15 text-yellow-400">
-                          Coming Soon
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-white text-sm font-medium">{f.label}</span>
                     <p className="text-gray-500 text-xs mt-0.5">{f.description}</p>
                   </div>
                   <button
                     type="button"
                     role="switch"
                     aria-checked={features[f.key]}
-                    disabled={f.comingSoon}
-                    onClick={() => !f.comingSoon && toggleFeature(f.key)}
+                    onClick={() => toggleFeature(f.key)}
                     className={`relative shrink-0 ml-3 w-10 h-6 rounded-full transition-colors ${
-                      f.comingSoon
-                        ? "bg-gray-800 cursor-not-allowed opacity-50"
-                        : features[f.key]
-                          ? "bg-red-600"
-                          : "bg-gray-700"
+                      features[f.key] ? "bg-red-600" : "bg-gray-700"
                     }`}
                   >
                     <span
                       className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                        !f.comingSoon && features[f.key] ? "translate-x-4" : ""
+                        features[f.key] ? "translate-x-4" : ""
                       }`}
                     />
                   </button>
