@@ -58,17 +58,27 @@ export async function GET(request: Request) {
       }
 
       // Skip if last scan is still running (duplicate prevention)
+      // Allow override if scan has been stuck for more than 15 minutes
       const { data: lastScan } = await admin
         .from("scans")
-        .select("status")
+        .select("status, created_at")
         .eq("project_id", project.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
       if (lastScan?.status === "running") {
-        results.push({ project: project.name, status: "skipped: scan already running" });
-        continue;
+        const stuckMinutes = (Date.now() - new Date(lastScan.created_at).getTime()) / 60_000;
+        if (stuckMinutes < 15) {
+          results.push({ project: project.name, status: "skipped: scan already running" });
+          continue;
+        }
+        // Mark stuck scan as failed before starting new one
+        await admin
+          .from("scans")
+          .update({ status: "failed", error_message: "Timed out (stuck > 15min)" })
+          .eq("project_id", project.id)
+          .eq("status", "running");
       }
 
       const owner = match[1];
@@ -214,7 +224,9 @@ function isValidWebhookUrl(url: string): boolean {
     return (
       parsed.protocol === "https:" &&
       (parsed.hostname === "hooks.slack.com" ||
-        (parsed.hostname === "discord.com" && parsed.pathname.startsWith("/api/webhooks/")))
+        parsed.hostname === "hooks.slack-gov.com" ||
+        ((parsed.hostname === "discord.com" || parsed.hostname === "discordapp.com") &&
+          parsed.pathname.startsWith("/api/webhooks/")))
     );
   } catch {
     return false;

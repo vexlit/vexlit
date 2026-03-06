@@ -33,6 +33,15 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
+
+  // Server-side webhook URL validation (SSRF prevention)
+  if (body.slack_webhook_url && !isValidWebhookUrl(body.slack_webhook_url, "slack")) {
+    return NextResponse.json({ error: "Invalid Slack webhook URL" }, { status: 400 });
+  }
+  if (body.discord_webhook_url && !isValidWebhookUrl(body.discord_webhook_url, "discord")) {
+    return NextResponse.json({ error: "Invalid Discord webhook URL" }, { status: 400 });
+  }
+
   const admin = createSupabaseAdmin();
 
   // Check if profile exists
@@ -62,4 +71,20 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ success: true });
+}
+
+function isValidWebhookUrl(url: string, type: "slack" | "discord"): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return false;
+    if (type === "slack") {
+      return parsed.hostname === "hooks.slack.com" || parsed.hostname === "hooks.slack-gov.com";
+    }
+    return (
+      (parsed.hostname === "discord.com" || parsed.hostname === "discordapp.com") &&
+      parsed.pathname.startsWith("/api/webhooks/")
+    );
+  } catch {
+    return false;
+  }
 }

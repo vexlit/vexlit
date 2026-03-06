@@ -187,8 +187,9 @@ export async function POST(request: Request) {
       const reportUrl = `${appUrl}/dashboard/scans/${scan.id}`;
 
       let commentBody: string;
+      const marker = "<!-- VEXLIT-SCAN -->\n";
       if (allVulns.length === 0) {
-        commentBody = `## VEXLIT Security Report\n\nNo vulnerabilities found. Your code looks clean!\n\n[View Full Report](${reportUrl})`;
+        commentBody = `${marker}## VEXLIT Security Report\n\nNo vulnerabilities found. Your code looks clean!\n\n[View Full Report](${reportUrl})`;
       } else {
         const criticalList = allVulns
           .filter((v) => v.severity === "critical")
@@ -202,7 +203,7 @@ export async function POST(request: Request) {
           .map((v) => `- ${v.rule_name} in \`${v.file_path}:${v.line}\``)
           .join("\n");
 
-        commentBody = `## VEXLIT Security Report\n\n`;
+        commentBody = `${marker}## VEXLIT Security Report\n\n`;
         commentBody += `**${allVulns.length} vulnerabilities** found (${critical} critical, ${warning} warning, ${info} info)\n\n`;
 
         if (criticalList) {
@@ -323,6 +324,6 @@ async function findExistingComment(
   if (!res.ok) return null;
 
   const comments = (await res.json()) as { id: number; body: string }[];
-  const existing = comments.find((c) => c.body.includes("## VEXLIT Security Report"));
+  const existing = comments.find((c) => c.body.includes("<!-- VEXLIT-SCAN -->"));
   return existing?.id ?? null;
 }

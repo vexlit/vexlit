@@ -40,11 +40,19 @@ export function SettingsClient({
 
   const handleSave = async () => {
     // Validate webhook URLs before saving
-    if (slackWebhook && !slackWebhook.startsWith("https://hooks.slack.com/")) {
+    if (
+      slackWebhook &&
+      !slackWebhook.startsWith("https://hooks.slack.com/") &&
+      !slackWebhook.startsWith("https://hooks.slack-gov.com/")
+    ) {
       toast.error("Invalid Slack webhook URL");
       return;
     }
-    if (discordWebhook && !discordWebhook.startsWith("https://discord.com/api/webhooks/")) {
+    if (
+      discordWebhook &&
+      !discordWebhook.startsWith("https://discord.com/api/webhooks/") &&
+      !discordWebhook.startsWith("https://discordapp.com/api/webhooks/")
+    ) {
       toast.error("Invalid Discord webhook URL");
       return;
     }
