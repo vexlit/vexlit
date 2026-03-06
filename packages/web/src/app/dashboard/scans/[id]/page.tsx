@@ -1,9 +1,8 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
-import { SeverityBadge } from "@/components/severity-badge";
 import { ScanPolling } from "@/components/scan-polling";
-import { AiExplainButton } from "@/components/ai-explain-button";
-import { AiFixButton } from "@/components/ai-fix-button";
 import { AiReportButton } from "@/components/ai-report-button";
+import { ScanResultsClient } from "@/components/scan-results-client";
+import { SeverityDonut } from "@/components/charts/severity-donut";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Scan, Vulnerability } from "@/lib/types";
@@ -37,36 +36,55 @@ export default async function ScanDetailPage({
   };
   const vulns = (vulnerabilities ?? []) as Vulnerability[];
 
-  // Group by file
-  const fileGroups = new Map<string, Vulnerability[]>();
-  for (const v of vulns) {
-    const existing = fileGroups.get(v.file_path) ?? [];
-    existing.push(v);
-    fileGroups.set(v.file_path, existing);
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <Link
-            href="/dashboard"
-            className="text-gray-500 hover:text-gray-300 text-sm"
-          >
-            Dashboard
-          </Link>
-          <span className="text-gray-600 mx-2">/</span>
-          <h1 className="text-2xl font-bold text-white inline">
-            {typedScan.projects?.name}
+          <div className="flex items-center gap-2 text-sm">
+            <Link
+              href="/dashboard"
+              className="text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              Dashboard
+            </Link>
+            <span className="text-gray-600">/</span>
+            {typedScan.projects && (
+              <>
+                <Link
+                  href={`/dashboard/projects/${typedScan.project_id}`}
+                  className="text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  {typedScan.projects.name}
+                </Link>
+                <span className="text-gray-600">/</span>
+              </>
+            )}
+            <span className="text-gray-400 font-mono">{id.slice(0, 8)}</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white mt-1">
+            {typedScan.projects?.name ?? "Scan Results"}
           </h1>
         </div>
         <StatusPill status={typedScan.status} />
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <SummaryCard label="Total" value={typedScan.total_vulnerabilities} />
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3 col-span-2 md:col-span-1">
+          <SeverityDonut
+            critical={typedScan.critical_count}
+            warning={typedScan.warning_count}
+            info={typedScan.info_count}
+            size={48}
+          />
+          <div>
+            <p className="text-gray-500 text-xs">Total</p>
+            <p className="text-xl font-bold text-white">
+              {typedScan.total_vulnerabilities}
+            </p>
+          </div>
+        </div>
         <SummaryCard
           label="Critical"
           value={typedScan.critical_count}
@@ -90,12 +108,19 @@ export default async function ScanDetailPage({
               : "-"
           }
         />
+        <SummaryCard
+          label="Files"
+          value={new Set(vulns.map((v) => v.file_path)).size || "-"}
+        />
       </div>
 
-      {/* Scan metadata */}
+      {/* Metadata */}
       {typedScan.commit_sha && (
         <p className="text-gray-500 text-sm">
-          Commit: <code className="text-gray-400">{typedScan.commit_sha}</code>
+          Commit:{" "}
+          <code className="text-gray-400 bg-gray-900 px-1.5 py-0.5 rounded text-xs">
+            {typedScan.commit_sha.slice(0, 7)}
+          </code>
         </p>
       )}
 
@@ -111,16 +136,19 @@ export default async function ScanDetailPage({
 
       {/* Failed state */}
       {typedScan.status === "failed" && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
           <p className="text-red-400 text-sm">
             Scan failed: {typedScan.error_message ?? "Unknown error"}
           </p>
         </div>
       )}
 
-      {/* Results by file */}
+      {/* Clean scan */}
       {typedScan.status === "completed" && vulns.length === 0 && (
-        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-8 text-center">
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-8 text-center">
+          <svg className="w-12 h-12 text-green-500 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           <p className="text-green-400 text-lg font-medium">
             No vulnerabilities found
           </p>
@@ -128,96 +156,14 @@ export default async function ScanDetailPage({
         </div>
       )}
 
-      {Array.from(fileGroups.entries()).map(([filePath, fileVulns]) => (
-        <div
-          key={filePath}
-          className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden"
-        >
-          <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50">
-            <span className="text-gray-300 text-sm font-mono">{filePath}</span>
-            <span className="text-gray-600 text-xs ml-2">
-              {fileVulns.length} issue{fileVulns.length > 1 ? "s" : ""}
-            </span>
-          </div>
-
-          <div className="divide-y divide-gray-800">
-            {fileVulns.map((v) => (
-              <div key={v.id} className="px-4 py-4">
-                <div className="flex items-start gap-3">
-                  <SeverityBadge severity={v.severity} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-white text-sm font-medium">
-                        {v.rule_name}
-                      </span>
-                      <ConfidenceBadge confidence={v.confidence} />
-                      <span className="text-gray-600 text-xs">
-                        Line {v.line}:{v.column}
-                      </span>
-                    </div>
-                    <p className="text-gray-400 text-sm mt-1">{v.message}</p>
-
-                    {/* Code snippet */}
-                    {v.snippet && (
-                      <pre className="mt-2 px-3 py-2 bg-gray-950 rounded text-sm font-mono text-gray-300 overflow-x-auto">
-                        <span className="text-gray-600 select-none">
-                          {v.line} |{" "}
-                        </span>
-                        {v.snippet}
-                      </pre>
-                    )}
-
-                    {/* Fix suggestion */}
-                    {v.suggestion && (
-                      <p className="mt-2 text-sm text-green-400/80">
-                        Fix: {v.suggestion}
-                      </p>
-                    )}
-
-                    {/* CWE / OWASP */}
-                    <div className="flex gap-3 mt-2">
-                      {v.cwe && (
-                        <span className="text-gray-600 text-xs">{v.cwe}</span>
-                      )}
-                      {v.owasp && (
-                        <span className="text-gray-600 text-xs">
-                          {v.owasp}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* AI Actions */}
-                    <div className="flex gap-2 mt-3">
-                      <AiExplainButton
-                        scanId={id}
-                        vulnId={v.id}
-                        ruleName={v.rule_name}
-                        severity={v.severity}
-                        message={v.message}
-                        filePath={v.file_path}
-                        line={v.line}
-                        snippet={v.snippet}
-                        cwe={v.cwe}
-                        owasp={v.owasp}
-                      />
-                      <AiFixButton
-                        scanId={id}
-                        vulnId={v.id}
-                        ruleName={v.rule_name}
-                        message={v.message}
-                        filePath={v.file_path}
-                        line={v.line}
-                        snippet={v.snippet}
-                        suggestion={v.suggestion}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+      {/* Results with filtering */}
+      {typedScan.status === "completed" && vulns.length > 0 && (
+        <ScanResultsClient
+          scanId={id}
+          vulns={vulns}
+          sarifJson={typedScan.sarif_json}
+        />
+      )}
     </div>
   );
 }
@@ -232,32 +178,12 @@ function SummaryCard({
   color?: string;
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <p className="text-gray-500 text-xs">{label}</p>
-      <p className={`text-2xl font-bold ${color ?? "text-white"} mt-1`}>
+      <p className={`text-xl font-bold ${color ?? "text-white"} mt-1`}>
         {value}
       </p>
     </div>
-  );
-}
-
-function ConfidenceBadge({
-  confidence,
-}: {
-  confidence: "high" | "medium" | "low";
-}) {
-  const styles: Record<string, string> = {
-    high: "bg-green-900/40 text-green-400 border-green-800",
-    medium: "bg-yellow-900/40 text-yellow-400 border-yellow-800",
-    low: "bg-gray-800 text-gray-400 border-gray-700",
-  };
-
-  return (
-    <span
-      className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${styles[confidence] ?? styles.medium}`}
-    >
-      {confidence}
-    </span>
   );
 }
 
@@ -277,4 +203,3 @@ function StatusPill({ status }: { status: string }) {
     </span>
   );
 }
-

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Navbar({ email }: { email: string }) {
   const router = useRouter();
@@ -14,33 +15,34 @@ export function Navbar({ email }: { email: string }) {
   };
 
   return (
-    <nav className="border-b border-gray-800 bg-gray-950">
+    <nav className="border-b border-gray-800 bg-gray-950 sticky top-0 z-50 backdrop-blur-sm bg-gray-950/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-14 items-center">
           <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="text-xl font-bold text-white">
+            <Link href="/" className="text-xl font-bold text-white">
               VEXLIT
             </Link>
-            <div className="flex gap-4">
+            <div className="hidden sm:flex gap-4">
               <Link
                 href="/dashboard"
-                className="text-gray-400 hover:text-white text-sm"
+                className="text-gray-400 hover:text-white text-sm transition-colors"
               >
                 Dashboard
               </Link>
               <Link
                 href="/dashboard/new"
-                className="text-gray-400 hover:text-white text-sm"
+                className="text-gray-400 hover:text-white text-sm transition-colors"
               >
                 New Scan
               </Link>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-400 text-sm">{email}</span>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="text-gray-400 text-sm hidden sm:inline">{email}</span>
             <button
               onClick={handleSignOut}
-              className="text-gray-400 hover:text-white text-sm"
+              className="text-gray-400 hover:text-white text-sm transition-colors"
             >
               Sign out
             </button>

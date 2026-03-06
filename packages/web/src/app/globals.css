@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
 :root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+html.light {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111111;
 }
 
 @theme inline {
@@ -12,15 +17,44 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Light mode overrides */
+.light .bg-gray-950 { background-color: #f9fafb !important; }
+.light .bg-gray-900 { background-color: #ffffff !important; }
+.light .bg-gray-900\/50 { background-color: rgba(255,255,255,0.5) !important; }
+.light .bg-gray-800 { background-color: #f3f4f6 !important; }
+.light .border-gray-800 { border-color: #e5e7eb !important; }
+.light .border-gray-700 { border-color: #d1d5db !important; }
+.light .text-white { color: #111827 !important; }
+.light .text-gray-300 { color: #374151 !important; }
+.light .text-gray-400 { color: #6b7280 !important; }
+.light .text-gray-500 { color: #9ca3af !important; }
+.light .text-gray-600 { color: #d1d5db !important; }
+.light .hover\:text-white:hover { color: #111827 !important; }
+.light .hover\:border-gray-500:hover { border-color: #9ca3af !important; }
+.light .hover\:border-gray-700:hover { border-color: #d1d5db !important; }
+.light .hover\:bg-gray-800:hover { background-color: #f3f4f6 !important; }
+.light .divide-gray-800 > :not(:last-child) { border-color: #e5e7eb !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+.light ::-webkit-scrollbar-thumb { background: #d1d5db; }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
 }
