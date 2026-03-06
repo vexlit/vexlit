@@ -11,6 +11,7 @@ export interface Profile {
   feature_code_analysis: boolean;
   slack_webhook_url: string | null;
   discord_webhook_url: string | null;
+  github_access_token: string | null;
   created_at: string;
   updated_at: string;
 }

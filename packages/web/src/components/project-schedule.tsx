@@ -61,6 +61,13 @@ export function ProjectSchedule({
           <option value="weekly">Weekly</option>
         </select>
       </div>
+      {schedule !== "none" && (
+        <p className="text-gray-500 text-xs mt-2 border-t border-gray-800 pt-2">
+          {schedule === "daily"
+            ? "Runs daily at 06:00 UTC (15:00 KST)"
+            : "Runs every Sunday at 06:00 UTC (15:00 KST)"}
+        </p>
+      )}
     </div>
   );
 }

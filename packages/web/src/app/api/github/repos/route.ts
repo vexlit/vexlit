@@ -1,4 +1,5 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { fetchUserRepos } from "@/lib/github";
 import { NextResponse } from "next/server";
 
@@ -12,7 +13,18 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const providerToken = session.provider_token;
+  // Try session provider_token first, fall back to stored token
+  let providerToken = session.provider_token;
+  if (!providerToken) {
+    const admin = createSupabaseAdmin();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("github_access_token")
+      .eq("id", session.user.id)
+      .single();
+    providerToken = profile?.github_access_token ?? null;
+  }
+
   if (!providerToken) {
     return NextResponse.json(
       { error: "GitHub token not available. Please re-login." },

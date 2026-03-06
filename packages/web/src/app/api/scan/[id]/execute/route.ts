@@ -62,7 +62,17 @@ export async function POST(
     const githubMeta = scan.github_meta as GithubMeta | null;
 
     if (githubMeta) {
-      const providerToken = session.provider_token;
+      // Try session provider_token first, fall back to stored token
+      let providerToken = session.provider_token;
+      if (!providerToken) {
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("github_access_token")
+          .eq("id", session.user.id)
+          .single();
+        providerToken = profile?.github_access_token ?? null;
+      }
+
       if (!providerToken) {
         await admin
           .from("scans")

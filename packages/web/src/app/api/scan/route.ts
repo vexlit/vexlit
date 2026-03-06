@@ -14,6 +14,7 @@ export async function POST(request: Request) {
   }
 
   const user = session.user;
+  const admin = createSupabaseAdmin();
   const contentType = request.headers.get("content-type") ?? "";
   const isJson = contentType.includes("application/json");
 
@@ -41,7 +42,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const providerToken = session.provider_token;
+    // Try session provider_token first, fall back to stored token
+    let providerToken = session.provider_token;
+    if (!providerToken) {
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("github_access_token")
+        .eq("id", user.id)
+        .single();
+      providerToken = profile?.github_access_token ?? null;
+    }
+
     if (!providerToken) {
       return NextResponse.json(
         { error: "GitHub token not available. Please re-login." },
@@ -91,8 +102,6 @@ export async function POST(request: Request) {
       }
     }
   }
-
-  const admin = createSupabaseAdmin();
 
   // Create or find project
   let projectId: string;
