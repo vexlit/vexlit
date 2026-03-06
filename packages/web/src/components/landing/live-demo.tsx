@@ -27,6 +27,23 @@ interface DemoVuln {
   suggestion?: string;
 }
 
+function detectLanguage(code: string): "javascript" | "typescript" | "python" {
+  const trimmed = code.trimStart();
+  if (
+    trimmed.startsWith("import ") && !trimmed.startsWith("import {") && !trimmed.startsWith("import '") && !trimmed.startsWith("import \"") ||
+    trimmed.startsWith("from ") ||
+    /\bdef\s+\w+\s*\(/.test(trimmed) ||
+    /\bclass\s+\w+.*:/.test(trimmed) ||
+    trimmed.includes("print(")
+  ) {
+    return "python";
+  }
+  if (/:\s*(string|number|boolean|void)\b/.test(code) || /interface\s+\w+/.test(code)) {
+    return "typescript";
+  }
+  return "javascript";
+}
+
 // Client-side quick scan patterns (instant, ~5 rules)
 function quickScan(code: string): DemoVuln[] {
   const vulns: DemoVuln[] = [];
@@ -84,7 +101,7 @@ export function LiveDemo() {
       const res = await fetch("/api/scan/demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, language: "javascript" }),
+        body: JSON.stringify({ code, language: detectLanguage(code) }),
         signal: controller.signal,
       });
 
