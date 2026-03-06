@@ -321,8 +321,9 @@ const COMPARISON_ROWS = [
   { feature: "Scheduled Scans", vexlit: true, others: "Paid plans" },
   { feature: "Slack / Discord Alerts", vexlit: true, others: "Partial" },
   { feature: "Open Source Rules", vexlit: true, others: "Closed source" },
-  { feature: "Unlimited Free Scans", vexlit: true, others: "Usage limits" },
+  { feature: "SARIF Export", vexlit: true, others: "Paid plans" },
   { feature: "No Credit Card Required", vexlit: true, others: "Varies" },
+  { feature: "Scan History & Trends", vexlit: true, others: "Paid plans" },
 ];
 
 function CheckIcon() {
