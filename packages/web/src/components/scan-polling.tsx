@@ -1,17 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function ScanPolling({ scanId }: { scanId: string }) {
+export function ScanPolling({
+  scanId,
+  createdAt,
+}: {
+  scanId: string;
+  createdAt: string;
+}) {
   const router = useRouter();
-  const [elapsed, setElapsed] = useState(0);
+  const triggered = useRef(false);
+  const [elapsed, setElapsed] = useState(() =>
+    Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000))
+  );
 
   useEffect(() => {
+    // Timer based on server-side createdAt (survives refresh)
     const timer = setInterval(() => {
-      setElapsed((prev) => prev + 1);
+      setElapsed(
+        Math.max(
+          0,
+          Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
+        )
+      );
     }, 1000);
 
+    // Trigger scan execution (once)
+    if (!triggered.current) {
+      triggered.current = true;
+      fetch(`/api/scan/${scanId}/execute`, { method: "POST" }).catch(() => {});
+    }
+
+    // Poll for completion
     const poll = setInterval(async () => {
       try {
         const res = await fetch(`/api/scan/${scanId}`);
@@ -23,7 +45,7 @@ export function ScanPolling({ scanId }: { scanId: string }) {
           router.refresh();
         }
       } catch {
-        // ignore network errors, retry on next interval
+        // retry on next interval
       }
     }, 2000);
 
@@ -31,7 +53,7 @@ export function ScanPolling({ scanId }: { scanId: string }) {
       clearInterval(poll);
       clearInterval(timer);
     };
-  }, [scanId, router]);
+  }, [scanId, createdAt, router]);
 
   return (
     <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6 text-center">

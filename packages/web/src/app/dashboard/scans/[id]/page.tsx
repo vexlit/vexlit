@@ -98,7 +98,7 @@ export default async function ScanDetailPage({
 
       {/* Pending/Running state */}
       {(typedScan.status === "pending" || typedScan.status === "running") && (
-        <ScanPolling scanId={id} />
+        <ScanPolling scanId={id} createdAt={typedScan.created_at} />
       )}
 
       {/* Failed state */}
