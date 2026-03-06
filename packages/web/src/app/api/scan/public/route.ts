@@ -135,7 +135,11 @@ export async function POST(request: Request) {
         .single();
 
       if (projectError || !newProject) {
-        return NextResponse.json({ error: "Failed to create project" }, { status: 500 });
+        console.error("[scan/public] Project insert error:", projectError);
+        return NextResponse.json(
+          { error: "Failed to create project", detail: projectError?.message },
+          { status: 500 }
+        );
       }
       projectId = newProject.id;
     }
@@ -152,11 +156,16 @@ export async function POST(request: Request) {
       .single();
 
     if (scanError || !scan) {
-      return NextResponse.json({ error: "Failed to create scan" }, { status: 500 });
+      console.error("[scan/public] Scan insert error:", scanError);
+      return NextResponse.json(
+        { error: "Failed to create scan", detail: scanError?.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ scanId: scan.id, owner, repo, branch });
   } catch (err) {
+    console.error("[scan/public] Error:", err);
     const message = err instanceof Error ? err.message : "Failed to access repository";
     return NextResponse.json({ error: message }, { status: 400 });
   }
