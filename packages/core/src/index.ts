@@ -1,6 +1,7 @@
 export { scan, scanFile } from "./scanner.js";
 export { RuleEngine } from "./rule-engine.js";
 export { allRules } from "./rules/index.js";
+export { allSecretPatterns, secretPatternRules } from "./secrets/index.js";
 export { loadConfig } from "./config.js";
 export { loadIgnorePatterns, isIgnored } from "./ignore.js";
 export { analyzeLlm } from "./llm.js";
