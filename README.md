@@ -20,10 +20,12 @@ VEXLIT detects security vulnerabilities in JavaScript, TypeScript, and Python us
 **[https://vexlit.vercel.app](https://vexlit.vercel.app)**
 
 - Connect your GitHub repository and scan in one click
+- **Public repo scanning** — paste any GitHub URL, no sign-in required
 - Severity donut charts, vulnerability trend graphs
 - Filter by severity, file, rule, or "exploitable only" (critical + high confidence)
 - AI Explain / AI Fix buttons per vulnerability
 - SARIF download, AI security report generation
+- **Notification system** with in-app bell icon
 - Dark / light mode toggle
 
 ## Installation
@@ -106,6 +108,7 @@ packages/
 ```
 
 - **Hybrid detection**: Regex prefilter → AST verification (tree-sitter WASM or @typescript-eslint)
+- **Centralized source registry**: User input patterns (req.body, sys.argv, etc.) managed in `sources.ts`, shared across all rules
 - **Confidence scoring**: Each vulnerability tagged high/medium/low based on FP risk
 - **Deduplication**: Same file:line → keep highest severity, prefer longer ruleId
 - **Async engine**: `RuleEngine.execute()` is async for tree-sitter WASM initialization
