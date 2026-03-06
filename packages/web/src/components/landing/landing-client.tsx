@@ -4,9 +4,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { FadeIn, ScrollReveal, StaggerContainer, StaggerItem } from "./motion-wrapper";
-import { AnimatedCounter } from "./counter";
 import { LiveDemo } from "./live-demo";
 import { RepoScanInput } from "./repo-scan-input";
+import {
+  BeforeAfterDemo,
+  HowItWorks,
+  SupportedLanguages,
+  ComparisonTable,
+  UsageMetrics,
+} from "./landing-sections";
 
 interface Rule {
   id: string;
@@ -132,15 +138,14 @@ export function LandingClient({
         </ScrollReveal>
       </section>
 
-      {/* Counters */}
-      <section className="border-t border-b border-gray-800 py-16">
-        <div className="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          <AnimatedCounter end={263} label="Security Rules" />
-          <AnimatedCounter end={200} suffix="+" label="Secret Patterns" />
-          <AnimatedCounter end={3} label="Languages" />
-          <AnimatedCounter end={10} suffix="+" label="OWASP Categories" />
-        </div>
-      </section>
+      {/* Before/After Demo */}
+      <BeforeAfterDemo />
+
+      {/* How It Works */}
+      <HowItWorks />
+
+      {/* Usage Metrics */}
+      <UsageMetrics />
 
       {/* Features */}
       <section className="max-w-7xl mx-auto px-6 py-20">
@@ -206,6 +211,12 @@ export function LandingClient({
           </p>
         </ScrollReveal>
       </section>
+
+      {/* Supported Languages */}
+      <SupportedLanguages />
+
+      {/* Comparison Table */}
+      <ComparisonTable />
 
       {/* CTA */}
       <section className="max-w-4xl mx-auto px-6 py-20">
