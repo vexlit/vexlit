@@ -1,3 +1,4 @@
+import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
 import { LazySeverityDonut as SeverityDonut } from "@/components/charts/lazy-severity-donut";
@@ -5,10 +6,8 @@ import Link from "next/link";
 import type { Project, Scan } from "@/lib/types";
 
 export default async function ProjectsPage() {
+  const user = await getUser();
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const [{ data: projects }, { data: recentScans }] = await Promise.all([
     supabase

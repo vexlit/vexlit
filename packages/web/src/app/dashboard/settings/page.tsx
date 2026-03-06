@@ -1,14 +1,11 @@
-import { createSupabaseServer } from "@/lib/supabase-server";
+import { getUser } from "@/lib/auth";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { redirect } from "next/navigation";
 import { SettingsClient } from "@/components/settings-client";
 import type { Profile } from "@/lib/types";
 
 export default async function SettingsPage() {
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) redirect("/login");
 

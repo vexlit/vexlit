@@ -1,3 +1,4 @@
+import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { SeverityBadge } from "@/components/severity-badge";
@@ -18,11 +19,8 @@ function computeSecurityScore(criticals: number, warnings: number): { score: num
 }
 
 export default async function DashboardPage() {
+  const user = await getUser();
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const admin = createSupabaseAdmin();
 
   // Run all queries in parallel

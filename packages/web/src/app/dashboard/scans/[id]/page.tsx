@@ -16,21 +16,22 @@ export default async function ScanDetailPage({
   const { id } = await params;
   const supabase = await createSupabaseServer();
 
-  const { data: scan } = await supabase
-    .from("scans")
-    .select("*, projects(name, github_url)")
-    .eq("id", id)
-    .single();
+  const [{ data: scan }, { data: vulnerabilities }] = await Promise.all([
+    supabase
+      .from("scans")
+      .select("*, projects(name, github_url)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("vulnerabilities")
+      .select("*")
+      .eq("scan_id", id)
+      .order("severity", { ascending: true })
+      .order("file_path", { ascending: true })
+      .order("line", { ascending: true }),
+  ]);
 
   if (!scan) notFound();
-
-  const { data: vulnerabilities } = await supabase
-    .from("vulnerabilities")
-    .select("*")
-    .eq("scan_id", id)
-    .order("severity", { ascending: true })
-    .order("file_path", { ascending: true })
-    .order("line", { ascending: true });
 
   const typedScan = scan as Scan & {
     projects: { name: string; github_url: string | null };

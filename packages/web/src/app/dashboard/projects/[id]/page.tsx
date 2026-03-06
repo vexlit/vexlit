@@ -16,19 +16,16 @@ export default async function ProjectDetailPage({
   const { id } = await params;
   const supabase = await createSupabaseServer();
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const [{ data: project }, { data: scans }] = await Promise.all([
+    supabase.from("projects").select("*").eq("id", id).single(),
+    supabase
+      .from("scans")
+      .select("*")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   if (!project) notFound();
-
-  const { data: scans } = await supabase
-    .from("scans")
-    .select("*")
-    .eq("project_id", id)
-    .order("created_at", { ascending: false });
 
   const scanList = (scans ?? []) as Scan[];
 
