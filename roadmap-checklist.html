@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vexlit — Project Roadmap Checklist</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: #111111;
+    --border: #222222;
+    --text: #e5e5e5;
+    --muted: #888888;
+    --red: #ef4444;
+    --orange: #f97316;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --yellow: #eab308;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(to right, var(--red), var(--orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--red), var(--orange));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .progress-text {
+    text-align: right;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: -1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .phase {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .phase-header:hover .phase-title { color: white; }
+  .phase-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-current { background: var(--red); color: white; }
+  .badge-next { background: var(--orange); color: white; }
+  .badge-future { background: var(--blue); color: white; }
+  .badge-later { background: var(--purple); color: white; }
+  .badge-done { background: var(--green); color: white; }
+  .phase-title { font-size: 1.25rem; font-weight: 700; transition: color 0.2s; }
+  .phase-desc { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+  .task-group { margin-bottom: 1rem; }
+  .task-group-title {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .task {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+  }
+  .task input[type="checkbox"] {
+    margin-top: 0.25rem;
+    accent-color: var(--red);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .task label { cursor: pointer; font-size: 0.95rem; }
+  .task label:hover { color: white; }
+  .task .detail {
+    display: block;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 0.1rem;
+  }
+  .tag {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+  }
+  .tag-core { background: #ef444430; color: var(--red); }
+  .tag-web { background: #3b82f630; color: var(--blue); }
+  .tag-cli { background: #a855f730; color: var(--purple); }
+  .tag-infra { background: #f9731630; color: var(--orange); }
+  .tag-biz { background: #22c55e30; color: var(--green); }
+  .tag-db { background: #eab30830; color: var(--yellow); }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<h1>VEXLIT Roadmap</h1>
+<p class="subtitle">하나하나 정밀하게 구현 — 체크하면서 진행</p>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<p class="progress-text" id="progressText"></p>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 0: COMPLETED -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge badge-done">DONE</span>
+    <span class="phase-title">Phase 0 — Foundation (완료)</span>
+  </div>
+  <div class="phase-body">
+    <div class="task-group">
+      <div class="task-group-title">Core Engine</div>
+      <div class="task"><input type="checkbox" checked disabled><label>85+ SAST rules (JS/TS/Python) <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>200+ secret detection patterns <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Tree-sitter AST parsing (JS/TS/Python) <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>SARIF output format <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Multiline template literal SQL detection <span class="tag tag-core">core</span></label></div>
+    </div>
+    <div class="task-group">
+      <div class="task-group-title">Web Dashboard</div>
+      <div class="task"><input type="checkbox" checked disabled><label>GitHub OAuth + Supabase Auth <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Public repo scan (no sign-in) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Scan history & detail view <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>AI verification (Claude) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Onboarding flow (terms → setup → dashboard) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>i18n (EN/KO) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Landing page + Live Demo <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Accuracy Benchmark section <span class="tag tag-web">web</span></label></div>
+    </div>
+    <div class="task-group">
+      <div class="task-group-title">Infra</div>
+      <div class="task"><input type="checkbox" checked disabled><label>Queue worker pattern (POST scan → execute) <span class="tag tag-infra">infra</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Chunked GitHub file fetch (40 files/call) <span class="tag tag-infra">infra</span></label></div>
+      <div class="task"><input type="checkbox" checked disabled><label>Vercel deployment + auto-deploy on push <span class="tag tag-infra">infra</span></label></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 1: CORE QUALITY -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge badge-current">NOW</span>
+    <span class="phase-title">Phase 1 — Core Quality & Reliability</span>
+  </div>
+  <div class="phase-body">
+    <p class="phase-desc">제품 신뢰도를 확보하고 유료 전환의 기반을 마련하는 단계</p>
+
+    <div class="task-group">
+      <div class="task-group-title">False Positive Reduction</div>
+      <div class="task"><input type="checkbox"><label>Taint analysis 고도화 — JS/TS 소스→싱크 추적 <span class="tag tag-core">core</span>
+        <span class="detail">req.body/query/params → DB query/exec/eval까지 데이터 흐름 추적</span></label></div>
+      <div class="task"><input type="checkbox"><label>Context-aware sanitizer 인식 확장 <span class="tag tag-core">core</span>
+        <span class="detail">DOMPurify, validator.js, escape 함수 등 주요 라이브러리별 sanitizer 매핑</span></label></div>
+      <div class="task"><input type="checkbox"><label>Confidence scoring 개선 — high/medium/low 세분화 기준 재정립 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>FP suppression: 인라인 주석 무시 (// vexlit-ignore-next-line) <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Benchmark FPR 목표: 0.5% 이하 유지 <span class="tag tag-core">core</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">Rule Coverage 확장</div>
+      <div class="task"><input type="checkbox"><label>Java 언어 지원 (tree-sitter-java) <span class="tag tag-core">core</span>
+        <span class="detail">SQL Injection, XSS, Deserialization, SSRF 등 주요 룰</span></label></div>
+      <div class="task"><input type="checkbox"><label>Go 언어 지원 (tree-sitter-go) <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>PHP 언어 지원 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Ruby 언어 지원 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Insecure Deserialization rule (Java/Python) <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>XXE (XML External Entity) rule <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>LDAP Injection rule <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Race Condition detection <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>목표: 150+ SAST rules <span class="tag tag-core">core</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">AI Verification 강화</div>
+      <div class="task"><input type="checkbox"><label>AI Fix 코드 제안 — 취약점별 수정 코드 자동 생성 <span class="tag tag-web">web</span>
+        <span class="detail">Claude로 각 취약점에 대해 before/after 코드 diff 생성</span></label></div>
+      <div class="task"><input type="checkbox"><label>AI confidence re-scoring — SAST 결과를 AI가 재평가 <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Batch AI verification (여러 취약점 한 번에 분석) <span class="tag tag-web">web</span></label></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 2: PR REVIEW & CI/CD -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge badge-next">NEXT</span>
+    <span class="phase-title">Phase 2 — PR Auto Review & CI/CD Integration</span>
+  </div>
+  <div class="phase-body">
+    <p class="phase-desc">개발 워크플로우에 직접 통합 — 결제 전환의 핵심 동력</p>
+
+    <div class="task-group">
+      <div class="task-group-title">GitHub App & PR Review</div>
+      <div class="task"><input type="checkbox"><label>GitHub App 생성 및 등록 <span class="tag tag-infra">infra</span>
+        <span class="detail">Webhook 수신, check runs 생성 권한</span></label></div>
+      <div class="task"><input type="checkbox"><label>PR open/sync webhook 핸들러 <span class="tag tag-web">web</span>
+        <span class="detail">POST /api/webhook/github — PR 이벤트 수신 및 스캔 트리거</span></label></div>
+      <div class="task"><input type="checkbox"><label>PR diff-only 스캔 — 변경된 파일만 분석 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>GitHub Check Run 생성 (pass/fail 상태) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>PR inline comment — 취약점 위치에 코멘트 <span class="tag tag-web">web</span>
+        <span class="detail">GitHub Reviews API로 취약점 라인에 직접 리뷰 코멘트</span></label></div>
+      <div class="task"><input type="checkbox"><label>PR summary comment — 전체 요약 코멘트 <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>AI fix suggestion in PR comment <span class="tag tag-web">web</span>
+        <span class="detail">"Apply this suggestion" 버튼으로 바로 적용 가능</span></label></div>
+      <div class="task"><input type="checkbox"><label>Branch protection rule 연동 가이드 <span class="tag tag-web">web</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">CI/CD Integration</div>
+      <div class="task"><input type="checkbox"><label>GitHub Actions 공식 action 배포 <span class="tag tag-cli">cli</span>
+        <span class="detail">vexlit/vexlit-action@v1 — marketplace 등록</span></label></div>
+      <div class="task"><input type="checkbox"><label>SARIF upload to GitHub Code Scanning <span class="tag tag-cli">cli</span></label></div>
+      <div class="task"><input type="checkbox"><label>GitLab CI 지원 (.gitlab-ci.yml 예제) <span class="tag tag-cli">cli</span></label></div>
+      <div class="task"><input type="checkbox"><label>Exit code 기반 pipeline fail (--fail-on critical) <span class="tag tag-cli">cli</span></label></div>
+      <div class="task"><input type="checkbox"><label>JSON/SARIF/Table 출력 포맷 선택 <span class="tag tag-cli">cli</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">Scheduled Scans</div>
+      <div class="task"><input type="checkbox"><label>Cron 기반 정기 스캔 스케줄러 <span class="tag tag-infra">infra</span>
+        <span class="detail">Vercel Cron 또는 외부 cron → API 호출</span></label></div>
+      <div class="task"><input type="checkbox"><label>스캔 스케줄 설정 UI (daily/weekly/custom) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>스캔 결과 비교 (이전 vs 현재) diff view <span class="tag tag-web">web</span></label></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 3: TEAM & MONETIZATION -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge badge-future">FUTURE</span>
+    <span class="phase-title">Phase 3 — Team Collaboration & Monetization</span>
+  </div>
+  <div class="phase-body">
+    <p class="phase-desc">팀 기능 + 결제 시스템 — 수익화 시작</p>
+
+    <div class="task-group">
+      <div class="task-group-title">Team & Organization</div>
+      <div class="task"><input type="checkbox"><label>Organization / Team 모델 (DB 스키마) <span class="tag tag-db">db</span>
+        <span class="detail">teams, team_members, team_repos 테이블</span></label></div>
+      <div class="task"><input type="checkbox"><label>팀 초대 & 멤버 관리 UI <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Role-based access (owner/admin/member/viewer) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>팀 대시보드 — 전체 repo 보안 현황 overview <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>취약점 assign & 상태 관리 (open/in-progress/resolved/ignored) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Activity feed — 팀 활동 타임라인 <span class="tag tag-web">web</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">Notifications & Alerts</div>
+      <div class="task"><input type="checkbox"><label>Email 알림 (new critical vuln, scan complete) <span class="tag tag-infra">infra</span></label></div>
+      <div class="task"><input type="checkbox"><label>Slack integration — webhook 알림 <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Discord integration — webhook 알림 <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>알림 설정 UI (severity threshold, channels) <span class="tag tag-web">web</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">Stripe Payments</div>
+      <div class="task"><input type="checkbox"><label>Pricing 모델 확정 (Free / Pro / Team) <span class="tag tag-biz">biz</span>
+        <span class="detail">Free: 3 repos, 10 scans/month | Pro: unlimited repos, AI fix | Team: org features</span></label></div>
+      <div class="task"><input type="checkbox"><label>Stripe 연동 — checkout session 생성 <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Stripe webhook — subscription lifecycle 처리 <span class="tag tag-web">web</span>
+        <span class="detail">checkout.session.completed, invoice.paid, customer.subscription.deleted</span></label></div>
+      <div class="task"><input type="checkbox"><label>subscriptions 테이블 + plan limits 체크 <span class="tag tag-db">db</span></label></div>
+      <div class="task"><input type="checkbox"><label>Usage 기반 제한 (scans/month, repos, AI calls) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Pricing page UI <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Billing portal (구독 관리, 카드 변경, 취소) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Plan upgrade/downgrade 플로우 <span class="tag tag-web">web</span></label></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 4: SCA & ADVANCED -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge badge-future">FUTURE</span>
+    <span class="phase-title">Phase 4 — SCA & Advanced Analysis</span>
+  </div>
+  <div class="phase-body">
+    <p class="phase-desc">의존성 취약점 스캔 + 고급 분석 — 경쟁력 차별화</p>
+
+    <div class="task-group">
+      <div class="task-group-title">SCA (Software Composition Analysis)</div>
+      <div class="task"><input type="checkbox"><label>package.json / package-lock.json 파싱 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>requirements.txt / Pipfile 파싱 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>pom.xml / build.gradle 파싱 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>OSV / NVD API 연동 — CVE 데이터 조회 <span class="tag tag-core">core</span>
+        <span class="detail">Google OSV API (무료) + National Vulnerability Database</span></label></div>
+      <div class="task"><input type="checkbox"><label>Dependency tree 시각화 <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>License compliance 체크 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Transitive dependency 취약점 추적 <span class="tag tag-core">core</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">Advanced SAST</div>
+      <div class="task"><input type="checkbox"><label>Inter-file taint analysis (파일 간 데이터 흐름) <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Custom rule authoring — YAML 기반 룰 정의 <span class="tag tag-core">core</span>
+        <span class="detail">사용자가 자체 패턴 정의 가능 (semgrep style)</span></label></div>
+      <div class="task"><input type="checkbox"><label>IaC scanning (Terraform, CloudFormation) <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Dockerfile security scanning <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Container image 취약점 스캔 <span class="tag tag-core">core</span></label></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 5: SCALE -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge badge-later">LATER</span>
+    <span class="phase-title">Phase 5 — Scale & Enterprise</span>
+  </div>
+  <div class="phase-body">
+    <p class="phase-desc">엔터프라이즈 기능 + 대규모 확장</p>
+
+    <div class="task-group">
+      <div class="task-group-title">Enterprise Features</div>
+      <div class="task"><input type="checkbox"><label>SSO (SAML/OIDC) 지원 <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Audit log — 모든 활동 기록 <span class="tag tag-db">db</span></label></div>
+      <div class="task"><input type="checkbox"><label>Compliance reports (SOC2, ISO27001 매핑) <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Self-hosted / on-premise 배포 옵션 <span class="tag tag-infra">infra</span></label></div>
+      <div class="task"><input type="checkbox"><label>API rate limiting & API key 관리 <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Public REST API + API docs <span class="tag tag-web">web</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">Performance & Scale</div>
+      <div class="task"><input type="checkbox"><label>Vercel → 전용 서버 마이그레이션 (필요시) <span class="tag tag-infra">infra</span></label></div>
+      <div class="task"><input type="checkbox"><label>Redis queue for background jobs <span class="tag tag-infra">infra</span></label></div>
+      <div class="task"><input type="checkbox"><label>Monorepo / large repo 지원 (100k+ files) <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Incremental scan — 변경 파일만 재스캔 <span class="tag tag-core">core</span></label></div>
+      <div class="task"><input type="checkbox"><label>Parallel scanning (worker threads) <span class="tag tag-core">core</span></label></div>
+    </div>
+
+    <div class="task-group">
+      <div class="task-group-title">Growth & Community</div>
+      <div class="task"><input type="checkbox"><label>VS Code extension <span class="tag tag-cli">cli</span></label></div>
+      <div class="task"><input type="checkbox"><label>JetBrains plugin <span class="tag tag-cli">cli</span></label></div>
+      <div class="task"><input type="checkbox"><label>Community rule marketplace <span class="tag tag-web">web</span></label></div>
+      <div class="task"><input type="checkbox"><label>Blog / security advisory 콘텐츠 <span class="tag tag-biz">biz</span></label></div>
+      <div class="task"><input type="checkbox"><label>Developer documentation site <span class="tag tag-web">web</span></label></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  VEXLIT Roadmap — Last updated: 2026-03-07
+</footer>
+
+<script>
+  // Toggle phase collapse
+  function togglePhase(header) {
+    const body = header.nextElementSibling;
+    if (body) body.style.display = body.style.display === 'none' ? '' : 'none';
+  }
+
+  // Update progress bar
+  function updateProgress() {
+    const all = document.querySelectorAll('input[type="checkbox"]');
+    const checked = document.querySelectorAll('input[type="checkbox"]:checked');
+    const pct = Math.round((checked.length / all.length) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = checked.length + ' / ' + all.length + ' tasks (' + pct + '%)';
+  }
+
+  // Save state to localStorage
+  function saveState() {
+    const state = {};
+    document.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach((cb, i) => {
+      state[i] = cb.checked;
+    });
+    localStorage.setItem('vexlit-roadmap', JSON.stringify(state));
+  }
+
+  // Load state from localStorage
+  function loadState() {
+    const raw = localStorage.getItem('vexlit-roadmap');
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    document.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach((cb, i) => {
+      if (state[i] !== undefined) cb.checked = state[i];
+    });
+  }
+
+  // Init
+  loadState();
+  updateProgress();
+
+  // Listen for changes
+  document.addEventListener('change', (e) => {
+    if (e.target.type === 'checkbox') {
+      saveState();
+      updateProgress();
+    }
+  });
+</script>
+
+</body>
+</html>

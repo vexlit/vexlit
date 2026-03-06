@@ -104,7 +104,7 @@
     "benchmarkMeaning1": "97.4% detection rate means VEXLIT catches nearly all known vulnerability patterns in its covered categories — fewer missed issues in production.",
     "benchmarkMeaning2": "Less than 1% false positive rate means almost every finding is real and actionable — no wasted time triaging phantom alerts.",
     "benchmarkCategories": "Per-category F1 scores",
-    "benchmarkFootnote": "Internal benchmark using parameterized test cases with randomized variable/function names. Scores reflect detection quality on known patterns — real-world results vary by codebase. Run the benchmark yourself: packages/core/benchmark/run.ts"
+    "benchmarkFootnote": "Internal benchmark using parameterized test cases with randomized variable/function names. Scores reflect detection quality on known patterns — real-world results vary by codebase."
   },
   "liveDemo": {
     "title": "Try it now",
