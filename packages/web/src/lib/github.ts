@@ -67,6 +67,11 @@ async function ghFetch<T>(path: string, token: string): Promise<T> {
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error(
+        "GitHub token expired or revoked. Please reconnect your GitHub account."
+      );
+    }
     if (res.status === 403) {
       const remaining = res.headers.get("x-ratelimit-remaining");
       if (remaining === "0") {

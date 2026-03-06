@@ -1,5 +1,6 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { encrypt } from "@/lib/crypto";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -22,11 +23,11 @@ export async function GET(request: Request) {
     if (user) {
       const admin = createSupabaseAdmin();
 
-      // Save GitHub token to profile
+      // Save GitHub token to profile (encrypted)
       if (providerToken) {
         await admin
           .from("profiles")
-          .update({ github_access_token: providerToken })
+          .update({ github_access_token: encrypt(providerToken) })
           .eq("id", user.id);
       }
 

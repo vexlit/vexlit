@@ -1,5 +1,6 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { decrypt } from "@/lib/crypto";
 import { fetchBranches } from "@/lib/github";
 import { NextResponse } from "next/server";
 
@@ -26,7 +27,10 @@ export async function GET(
       .select("github_access_token")
       .eq("id", session.user.id)
       .single();
-    providerToken = profile?.github_access_token ?? null;
+    const encrypted = profile?.github_access_token;
+    if (encrypted) {
+      try { providerToken = decrypt(encrypted); } catch { providerToken = null; }
+    }
   }
 
   if (!providerToken) {
