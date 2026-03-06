@@ -166,37 +166,16 @@ export function BeforeAfterDemo() {
 
 /* ─────────────────────────── How It Works ─────────────────────────── */
 
-const STEPS = [
-  {
-    step: "01",
-    title: "Connect Your Repo",
-    description: "Link your GitHub repository with one click. Public or private, we scan it all.",
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.07a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.343 8.82" />
-      </svg>
-    ),
-  },
-  {
-    step: "02",
-    title: "Scan for Vulnerabilities",
-    description: "85+ SAST rules and 200+ secret detectors analyze your code using AST-based static analysis in seconds.",
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-      </svg>
-    ),
-  },
-  {
-    step: "03",
-    title: "Fix with AI Guidance",
-    description: "Get actionable fix suggestions with code examples. AI explains each vulnerability clearly.",
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-      </svg>
-    ),
-  },
+const STEP_ICONS = [
+  <svg key="1" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.07a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.343 8.82" /></svg>,
+  <svg key="2" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>,
+  <svg key="3" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>,
+];
+
+const STEP_KEYS = [
+  { step: "01", titleKey: "step1Title" as const, descKey: "step1Desc" as const },
+  { step: "02", titleKey: "step2Title" as const, descKey: "step2Desc" as const },
+  { step: "03", titleKey: "step3Title" as const, descKey: "step3Desc" as const },
 ];
 
 export function HowItWorks() {
@@ -213,17 +192,17 @@ export function HowItWorks() {
       </ScrollReveal>
 
       <StaggerContainer className="grid md:grid-cols-3 gap-8">
-        {STEPS.map((s) => (
+        {STEP_KEYS.map((s, i) => (
           <StaggerItem key={s.step}>
             <div className="relative bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-all group h-full">
               <span className="absolute -top-3 -left-2 text-5xl font-black text-gray-800/50 select-none">
                 {s.step}
               </span>
               <div className="w-12 h-12 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center mb-4 group-hover:bg-red-500/20 transition-colors">
-                {s.icon}
+                {STEP_ICONS[i]}
               </div>
-              <h3 className="text-white font-semibold text-lg mb-2">{s.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{s.description}</p>
+              <h3 className="text-white font-semibold text-lg mb-2">{t(s.titleKey)}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{t(s.descKey)}</p>
             </div>
           </StaggerItem>
         ))}
@@ -317,16 +296,16 @@ export function SupportedLanguages() {
 
 /* ─────────────────────────── Comparison Table ─────────────────────────── */
 
-const COMPARISON_ROWS = [
-  { feature: "Static Analysis (SAST)", vexlit: true, others: "Paid plans" },
-  { feature: "AI-Powered Fix Suggestions", vexlit: true, others: "Limited or none" },
-  { feature: "PR Security Check", vexlit: true, others: "Paid plans" },
-  { feature: "Scheduled Scans", vexlit: true, others: "Paid plans" },
-  { feature: "Slack / Discord Alerts", vexlit: true, others: "Partial" },
-  { feature: "Open Source Rules", vexlit: true, others: "Closed source" },
-  { feature: "SARIF Export", vexlit: true, others: "Paid plans" },
-  { feature: "No Credit Card Required", vexlit: true, others: "Varies" },
-  { feature: "Scan History & Trends", vexlit: true, others: "Paid plans" },
+const COMPARISON_KEYS = [
+  { featureKey: "compFeatureSast" as const, vexlit: true, othersKey: "compOtherPaid" as const },
+  { featureKey: "compFeatureAiFix" as const, vexlit: true, othersKey: "compOtherLimited" as const },
+  { featureKey: "compFeaturePrCheck" as const, vexlit: true, othersKey: "compOtherPaid" as const },
+  { featureKey: "compFeatureScheduled" as const, vexlit: true, othersKey: "compOtherPaid" as const },
+  { featureKey: "compFeatureAlerts" as const, vexlit: true, othersKey: "compOtherPartial" as const },
+  { featureKey: "compFeatureOpenSource" as const, vexlit: true, othersKey: "compOtherClosed" as const },
+  { featureKey: "compFeatureSarif" as const, vexlit: true, othersKey: "compOtherPaid" as const },
+  { featureKey: "compFeatureNoCreditCard" as const, vexlit: true, othersKey: "compOtherVaries" as const },
+  { featureKey: "compFeatureHistory" as const, vexlit: true, othersKey: "compOtherPaid" as const },
 ];
 
 function CheckIcon() {
@@ -363,21 +342,21 @@ export function ComparisonTable() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-800">
-                <th className="text-left py-3 px-4 text-gray-400 text-sm font-medium">Feature</th>
+                <th className="text-left py-3 px-4 text-gray-400 text-sm font-medium">{t("compHeaderFeature")}</th>
                 <th className="py-3 px-4 text-center">
                   <span className="text-red-400 font-bold text-sm">VEXLIT</span>
                 </th>
                 <th className="py-3 px-4 text-center">
-                  <span className="text-gray-400 text-sm">Others</span>
+                  <span className="text-gray-400 text-sm">{t("compHeaderOthers")}</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {COMPARISON_ROWS.map((row) => (
-                <tr key={row.feature} className="border-b border-gray-800/50 hover:bg-gray-900/50 transition-colors">
-                  <td className="py-3 px-4 text-white text-sm">{row.feature}</td>
+              {COMPARISON_KEYS.map((row) => (
+                <tr key={row.featureKey} className="border-b border-gray-800/50 hover:bg-gray-900/50 transition-colors">
+                  <td className="py-3 px-4 text-white text-sm">{t(row.featureKey)}</td>
                   <td className="py-3 px-4">{row.vexlit ? <CheckIcon /> : <CrossIcon />}</td>
-                  <td className="py-3 px-4 text-center text-gray-500 text-sm">{row.others}</td>
+                  <td className="py-3 px-4 text-center text-gray-500 text-sm">{t(row.othersKey)}</td>
                 </tr>
               ))}
             </tbody>
@@ -402,23 +381,23 @@ export function UsageMetrics() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-center">
             <div>
               <p className="text-3xl md:text-4xl font-bold text-red-400">85+</p>
-              <p className="text-gray-500 text-sm mt-1">SAST Rules</p>
+              <p className="text-gray-500 text-sm mt-1">{t("metricSastRules")}</p>
             </div>
             <div>
               <p className="text-3xl md:text-4xl font-bold text-red-400">200+</p>
-              <p className="text-gray-500 text-sm mt-1">Secret Patterns</p>
+              <p className="text-gray-500 text-sm mt-1">{t("metricSecretPatterns")}</p>
             </div>
             <div>
               <p className="text-3xl md:text-4xl font-bold text-red-400">10+</p>
-              <p className="text-gray-500 text-sm mt-1">OWASP Categories</p>
+              <p className="text-gray-500 text-sm mt-1">{t("metricOwaspCategories")}</p>
             </div>
             <div>
               <p className="text-3xl md:text-4xl font-bold text-red-400">&lt;10s</p>
-              <p className="text-gray-500 text-sm mt-1">Avg Scan Time</p>
+              <p className="text-gray-500 text-sm mt-1">{t("metricAvgScanTime")}</p>
             </div>
             <div>
               <p className="text-3xl md:text-4xl font-bold text-red-400">100%</p>
-              <p className="text-gray-500 text-sm mt-1">Free to Use</p>
+              <p className="text-gray-500 text-sm mt-1">{t("metricFree")}</p>
             </div>
           </div>
         </div>

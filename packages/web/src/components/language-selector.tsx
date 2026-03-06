@@ -60,7 +60,7 @@ export function LanguageSelector() {
                   : "text-gray-400 hover:text-white hover:bg-gray-800/50"
               }`}
             >
-              {loc === "en" ? "🇺🇸" : "🇰🇷"} {loc.toUpperCase()}
+              {loc.toUpperCase()}
             </button>
           ))}
         </div>

@@ -134,7 +134,7 @@ export function LandingClient({
       </section>
 
       {/* Live Demo */}
-      <section className="max-w-4xl mx-auto px-6 pb-20">
+      <section id="live-demo" className="max-w-4xl mx-auto px-6 pb-20 scroll-mt-20">
         <ScrollReveal>
           <LiveDemo />
         </ScrollReveal>

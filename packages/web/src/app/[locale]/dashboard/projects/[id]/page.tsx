@@ -34,16 +34,17 @@ export default async function ProjectDetailPage({
     .slice(0, 10)
     .reverse();
 
-  const trendData = completedScans.map((s) => ({
-    date: new Date(s.created_at).toLocaleDateString("en", {
-      month: "short",
-      day: "numeric",
-    }),
-    critical: s.critical_count,
-    warning: s.warning_count,
-    info: s.info_count,
-    total: s.total_vulnerabilities,
-  }));
+  const trendData = Object.values(
+    completedScans.reduce<Record<string, { date: string; critical: number; warning: number; info: number; total: number }>>((acc, s) => {
+      const date = new Date(s.created_at).toLocaleDateString("en", { month: "short", day: "numeric" });
+      if (!acc[date]) acc[date] = { date, critical: 0, warning: 0, info: 0, total: 0 };
+      acc[date].critical += s.critical_count;
+      acc[date].warning += s.warning_count;
+      acc[date].info += s.info_count;
+      acc[date].total += s.total_vulnerabilities;
+      return acc;
+    }, {})
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
