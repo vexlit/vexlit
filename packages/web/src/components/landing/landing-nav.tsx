@@ -6,12 +6,52 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 // ── Nav menu data ──
 
+interface NavChild {
+  label: string;
+  description: string;
+  href: string;
+  icon?: React.ReactNode;
+}
+
 interface NavItem {
   label: string;
   href?: string;
-  children?: { label: string; description: string; href: string }[];
+  children?: NavChild[];
   badge?: string;
 }
+
+const DROPDOWN_ICONS = {
+  sast: (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+    </svg>
+  ),
+  secret: (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+    </svg>
+  ),
+  ai: (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+    </svg>
+  ),
+  github: (
+    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+      <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+    </svg>
+  ),
+  rules: (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+    </svg>
+  ),
+  changelog: (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.183" />
+    </svg>
+  ),
+};
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -21,41 +61,46 @@ const NAV_ITEMS: NavItem[] = [
         label: "SAST Scanner",
         description: "85+ rules for JS, TS, Python with AST analysis",
         href: "/#features",
+        icon: DROPDOWN_ICONS.sast,
       },
       {
         label: "Secret Detection",
         description: "200+ detectors for API keys, tokens, and credentials",
         href: "/#rules",
+        icon: DROPDOWN_ICONS.secret,
       },
       {
         label: "AI Verification",
         description: "Claude AI filters false positives and explains fixes",
         href: "/#features",
+        icon: DROPDOWN_ICONS.ai,
       },
       {
         label: "GitHub Integration",
         description: "One-click repo scanning with SARIF output",
         href: "/#features",
+        icon: DROPDOWN_ICONS.github,
       },
     ],
+  },
+  {
+    label: "Docs",
+    href: "https://github.com/vexlit/vexlit#readme",
   },
   {
     label: "Resources",
     children: [
       {
-        label: "Documentation",
-        description: "Getting started guides and API reference",
-        href: "https://github.com/vexlit/vexlit#readme",
-      },
-      {
         label: "Security Rules",
         description: "Browse all SAST rules and CWE coverage",
         href: "/#rules",
+        icon: DROPDOWN_ICONS.rules,
       },
       {
         label: "Changelog",
         description: "Latest updates and new features",
         href: "https://github.com/vexlit/vexlit/releases",
+        icon: DROPDOWN_ICONS.changelog,
       },
     ],
   },
@@ -154,11 +199,16 @@ function NavDropdown({
                 key={child.label}
                 href={child.href}
                 {...(extraProps as Record<string, string>)}
-                className="block px-4 py-3 hover:bg-gray-800/60 transition-colors"
+                className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/60 transition-colors"
                 onClick={() => onToggle()}
               >
-                <p className="text-white text-sm font-medium">{child.label}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{child.description}</p>
+                {child.icon && (
+                  <span className="text-gray-400 mt-0.5 flex-shrink-0">{child.icon}</span>
+                )}
+                <div>
+                  <p className="text-white text-sm font-medium">{child.label}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">{child.description}</p>
+                </div>
               </Comp>
             );
           })}
@@ -181,6 +231,13 @@ function MobileMenu({
   isLoggedIn: boolean;
   loading: boolean;
 }) {
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -255,10 +312,8 @@ function MobileMenu({
           ))}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-800 space-y-3">
-          {loading ? (
-            <div className="h-10" />
-          ) : isLoggedIn ? (
+        <div className={`px-6 py-4 border-t border-gray-800 space-y-3 transition-opacity ${loading ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+          {isLoggedIn ? (
             <Link
               href="/dashboard"
               className="block w-full text-center px-4 py-2.5 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
@@ -280,7 +335,7 @@ function MobileMenu({
                 className="block w-full text-center px-4 py-2.5 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
                 onClick={onClose}
               >
-                Get Started Free
+                Scan Repo
               </Link>
             </>
           )}
@@ -346,31 +401,31 @@ export function LandingNav() {
 
           {/* Desktop auth buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            {loading ? (
-              <div className="w-24" />
-            ) : isLoggedIn ? (
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <>
+            <div className={`flex items-center gap-3 transition-opacity ${loading ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+              {isLoggedIn ? (
                 <Link
-                  href="/login"
-                  className="text-gray-400 hover:text-white text-sm font-medium transition-colors px-3 py-2"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/login"
+                  href="/dashboard"
                   className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
                 >
-                  Get Started
+                  Dashboard
                 </Link>
-              </>
-            )}
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-gray-400 hover:text-white text-sm font-medium transition-colors px-3 py-2"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
+                  >
+                    Scan Repo
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Mobile hamburger */}
