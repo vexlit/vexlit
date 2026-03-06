@@ -5,6 +5,7 @@ import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
 import { collectJsSanitizedVars, collectPySanitizedVars, collectPySanitizedVarsRegex, isJsSanitizerCall, hasJsNumericGuard } from "../sanitizers.js";
+import { PY_USER_INPUT, collectPyTaintedVars, hasPyTaintedRef } from "../sources.js";
 
 // ── Shared ──
 
@@ -104,46 +105,16 @@ const PY_SQL_INLINE_PATTERNS: { name: string; pattern: RegExp }[] = [
   },
 ];
 
-const PY_USER_INPUT = /\b(?:request\.\w+|input\s*\(|sys\.argv)/;
-
 function scanPySql(ctx: ScanContext): Vulnerability[] {
   const tree = ctx.treeSitterTree as TreeSitterTree | null;
   if (tree) return scanPySqlTreeSitter(ctx, tree);
   return scanPySqlRegex(ctx);
 }
 
-/** Check if a tree-sitter node contains user input or tainted references */
-function hasPyTaintedRef(node: TreeSitterNode, tainted: Set<string>): boolean {
-  if (node.type === "identifier" && tainted.has(node.text)) return true;
-  if (PY_USER_INPUT.test(node.text)) return true;
-  return node.namedChildren.some((c: TreeSitterNode) => hasPyTaintedRef(c, tainted));
-}
-
 function scanPySqlTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerability[] {
   const vulns: Vulnerability[] = [];
 
-  // Collect user-input tainted variables
-  const userTainted = new Set<string>();
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (PY_USER_INPUT.test(right.text)) userTainted.add(left.text);
-  });
-  // Transitive
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (userTainted.has(left.text)) return;
-    if (right.namedChildren.some((c: TreeSitterNode) =>
-      c.type === "identifier" && userTainted.has(c.text)
-    )) {
-      userTainted.add(left.text);
-    }
-  });
+  const userTainted = collectPyTaintedVars(tree.rootNode, walkTreeSitter);
 
   // Collect sanitized variables: safe_id = int(user_id)
   const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "sql");

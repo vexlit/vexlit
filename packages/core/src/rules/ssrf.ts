@@ -5,6 +5,7 @@ import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
 import { collectJsSanitizedVars, collectPySanitizedVars, collectPySanitizedVarsRegex, surroundingHasSanitizer } from "../sanitizers.js";
+import { isJsUserInput, collectJsTaintedVars, PY_USER_INPUT, collectPyTaintedVars, collectPyTaintedVarsRegex } from "../sources.js";
 
 const SSRF_REGEX =
   /(?:fetch|axios\.get|axios\.post|axios\(|http\.get|http\.request|https\.get|https\.request|got\(|request\()\s*\(\s*(?:req\.|request\.|query\.|params\.|body\.|`|\w)/;
@@ -14,40 +15,9 @@ const HTTP_CALLEES = new Set([
 ]);
 
 function hasSsrfAST(ast: AST, line: number, sanitizedVars: Map<string, Set<string>>): boolean {
-  // First pass: collect variable names assigned from user input
-  const taintedVars = new Set<string>();
-  walkAST(ast, (node: TSESTree.Node) => {
-    // const { url } = req.query  OR  const url = req.query.url
-    if (
-      node.type === "VariableDeclarator" &&
-      node.init
-    ) {
-      if (isUserInput(node.init)) {
-        if (node.id.type === "Identifier") taintedVars.add(node.id.name);
-        if (node.id.type === "ObjectPattern") {
-          for (const prop of node.id.properties) {
-            if (prop.type === "Property" && prop.value.type === "Identifier") {
-              taintedVars.add(prop.value.name);
-            }
-          }
-        }
-      }
-      // Destructuring: const { url } = req.query
-      if (
-        node.id.type === "ObjectPattern" &&
-        node.init.type === "MemberExpression" &&
-        isUserInput(node.init)
-      ) {
-        for (const prop of node.id.properties) {
-          if (prop.type === "Property" && prop.value.type === "Identifier") {
-            taintedVars.add(prop.value.name);
-          }
-        }
-      }
-    }
-  });
+  const taintedVars = collectJsTaintedVars(ast, walkAST as (a: unknown, v: (n: TSESTree.Node) => void) => void);
 
-  // Second pass: check HTTP calls at the target line
+  // Check HTTP calls at the target line
   let found = false;
   walkAST(ast, (node: TSESTree.Node) => {
     if (found) return;
@@ -61,7 +31,7 @@ function hasSsrfAST(ast: AST, line: number, sanitizedVars: Map<string, Set<strin
       if (calleeName && HTTP_CALLEES.has(calleeName)) {
         const firstArg = node.arguments[0];
         // Direct user input: fetch(req.query.url)
-        if (isUserInput(firstArg)) {
+        if (isJsUserInput(firstArg)) {
           found = true;
           return;
         }
@@ -75,7 +45,7 @@ function hasSsrfAST(ast: AST, line: number, sanitizedVars: Map<string, Set<strin
         // Template literal with user input or tainted var
         if (firstArg.type === "TemplateLiteral" && firstArg.expressions.length > 0) {
           for (const expr of firstArg.expressions) {
-            if (isUserInput(expr)) {
+            if (isJsUserInput(expr)) {
               found = true;
               return;
             }
@@ -99,21 +69,6 @@ function getCalleeName(callee: TSESTree.Node): string | null {
   return null;
 }
 
-function isUserInput(node: TSESTree.Node): boolean {
-  if (node.type === "MemberExpression") {
-    const src = flattenMember(node);
-    return /^(req|request)\.(body|query|params|headers)/.test(src);
-  }
-  return false;
-}
-
-function flattenMember(node: TSESTree.MemberExpression): string {
-  const prop = node.property.type === "Identifier" ? node.property.name : "?";
-  if (node.object.type === "Identifier") return `${node.object.name}.${prop}`;
-  if (node.object.type === "MemberExpression") return `${flattenMember(node.object)}.${prop}`;
-  return prop;
-}
-
 // ── Python detection ──
 
 const PY_HTTP_FUNCS = new Map<string, Set<string>>([
@@ -126,8 +81,6 @@ const PY_HTTP_FUNCS = new Map<string, Set<string>>([
 const PY_SSRF_BASELINE =
   /\b(?:requests\.(?:get|post|put|patch|delete|head|options|request)|urllib\.(?:request\.)?(?:urlopen|urlretrieve)|httpx\.(?:get|post|put|patch|delete|head|options|request))\s*\(/;
 
-const PY_USER_INPUT = /\b(?:request\.\w+|input\s*\(|sys\.argv)/;
-
 function scanPySsrf(ctx: ScanContext): Vulnerability[] {
   const tree = ctx.treeSitterTree as TreeSitterTree | null;
   if (tree) return scanPySsrfTreeSitter(ctx, tree);
@@ -137,28 +90,7 @@ function scanPySsrf(ctx: ScanContext): Vulnerability[] {
 function scanPySsrfTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerability[] {
   const vulns: Vulnerability[] = [];
 
-  // Collect tainted variables
-  const tainted = new Set<string>();
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (PY_USER_INPUT.test(right.text)) tainted.add(left.text);
-  });
-  // Transitive
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (tainted.has(left.text)) return;
-    if (right.namedChildren.some((c: TreeSitterNode) =>
-      c.type === "identifier" && tainted.has(c.text)
-    )) {
-      tainted.add(left.text);
-    }
-  });
+  const tainted = collectPyTaintedVars(tree.rootNode, walkTreeSitter);
 
   // Collect sanitized variables (urllib.parse.quote, etc.)
   const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "ssrf");
@@ -227,11 +159,8 @@ function scanPySsrfRegex(ctx: ScanContext): Vulnerability[] {
   const sanitized = collectPySanitizedVarsRegex(ctx.lines, "ssrf");
 
   // Collect tainted vars
-  const tainted = new Set<string>();
-  for (const l of ctx.lines) {
-    const m = l.match(/^\s*(\w+)\s*=\s*.*\b(?:request\.\w+|input\s*\(|sys\.argv)/);
-    if (m && !sanitized.has(m[1])) tainted.add(m[1]);
-  }
+  const tainted = collectPyTaintedVarsRegex(ctx.lines);
+  for (const v of sanitized) tainted.delete(v);
 
   for (let i = 0; i < ctx.lines.length; i++) {
     const line = ctx.lines[i];

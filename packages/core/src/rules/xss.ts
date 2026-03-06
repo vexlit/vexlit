@@ -5,6 +5,7 @@ import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
 import { collectJsSanitizedVars, collectPySanitizedVars, collectPySanitizedVarsRegex, isJsSanitizerCall, surroundingHasSanitizer } from "../sanitizers.js";
+import { PY_USER_INPUT_WEB, collectPyTaintedVars } from "../sources.js";
 
 const XSS_PATTERNS: { name: string; pattern: RegExp }[] = [
   {
@@ -195,8 +196,6 @@ const PY_XSS_PATTERNS: { name: string; pattern: RegExp }[] = [
   },
 ];
 
-const PY_USER_INPUT_XSS = /\b(?:request\.\w+|input\s*\()/;
-
 function scanPyXss(ctx: ScanContext): Vulnerability[] {
   const vulns: Vulnerability[] = [];
   const tree = ctx.treeSitterTree as TreeSitterTree | null;
@@ -214,9 +213,9 @@ function scanPyXss(ctx: ScanContext): Vulnerability[] {
 
       // Skip if line only uses sanitized variables
       if ([...sanitizedRegex].some((v) => new RegExp(`\\b${v}\\b`).test(line)) &&
-          !PY_USER_INPUT_XSS.test(line)) continue;
+          !PY_USER_INPUT_WEB.test(line)) continue;
 
-      const isTainted = PY_USER_INPUT_XSS.test(line);
+      const isTainted = PY_USER_INPUT_WEB.test(line);
       vulns.push({
         ruleId: "VEXLIT-003",
         ruleName: "Cross-Site Scripting (XSS)",
@@ -240,15 +239,7 @@ function scanPyXss(ctx: ScanContext): Vulnerability[] {
 function scanPyXssTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerability[] {
   const vulns: Vulnerability[] = [];
 
-  // Collect tainted variables
-  const tainted = new Set<string>();
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (PY_USER_INPUT_XSS.test(right.text)) tainted.add(left.text);
-  });
+  const tainted = collectPyTaintedVars(tree.rootNode, walkTreeSitter, PY_USER_INPUT_WEB);
 
   // Collect sanitized variables (html.escape, markupsafe.escape, bleach.clean)
   const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "xss");
@@ -264,7 +255,7 @@ function scanPyXssTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabil
       if (!pattern.test(lineText)) continue;
 
       const isTainted =
-        PY_USER_INPUT_XSS.test(lineText) ||
+        PY_USER_INPUT_WEB.test(lineText) ||
         [...tainted].some((v) => new RegExp(`\\b${v}\\b`).test(lineText));
 
       // Skip if only sanitized variables are used on this line

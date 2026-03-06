@@ -5,6 +5,7 @@ import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
 import { collectJsSanitizedVars, collectPySanitizedVars, collectPySanitizedVarsRegex, surroundingHasSanitizer } from "../sanitizers.js";
+import { isJsUserInput, containsJsUserInputOrTainted, collectJsTaintedVars, PY_USER_INPUT, collectPyTaintedVars, collectPyTaintedVarsRegex } from "../sources.js";
 
 // ── JS/TS detection ──
 
@@ -21,49 +22,9 @@ const FS_METHODS = new Set([
   "unlink", "unlinkSync", "rmdir", "rmdirSync", "mkdir", "mkdirSync",
 ]);
 
-function collectTaintedVarsJS(ast: AST): Set<string> {
-  const tainted = new Set<string>();
-  walkAST(ast, (node: TSESTree.Node) => {
-    if (node.type === "VariableDeclarator" && node.init) {
-      if (isUserInputExpression(node.init)) {
-        if (node.id.type === "Identifier") tainted.add(node.id.name);
-        if (node.id.type === "ObjectPattern") {
-          for (const prop of node.id.properties) {
-            if (prop.type === "Property" && prop.value.type === "Identifier") {
-              tainted.add(prop.value.name);
-            }
-          }
-        }
-      }
-      // Destructuring: const { file } = req.query
-      if (
-        node.id.type === "ObjectPattern" &&
-        node.init.type === "MemberExpression" &&
-        isUserInputExpression(node.init)
-      ) {
-        for (const prop of node.id.properties) {
-          if (prop.type === "Property" && prop.value.type === "Identifier") {
-            tainted.add(prop.value.name);
-          }
-        }
-      }
-    }
-  });
-  return tainted;
-}
-
-function containsUserInputOrTainted(node: TSESTree.Node, tainted: Set<string>): boolean {
-  if (isUserInputExpression(node)) return true;
-  if (node.type === "Identifier" && tainted.has(node.name)) return true;
-  if (node.type === "BinaryExpression") {
-    return containsUserInputOrTainted(node.left, tainted) ||
-           containsUserInputOrTainted(node.right, tainted);
-  }
-  return false;
-}
 
 function hasPathTraversalAST(ast: AST, line: number, sanitizedVars: Map<string, Set<string>>): boolean {
-  const tainted = collectTaintedVarsJS(ast);
+  const tainted = collectJsTaintedVars(ast, walkAST as (a: unknown, v: (n: TSESTree.Node) => void) => void);
   // Remove sanitized vars from tainted
   for (const [name, cats] of sanitizedVars) {
     if (cats.has("path")) tainted.delete(name);
@@ -84,13 +45,13 @@ function hasPathTraversalAST(ast: AST, line: number, sanitizedVars: Map<string, 
       // fs.readFile(req.query.file) / fs.readFile("/data/" + file) / fs.readFile(file)
       if (FS_METHODS.has(calleeName)) {
         const firstArg = node.arguments[0];
-        if (isUserInputExpression(firstArg) || isUnsafeTemplate(firstArg)) {
+        if (isJsUserInput(firstArg) || isUnsafeTemplate(firstArg)) {
           found = true;
           return;
         }
         // BinaryExpression with tainted variable: "/data/" + file
         if (firstArg.type === "BinaryExpression" && firstArg.operator === "+") {
-          if (containsUserInputOrTainted(firstArg, tainted)) {
+          if (containsJsUserInputOrTainted(firstArg, tainted)) {
             found = true;
             return;
           }
@@ -110,7 +71,7 @@ function hasPathTraversalAST(ast: AST, line: number, sanitizedVars: Map<string, 
         node.callee.object.name === "path"
       ) {
         for (const arg of node.arguments) {
-          if (isUserInputExpression(arg)) {
+          if (isJsUserInput(arg)) {
             found = true;
             return;
           }
@@ -136,34 +97,13 @@ function getCalleeName(callee: TSESTree.Node): string | null {
   return null;
 }
 
-function isUserInputExpression(node: TSESTree.Node): boolean {
-  if (node.type === "MemberExpression") {
-    const src = flattenMember(node);
-    return /^(req|request)\.(params|query|body|headers)/.test(src);
-  }
-  return false;
-}
-
 function isUnsafeTemplate(node: TSESTree.Node): boolean {
   return node.type === "TemplateLiteral" && node.expressions.length > 0;
-}
-
-function flattenMember(node: TSESTree.MemberExpression): string {
-  const prop =
-    node.property.type === "Identifier" ? node.property.name : "?";
-  if (node.object.type === "Identifier") {
-    return `${node.object.name}.${prop}`;
-  }
-  if (node.object.type === "MemberExpression") {
-    return `${flattenMember(node.object)}.${prop}`;
-  }
-  return prop;
 }
 
 // ── Python detection ──
 
 const PY_FILE_FUNCS = new Set(["open"]);
-const PY_USER_INPUT = /\b(?:request\.\w+|input\s*\(|sys\.argv)/;
 
 const PY_PATH_TRAVERSAL_REGEX =
   /\bopen\s*\(\s*(?:request\.|f["']|["'][^"']*["']\s*\+)/;
@@ -177,28 +117,7 @@ function scanPyPathTraversal(ctx: ScanContext): Vulnerability[] {
 function scanPyPathTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerability[] {
   const vulns: Vulnerability[] = [];
 
-  // Collect tainted variables
-  const tainted = new Set<string>();
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (PY_USER_INPUT.test(right.text)) tainted.add(left.text);
-  });
-  // Transitive
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (tainted.has(left.text)) return;
-    if (right.namedChildren.some((c: TreeSitterNode) =>
-      c.type === "identifier" && tainted.has(c.text)
-    )) {
-      tainted.add(left.text);
-    }
-  });
+  const tainted = collectPyTaintedVars(tree.rootNode, walkTreeSitter);
 
   // Collect sanitized variables (os.path.basename, os.path.realpath, etc.)
   const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "path");
@@ -269,11 +188,8 @@ function scanPyPathRegex(ctx: ScanContext): Vulnerability[] {
   const sanitized = collectPySanitizedVarsRegex(ctx.lines, "path");
 
   // Collect tainted variables
-  const tainted = new Set<string>();
-  for (const l of ctx.lines) {
-    const m = l.match(/^\s*(\w+)\s*=\s*.*\b(?:request\.\w+|input\s*\(|sys\.argv)/);
-    if (m && !sanitized.has(m[1])) tainted.add(m[1]);
-  }
+  const tainted = collectPyTaintedVarsRegex(ctx.lines);
+  for (const v of sanitized) tainted.delete(v);
 
   for (let i = 0; i < ctx.lines.length; i++) {
     const line = ctx.lines[i];

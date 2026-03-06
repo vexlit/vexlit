@@ -5,6 +5,7 @@ import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
 import { collectJsSanitizedVars, isJsSanitizerCall, surroundingHasSanitizer } from "../sanitizers.js";
+import { isJsUserInput, containsJsUserInput, PY_USER_INPUT } from "../sources.js";
 
 // ── JS/TS detection ──
 
@@ -48,7 +49,7 @@ function hasCommandInjectionAST(ast: AST, line: number, sanitizedVars: Map<strin
         return;
       }
 
-      if (isUserInputExpression(firstArg)) {
+      if (isJsUserInput(firstArg)) {
         found = true;
         return;
       }
@@ -57,7 +58,7 @@ function hasCommandInjectionAST(ast: AST, line: number, sanitizedVars: Map<strin
       if (firstArg.type === "Identifier" && sanitizedVars.get(firstArg.name)?.has("cmd")) return;
 
       if (firstArg.type === "BinaryExpression" && firstArg.operator === "+") {
-        if (containsUserInput(firstArg)) {
+        if (containsJsUserInput(firstArg)) {
           found = true;
           return;
         }
@@ -78,33 +79,6 @@ function getCalleeName(callee: TSESTree.Node): string | null {
   return null;
 }
 
-function isUserInputExpression(node: TSESTree.Node): boolean {
-  if (node.type === "MemberExpression") {
-    const src = flattenMember(node);
-    return /^(req|request)\.(params|query|body|headers)/.test(src);
-  }
-  return false;
-}
-
-function containsUserInput(node: TSESTree.Node): boolean {
-  if (isUserInputExpression(node)) return true;
-  if (node.type === "BinaryExpression") {
-    return containsUserInput(node.left) || containsUserInput(node.right);
-  }
-  return false;
-}
-
-function flattenMember(node: TSESTree.MemberExpression): string {
-  const prop =
-    node.property.type === "Identifier" ? node.property.name : "?";
-  if (node.object.type === "Identifier") {
-    return `${node.object.name}.${prop}`;
-  }
-  if (node.object.type === "MemberExpression") {
-    return `${flattenMember(node.object)}.${prop}`;
-  }
-  return prop;
-}
 
 // ── Python detection ──
 
@@ -115,9 +89,6 @@ const PYTHON_DANGEROUS_FUNCS = new Map<string, Set<string>>([
 
 const PYTHON_CMD_BASELINE =
   /\b(?:os\.(?:system|popen)|subprocess\.(?:call|run|Popen|check_output|check_call))\s*\(/;
-
-const PYTHON_USER_INPUT =
-  /\b(?:request\.\w+|input\s*\(|sys\.argv)/;
 
 /** Known Python sanitizer functions that neutralize command injection */
 const PYTHON_SANITIZERS = new Set([
@@ -144,7 +115,7 @@ function isPySafeArg(node: TreeSitterNode, sanitized: Set<string>): boolean {
 /** Check if a tree-sitter node contains tainted data */
 function isPyTainted(node: TreeSitterNode, tainted: Set<string>): boolean {
   if (node.type === "identifier") return tainted.has(node.text);
-  if (PYTHON_USER_INPUT.test(node.text)) return true;
+  if (PY_USER_INPUT.test(node.text)) return true;
   if (node.type === "binary_operator" || node.type === "concatenated_string") {
     return node.namedChildren.some((c) => isPyTainted(c, tainted));
   }
@@ -154,7 +125,7 @@ function isPyTainted(node: TreeSitterNode, tainted: Set<string>): boolean {
   }
   // Call expression: request.args.get("host")
   if (node.type === "call") {
-    return PYTHON_USER_INPUT.test(node.text);
+    return PY_USER_INPUT.test(node.text);
   }
   return false;
 }
@@ -195,7 +166,7 @@ function collectPyTaintState(tree: TreeSitterTree): { tainted: Set<string>; sani
     const left = node.childForFieldName("left");
     const right = node.childForFieldName("right");
     if (!left || !right || left.type !== "identifier") return;
-    if (PYTHON_USER_INPUT.test(right.text)) {
+    if (PY_USER_INPUT.test(right.text)) {
       tainted.add(left.text);
     }
   });
@@ -232,7 +203,7 @@ function collectPyTaintState(tree: TreeSitterTree): { tainted: Set<string>; sani
 function isBinaryAllSanitized(node: TreeSitterNode, tainted: Set<string>, sanitized: Set<string>): boolean {
   if (node.type !== "binary_operator") return false;
   // If the expression contains direct user input patterns, it's not safe
-  if (PYTHON_USER_INPUT.test(node.text)) return false;
+  if (PY_USER_INPUT.test(node.text)) return false;
   // All identifier leaves must be either sanitized or not tainted
   const identifiers: TreeSitterNode[] = [];
   function collectIds(n: TreeSitterNode) {
@@ -350,7 +321,7 @@ function scanPyRegex(ctx: ScanContext): Vulnerability[] {
         ![...tainted].some((v) => new RegExp(`\\b${v}\\b`).test(line))) continue;
 
     const isTainted =
-      PYTHON_USER_INPUT.test(line) ||
+      PY_USER_INPUT.test(line) ||
       [...tainted].some((v) => new RegExp(`\\b${v}\\b`).test(line));
 
     vulns.push(makePyVuln(ctx, i + 1, isTainted));

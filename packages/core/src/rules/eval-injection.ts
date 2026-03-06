@@ -5,6 +5,7 @@ import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
 import { collectPySanitizedVars, isPySanitizerCallForCategory } from "../sanitizers.js";
+import { PY_USER_INPUT, collectPyTaintedVars } from "../sources.js";
 
 // ── JS/TS detection ──
 
@@ -33,7 +34,6 @@ function hasUnsafeEvalAtLine(ast: AST, line: number): boolean {
 // ── Python detection ──
 
 const PY_EVAL_EXEC_REGEX = /\b(?:eval|exec)\s*\(/;
-const PY_USER_INPUT = /\b(?:request\.\w+|input\s*\(|sys\.argv)/;
 
 function scanPyEval(ctx: ScanContext): Vulnerability[] {
   const vulns: Vulnerability[] = [];
@@ -75,28 +75,7 @@ function scanPyEval(ctx: ScanContext): Vulnerability[] {
 function scanPyEvalTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerability[] {
   const vulns: Vulnerability[] = [];
 
-  // Collect tainted variables
-  const tainted = new Set<string>();
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (PY_USER_INPUT.test(right.text)) tainted.add(left.text);
-  });
-  // Transitive
-  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    if (node.type !== "assignment") return;
-    const left = node.childForFieldName("left");
-    const right = node.childForFieldName("right");
-    if (!left || !right || left.type !== "identifier") return;
-    if (tainted.has(left.text)) return;
-    if (right.namedChildren.some((c: TreeSitterNode) =>
-      c.type === "identifier" && tainted.has(c.text)
-    )) {
-      tainted.add(left.text);
-    }
-  });
+  const tainted = collectPyTaintedVars(tree.rootNode, walkTreeSitter);
 
   // Collect sanitized variables (ast.literal_eval)
   const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "eval");
