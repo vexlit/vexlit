@@ -47,6 +47,7 @@ export const allRules: Rule[] = [
   pathTraversalRule,
   commandInjectionRule,
   evalInjectionRule,
+  unsafeFileAccessRule,
 ];
 
 export {
