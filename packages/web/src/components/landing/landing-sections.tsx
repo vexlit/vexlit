@@ -389,11 +389,11 @@ export function UsageMetrics() {
   return (
     <section className="border-t border-b border-gray-800 py-16 bg-gradient-to-b from-gray-950 to-gray-900/50">
       <ScrollReveal>
-        <div className="max-w-4xl mx-auto px-6">
+        <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
             Built for Developers
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-center">
             <div>
               <p className="text-3xl md:text-4xl font-bold text-red-400">263</p>
               <p className="text-gray-500 text-sm mt-1">Security Rules</p>
@@ -407,9 +407,111 @@ export function UsageMetrics() {
               <p className="text-gray-500 text-sm mt-1">OWASP Categories</p>
             </div>
             <div>
+              <p className="text-3xl md:text-4xl font-bold text-red-400">&lt;10s</p>
+              <p className="text-gray-500 text-sm mt-1">Avg Scan Time</p>
+            </div>
+            <div>
               <p className="text-3xl md:text-4xl font-bold text-red-400">100%</p>
               <p className="text-gray-500 text-sm mt-1">Free to Use</p>
             </div>
+          </div>
+        </div>
+      </ScrollReveal>
+    </section>
+  );
+}
+
+/* ─────────────────────────── Scan Output Preview ─────────────────────────── */
+
+const PREVIEW_FINDINGS = [
+  {
+    severity: "critical" as const,
+    rule: "SQL Injection",
+    id: "VEXLIT-002",
+    file: "api/users.js",
+    line: 42,
+    message: "User input directly interpolated into SQL query",
+    cwe: "CWE-89",
+  },
+  {
+    severity: "critical" as const,
+    rule: "Hardcoded Secret",
+    id: "VEXLIT-001",
+    file: "config/auth.ts",
+    line: 12,
+    message: "API key found in source code",
+    cwe: "CWE-798",
+  },
+  {
+    severity: "warning" as const,
+    rule: "SSRF",
+    id: "VEXLIT-012",
+    file: "lib/fetch.ts",
+    line: 28,
+    message: "User-controlled URL passed to fetch without validation",
+    cwe: "CWE-918",
+  },
+  {
+    severity: "info" as const,
+    rule: "Console Log",
+    id: "VEXLIT-045",
+    file: "utils/debug.js",
+    line: 5,
+    message: "Console statement left in production code",
+    cwe: "CWE-215",
+  },
+];
+
+const SEVERITY_STYLES = {
+  critical: "bg-red-500",
+  warning: "bg-yellow-500",
+  info: "bg-blue-500",
+};
+
+export function ScanOutputPreview() {
+  return (
+    <section className="max-w-4xl mx-auto px-6 py-20 border-t border-gray-800">
+      <ScrollReveal>
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
+          Clear, Actionable Results
+        </h2>
+        <p className="text-gray-400 text-center max-w-2xl mx-auto mb-10">
+          See exactly what was found, where, and how to fix it.
+        </p>
+      </ScrollReveal>
+
+      <ScrollReveal>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/80">
+            <div className="flex items-center gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+              <span className="text-white text-sm font-medium">Scan completed</span>
+              <span className="text-gray-600 text-xs">2.4s</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-red-500/10 text-red-400 rounded text-xs font-medium">2 critical</span>
+              <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-400 rounded text-xs font-medium">1 warning</span>
+              <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded text-xs font-medium">1 info</span>
+            </div>
+          </div>
+
+          {/* Findings */}
+          <div className="divide-y divide-gray-800/50">
+            {PREVIEW_FINDINGS.map((f) => (
+              <div key={f.id + f.line} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/30 transition-colors">
+                <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${SEVERITY_STYLES[f.severity]}`} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-white text-sm font-medium">{f.rule}</span>
+                    <span className="text-gray-600 text-xs font-mono">{f.id}</span>
+                    <span className="text-gray-600 text-xs">{f.cwe}</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mt-0.5">{f.message}</p>
+                  <p className="text-gray-600 text-xs mt-0.5 font-mono">{f.file}:{f.line}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </ScrollReveal>

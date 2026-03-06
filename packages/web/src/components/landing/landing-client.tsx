@@ -12,6 +12,7 @@ import {
   SupportedLanguages,
   ComparisonTable,
   UsageMetrics,
+  ScanOutputPreview,
 } from "./landing-sections";
 
 interface Rule {
@@ -140,6 +141,9 @@ export function LandingClient({
 
       {/* Before/After Demo */}
       <BeforeAfterDemo />
+
+      {/* Scan Output Preview */}
+      <ScanOutputPreview />
 
       {/* How It Works */}
       <HowItWorks />
