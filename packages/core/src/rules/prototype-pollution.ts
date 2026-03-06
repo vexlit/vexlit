@@ -3,13 +3,28 @@ import type { TSESTree } from "@typescript-eslint/typescript-estree";
 import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
 
-const PROTO_REGEX = /__proto__|Object\.assign\s*\(\s*\{|\.constructor\.prototype/;
+const PROTO_REGEX =
+  /__proto__|Object\.assign\s*\(|\.constructor\.prototype|for\s*\(.*\bin\b|_\.merge\s*\(|lodash\.merge\s*\(|merge\s*\(|deepmerge\s*\(/;
 
 function hasPrototypePollutionAST(ast: AST, line: number): boolean {
   let found = false;
   walkAST(ast, (node: TSESTree.Node) => {
     if (found) return;
-    if (!node.loc || node.loc.start.line !== line) return;
+    if (!node.loc) return;
+
+    // for..in loop with direct assignment (no hasOwnProperty guard)
+    if (
+      node.type === "ForInStatement" &&
+      node.loc.start.line <= line &&
+      node.loc.end.line >= line
+    ) {
+      if (!hasHasOwnPropertyGuard(node.body)) {
+        found = true;
+      }
+      return;
+    }
+
+    if (node.loc.start.line !== line) return;
 
     // __proto__ access
     if (
@@ -48,8 +63,47 @@ function hasPrototypePollutionAST(ast: AST, line: number): boolean {
     ) {
       found = true;
     }
+
+    // lodash.merge / _.merge / deepmerge calls
+    if (node.type === "CallExpression" && node.loc?.start.line === line) {
+      const name = getCallName(node);
+      if (
+        name === "_.merge" ||
+        name === "_.defaultsDeep" ||
+        name === "lodash.merge" ||
+        name === "merge" ||
+        name === "deepmerge"
+      ) {
+        found = true;
+      }
+    }
   });
   return found;
+}
+
+function hasHasOwnPropertyGuard(body: TSESTree.Node): boolean {
+  let hasGuard = false;
+  walkAST(body as AST, (node: TSESTree.Node) => {
+    if (hasGuard) return;
+    // if (obj.hasOwnProperty(key)) or if (Object.hasOwn(obj, key))
+    if (node.type === "CallExpression") {
+      const name = getCallName(node);
+      if (
+        name?.endsWith(".hasOwnProperty") ||
+        name === "Object.hasOwn" ||
+        name === "Object.prototype.hasOwnProperty.call"
+      ) {
+        hasGuard = true;
+      }
+    }
+  });
+  return hasGuard;
+}
+
+function getCallName(node: TSESTree.CallExpression): string | null {
+  if (node.callee.type === "Identifier") return node.callee.name;
+  if (node.callee.type === "MemberExpression") return flattenMember(node.callee);
+  return null;
 }
 
 function isUserInput(node: TSESTree.Node): boolean {
@@ -89,7 +143,7 @@ export const prototypePollutionRule: Rule = {
 
       vulnerabilities.push({
         ruleId: this.id, ruleName: this.name, severity: this.severity,
-        message: "Prototype pollution — __proto__ or unsafe Object.assign with user input",
+        message: "Prototype pollution — unsafe object merge or __proto__ access",
         filePath: ctx.filePath, line: lineNum, column: 1,
         snippet: ctx.lines[i].trim(),
         cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
