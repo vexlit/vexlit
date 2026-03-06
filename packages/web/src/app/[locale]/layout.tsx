@@ -39,12 +39,13 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const [common, landing, dashboard, settings, docs] = await Promise.all([
+  const [common, landing, dashboard, settings, docs, pricing] = await Promise.all([
     import(`../../../messages/${locale}/common.json`),
     import(`../../../messages/${locale}/landing.json`),
     import(`../../../messages/${locale}/dashboard.json`),
     import(`../../../messages/${locale}/settings.json`),
     import(`../../../messages/${locale}/docs.json`),
+    import(`../../../messages/${locale}/pricing.json`),
   ]);
   const messages = {
     ...common.default,
@@ -52,6 +53,7 @@ export default async function LocaleLayout({
     ...dashboard.default,
     ...settings.default,
     ...docs.default,
+    ...pricing.default,
   };
 
   return (

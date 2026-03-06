@@ -98,7 +98,7 @@ function useNavItems(): NavItem[] {
         { label: "GitHub", description: "", href: "https://github.com/vexlit/vexlit", icon: DROPDOWN_ICONS.github },
       ],
     },
-    { label: t("pricing"), href: "/#pricing" },
+    { label: t("pricing"), href: "/pricing" },
   ], [t]);
 }
 

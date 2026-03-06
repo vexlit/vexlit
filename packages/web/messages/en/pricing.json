@@ -1,0 +1,89 @@
+{
+  "pricing": {
+    "title": "Simple, transparent pricing",
+    "subtitle": "Start free. Upgrade when your team needs more.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "yearlyDiscount": "Save 20%",
+    "free": {
+      "name": "Free",
+      "price": "$0",
+      "period": "forever",
+      "description": "For individual developers exploring security scanning.",
+      "cta": "Get Started Free",
+      "features": [
+        "3 projects",
+        "10 scans per month",
+        "File upload scan",
+        "85+ SAST rules",
+        "200+ secret detectors",
+        "SARIF export",
+        "Community support"
+      ]
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$19",
+      "period": "/month",
+      "yearlyPrice": "$15",
+      "description": "For developers who need full scanning power and AI features.",
+      "cta": "Upgrade to Pro",
+      "badge": "Most Popular",
+      "features": [
+        "Unlimited projects",
+        "Unlimited scans",
+        "GitHub repo scan",
+        "AI-powered fix suggestions",
+        "AI false positive filtering",
+        "Scan history & trends",
+        "Priority support",
+        "Everything in Free"
+      ]
+    },
+    "team": {
+      "name": "Team",
+      "price": "$49",
+      "period": "/month",
+      "yearlyPrice": "$39",
+      "description": "For teams that need collaboration and shared security oversight.",
+      "cta": "Start Team Trial",
+      "features": [
+        "Up to 25 team members",
+        "Shared dashboard",
+        "PR auto-review (coming soon)",
+        "Scheduled scans (coming soon)",
+        "Slack / Discord alerts (coming soon)",
+        "API access",
+        "Role-based access control",
+        "Everything in Pro"
+      ]
+    },
+    "faqTitle": "Frequently asked questions",
+    "faq": [
+      {
+        "q": "Can I use VEXLIT for free?",
+        "a": "Yes. The Free plan includes 3 projects and 10 scans per month with full SAST rule coverage. No credit card required."
+      },
+      {
+        "q": "What payment methods do you accept?",
+        "a": "We accept all major credit and debit cards through Stripe. Invoicing is available for Team plans."
+      },
+      {
+        "q": "Can I cancel anytime?",
+        "a": "Yes. You can cancel your subscription at any time. You'll continue to have access until the end of your billing period."
+      },
+      {
+        "q": "What happens when I exceed the Free plan limits?",
+        "a": "You'll be prompted to upgrade. Your existing scan history and results are always preserved."
+      },
+      {
+        "q": "Is the CLI still free and open source?",
+        "a": "Yes. The CLI and core engine remain MIT-licensed and free to use locally or in CI/CD. The web dashboard plans add cloud features."
+      }
+    ],
+    "ctaTitle": "Ready to secure your code?",
+    "ctaDescription": "Start scanning for free. No credit card required.",
+    "ctaButton": "Get Started Free",
+    "comingSoonBadge": "Coming Soon"
+  }
+}
