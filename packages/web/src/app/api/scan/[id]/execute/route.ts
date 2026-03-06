@@ -2,6 +2,9 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { NextResponse } from "next/server";
 
+// Process files in chunks to stay within serverless timeout
+const CHUNK_SIZE = 10;
+
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -34,14 +37,13 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Skip if already completed, failed, or already running
+  // Skip if already completed or failed
   if (scan.status === "completed" || scan.status === "failed") {
     return NextResponse.json({ status: scan.status });
   }
 
-  if (scan.status === "running") {
-    return NextResponse.json({ status: "running" });
-  }
+  // Allow re-entry for "running" status — this enables chunk continuation
+  // The client calls execute repeatedly; each call processes the next chunk
 
   const files = (scan.file_contents ?? []) as {
     path: string;
@@ -51,21 +53,34 @@ export async function POST(
   if (!files.length) {
     await admin
       .from("scans")
-      .update({ status: "failed", error_message: "No files to scan" })
+      .update({
+        status: scan.status === "pending" ? "failed" : "completed",
+        error_message: scan.status === "pending" ? "No files to scan" : null,
+        file_contents: null,
+        completed_at: new Date().toISOString(),
+      })
       .eq("id", id);
-    return NextResponse.json({ status: "failed" });
+    return NextResponse.json({
+      status: scan.status === "pending" ? "failed" : "completed",
+    });
   }
 
   const startTime = Date.now();
 
   try {
-    // Mark as running
-    await admin.from("scans").update({ status: "running" }).eq("id", id);
+    // Mark as running (only on first chunk)
+    if (scan.status === "pending") {
+      await admin.from("scans").update({ status: "running" }).eq("id", id);
+    }
 
     const { RuleEngine } = await import("@vexlit/core");
     const engine = new RuleEngine();
 
-    const allVulnerabilities: {
+    // Take only a chunk of files to process within timeout
+    const chunk = files.slice(0, CHUNK_SIZE);
+    const remaining = files.slice(CHUNK_SIZE);
+
+    const chunkVulnerabilities: {
       scan_id: string;
       rule_id: string;
       rule_name: string;
@@ -90,7 +105,7 @@ export async function POST(
       ".py": "python",
     };
 
-    for (const file of files) {
+    for (const file of chunk) {
       const ext = "." + file.path.split(".").pop()?.toLowerCase();
       const language = extMap[ext];
       if (!language) continue;
@@ -98,7 +113,7 @@ export async function POST(
       const vulns = engine.execute(file.path, file.content, language);
 
       for (const v of vulns) {
-        allVulnerabilities.push({
+        chunkVulnerabilities.push({
           scan_id: id,
           rule_id: v.ruleId,
           rule_name: v.ruleName,
@@ -115,27 +130,51 @@ export async function POST(
       }
     }
 
-    // Insert vulnerabilities
-    if (allVulnerabilities.length > 0) {
-      await admin.from("vulnerabilities").insert(allVulnerabilities);
+    // Insert this chunk's vulnerabilities
+    if (chunkVulnerabilities.length > 0) {
+      await admin.from("vulnerabilities").insert(chunkVulnerabilities);
     }
 
-    // Count by severity
+    if (remaining.length > 0) {
+      // More files to process — update remaining files, keep status as running
+      await admin
+        .from("scans")
+        .update({ file_contents: remaining })
+        .eq("id", id);
+
+      return NextResponse.json({
+        status: "running",
+        processed: chunk.length,
+        remaining: remaining.length,
+      });
+    }
+
+    // All files processed — finalize scan
+    // Count all vulnerabilities for this scan
+    const { count: totalCount } = await admin
+      .from("vulnerabilities")
+      .select("*", { count: "exact", head: true })
+      .eq("scan_id", id);
+
+    const { data: severityCounts } = await admin
+      .from("vulnerabilities")
+      .select("severity")
+      .eq("scan_id", id);
+
     let critical = 0,
       warning = 0,
       info = 0;
-    for (const v of allVulnerabilities) {
+    for (const v of severityCounts ?? []) {
       if (v.severity === "critical") critical++;
       else if (v.severity === "warning") warning++;
       else info++;
     }
 
-    // Update scan as completed, clear file_contents to save space
     await admin
       .from("scans")
       .update({
         status: "completed",
-        total_vulnerabilities: allVulnerabilities.length,
+        total_vulnerabilities: totalCount ?? 0,
         critical_count: critical,
         warning_count: warning,
         info_count: info,

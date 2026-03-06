@@ -11,12 +11,14 @@ export function ScanPolling({
   createdAt: string;
 }) {
   const router = useRouter();
-  const triggered = useRef(false);
+  const executing = useRef(false);
   const [elapsed, setElapsed] = useState(() =>
     Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000))
   );
 
   useEffect(() => {
+    let stopped = false;
+
     // Timer based on server-side createdAt (survives refresh)
     const timer = setInterval(() => {
       setElapsed(
@@ -27,13 +29,44 @@ export function ScanPolling({
       );
     }, 1000);
 
-    // Trigger scan execution (once)
-    if (!triggered.current) {
-      triggered.current = true;
-      fetch(`/api/scan/${scanId}/execute`, { method: "POST" }).catch(() => {});
+    // Execute chunks until done
+    async function runExecute() {
+      if (executing.current || stopped) return;
+      executing.current = true;
+
+      try {
+        const res = await fetch(`/api/scan/${scanId}/execute`, {
+          method: "POST",
+        });
+        if (!res.ok) {
+          executing.current = false;
+          return;
+        }
+        const data = await res.json();
+
+        if (data.status === "completed" || data.status === "failed") {
+          clearInterval(timer);
+          clearInterval(poll);
+          if (!stopped) router.refresh();
+          return;
+        }
+
+        // If still running (more chunks), call again after short delay
+        if (data.status === "running" && data.remaining > 0) {
+          executing.current = false;
+          if (!stopped) setTimeout(runExecute, 500);
+          return;
+        }
+      } catch {
+        // retry via polling
+      }
+      executing.current = false;
     }
 
-    // Poll for completion
+    // Start execution
+    runExecute();
+
+    // Fallback polling (in case execute calls fail)
     const poll = setInterval(async () => {
       try {
         const res = await fetch(`/api/scan/${scanId}`);
@@ -42,14 +75,15 @@ export function ScanPolling({
         if (scan.status === "completed" || scan.status === "failed") {
           clearInterval(poll);
           clearInterval(timer);
-          router.refresh();
+          if (!stopped) router.refresh();
         }
       } catch {
         // retry on next interval
       }
-    }, 2000);
+    }, 3000);
 
     return () => {
+      stopped = true;
       clearInterval(poll);
       clearInterval(timer);
     };
