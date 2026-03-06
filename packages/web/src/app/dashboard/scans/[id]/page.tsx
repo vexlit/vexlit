@@ -1,6 +1,9 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
 import { ScanPolling } from "@/components/scan-polling";
+import { AiExplainButton } from "@/components/ai-explain-button";
+import { AiFixButton } from "@/components/ai-fix-button";
+import { AiReportButton } from "@/components/ai-report-button";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Scan, Vulnerability } from "@/lib/types";
@@ -96,6 +99,11 @@ export default async function ScanDetailPage({
         </p>
       )}
 
+      {/* AI Report button */}
+      {typedScan.status === "completed" && vulns.length > 0 && (
+        <AiReportButton scanId={id} />
+      )}
+
       {/* Pending/Running state */}
       {(typedScan.status === "pending" || typedScan.status === "running") && (
         <ScanPolling scanId={id} createdAt={typedScan.created_at} />
@@ -175,6 +183,28 @@ export default async function ScanDetailPage({
                           {v.owasp}
                         </span>
                       )}
+                    </div>
+
+                    {/* AI Actions */}
+                    <div className="flex gap-2 mt-3">
+                      <AiExplainButton
+                        ruleName={v.rule_name}
+                        severity={v.severity}
+                        message={v.message}
+                        filePath={v.file_path}
+                        line={v.line}
+                        snippet={v.snippet}
+                        cwe={v.cwe}
+                        owasp={v.owasp}
+                      />
+                      <AiFixButton
+                        ruleName={v.rule_name}
+                        message={v.message}
+                        filePath={v.file_path}
+                        line={v.line}
+                        snippet={v.snippet}
+                        suggestion={v.suggestion}
+                      />
                     </div>
                   </div>
                 </div>

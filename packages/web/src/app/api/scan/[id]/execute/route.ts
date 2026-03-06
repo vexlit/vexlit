@@ -55,19 +55,6 @@ export async function POST(
     return NextResponse.json({ status: scan.status });
   }
 
-  // Debug: log scan state for troubleshooting
-  console.log("[execute] scan state:", {
-    id: scan.id,
-    status: scan.status,
-    hasGithubMeta: !!scan.github_meta,
-    githubMeta: scan.github_meta,
-    hasFileContents: !!scan.file_contents,
-    fileContentsLength: Array.isArray(scan.file_contents)
-      ? scan.file_contents.length
-      : null,
-    hasProviderToken: !!session.provider_token,
-  });
-
   const startTime = Date.now();
 
   try {
@@ -209,12 +196,11 @@ export async function POST(
     }[];
 
     if (!files.length) {
-      const debugInfo = `No files to scan | status=${scan.status} | github_meta=${JSON.stringify(scan.github_meta)} | has_provider_token=${!!session.provider_token} | file_contents_type=${typeof scan.file_contents}`;
       await admin
         .from("scans")
         .update({
           status: scan.status === "pending" ? "failed" : "completed",
-          error_message: scan.status === "pending" ? debugInfo : null,
+          error_message: scan.status === "pending" ? "No files to scan" : null,
           file_contents: null,
           completed_at: new Date().toISOString(),
         })
