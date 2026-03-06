@@ -188,6 +188,8 @@ export default async function ScanDetailPage({
                     {/* AI Actions */}
                     <div className="flex gap-2 mt-3">
                       <AiExplainButton
+                        scanId={id}
+                        vulnId={v.id}
                         ruleName={v.rule_name}
                         severity={v.severity}
                         message={v.message}
@@ -198,6 +200,8 @@ export default async function ScanDetailPage({
                         owasp={v.owasp}
                       />
                       <AiFixButton
+                        scanId={id}
+                        vulnId={v.id}
                         ruleName={v.rule_name}
                         message={v.message}
                         filePath={v.file_path}

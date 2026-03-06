@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 interface Props {
+  scanId: string;
+  vulnId: string;
   ruleName: string;
   message: string;
   filePath: string;
@@ -11,8 +13,16 @@ interface Props {
   suggestion: string | null;
 }
 
-export function AiFixButton(props: Props) {
-  const [fix, setFix] = useState<string | null>(null);
+function getCacheKey(scanId: string, vulnId: string) {
+  return `vexlit-ai-${scanId}-${vulnId}-fix`;
+}
+
+export function AiFixButton({ scanId, vulnId, ...props }: Props) {
+  const cacheKey = getCacheKey(scanId, vulnId);
+  const [fix, setFix] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(cacheKey);
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -43,6 +53,7 @@ export function AiFixButton(props: Props) {
       }
 
       setFix(data.fix);
+      localStorage.setItem(cacheKey, data.fix);
       setOpen(true);
     } catch {
       setError("Network error");

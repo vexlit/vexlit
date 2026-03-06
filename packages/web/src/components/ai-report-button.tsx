@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 
+function getCacheKey(scanId: string) {
+  return `vexlit-ai-${scanId}-report`;
+}
+
 export function AiReportButton({ scanId }: { scanId: string }) {
-  const [report, setReport] = useState<string | null>(null);
+  const cacheKey = getCacheKey(scanId);
+  const [report, setReport] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(cacheKey);
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -31,6 +39,7 @@ export function AiReportButton({ scanId }: { scanId: string }) {
       }
 
       setReport(data.report);
+      localStorage.setItem(cacheKey, data.report);
       setOpen(true);
     } catch {
       setError("Network error");
