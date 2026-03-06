@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAiCache, setAiCache } from "@/lib/ai-cache";
 
 interface Props {
   scanId: string;
@@ -13,16 +14,9 @@ interface Props {
   suggestion: string | null;
 }
 
-function getCacheKey(scanId: string, vulnId: string) {
-  return `vexlit-ai-${scanId}-${vulnId}-fix`;
-}
-
 export function AiFixButton({ scanId, vulnId, ...props }: Props) {
-  const cacheKey = getCacheKey(scanId, vulnId);
-  const [fix, setFix] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(cacheKey);
-  });
+  const cacheKey = `vexlit-ai-${scanId}-${vulnId}-fix`;
+  const [fix, setFix] = useState<string | null>(() => getAiCache(cacheKey));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -53,7 +47,7 @@ export function AiFixButton({ scanId, vulnId, ...props }: Props) {
       }
 
       setFix(data.fix);
-      localStorage.setItem(cacheKey, data.fix);
+      setAiCache(cacheKey, data.fix);
       setOpen(true);
     } catch {
       setError("Network error");

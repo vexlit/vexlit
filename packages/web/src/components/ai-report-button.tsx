@@ -1,17 +1,13 @@
 "use client";
 
 import { useState } from "react";
-
-function getCacheKey(scanId: string) {
-  return `vexlit-ai-${scanId}-report`;
-}
+import { getAiCache, setAiCache } from "@/lib/ai-cache";
 
 export function AiReportButton({ scanId }: { scanId: string }) {
-  const cacheKey = getCacheKey(scanId);
-  const [report, setReport] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(cacheKey);
-  });
+  const cacheKey = `vexlit-ai-${scanId}-report`;
+  const [report, setReport] = useState<string | null>(() =>
+    getAiCache(cacheKey)
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -39,7 +35,7 @@ export function AiReportButton({ scanId }: { scanId: string }) {
       }
 
       setReport(data.report);
-      localStorage.setItem(cacheKey, data.report);
+      setAiCache(cacheKey, data.report);
       setOpen(true);
     } catch {
       setError("Network error");

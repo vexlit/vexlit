@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAiCache, setAiCache } from "@/lib/ai-cache";
 
 interface Props {
   scanId: string;
@@ -15,16 +16,11 @@ interface Props {
   owasp: string | null;
 }
 
-function getCacheKey(scanId: string, vulnId: string) {
-  return `vexlit-ai-${scanId}-${vulnId}-explain`;
-}
-
 export function AiExplainButton({ scanId, vulnId, ...props }: Props) {
-  const cacheKey = getCacheKey(scanId, vulnId);
-  const [explanation, setExplanation] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(cacheKey);
-  });
+  const cacheKey = `vexlit-ai-${scanId}-${vulnId}-explain`;
+  const [explanation, setExplanation] = useState<string | null>(() =>
+    getAiCache(cacheKey)
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -52,7 +48,7 @@ export function AiExplainButton({ scanId, vulnId, ...props }: Props) {
       }
 
       setExplanation(data.explanation);
-      localStorage.setItem(cacheKey, data.explanation);
+      setAiCache(cacheKey, data.explanation);
       setOpen(true);
     } catch {
       setError("Network error");
