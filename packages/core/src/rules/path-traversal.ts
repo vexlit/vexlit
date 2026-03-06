@@ -4,6 +4,7 @@ import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
+import { collectJsSanitizedVars, collectPySanitizedVars, collectPySanitizedVarsRegex, surroundingHasSanitizer } from "../sanitizers.js";
 
 // ── JS/TS detection ──
 
@@ -61,8 +62,12 @@ function containsUserInputOrTainted(node: TSESTree.Node, tainted: Set<string>): 
   return false;
 }
 
-function hasPathTraversalAST(ast: AST, line: number): boolean {
+function hasPathTraversalAST(ast: AST, line: number, sanitizedVars: Map<string, Set<string>>): boolean {
   const tainted = collectTaintedVarsJS(ast);
+  // Remove sanitized vars from tainted
+  for (const [name, cats] of sanitizedVars) {
+    if (cats.has("path")) tainted.delete(name);
+  }
 
   let found = false;
   walkAST(ast, (node: TSESTree.Node) => {
@@ -195,6 +200,10 @@ function scanPyPathTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabi
     }
   });
 
+  // Collect sanitized variables (os.path.basename, os.path.realpath, etc.)
+  const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "path");
+  for (const v of sanitized) tainted.delete(v);
+
   walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
     if (node.type !== "call") return;
     const func = node.childForFieldName("function");
@@ -256,11 +265,14 @@ function scanPyPathTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabi
 function scanPyPathRegex(ctx: ScanContext): Vulnerability[] {
   const vulns: Vulnerability[] = [];
 
+  // Collect sanitized variables
+  const sanitized = collectPySanitizedVarsRegex(ctx.lines, "path");
+
   // Collect tainted variables
   const tainted = new Set<string>();
   for (const l of ctx.lines) {
     const m = l.match(/^\s*(\w+)\s*=\s*.*\b(?:request\.\w+|input\s*\(|sys\.argv)/);
-    if (m) tainted.add(m[1]);
+    if (m && !sanitized.has(m[1])) tainted.add(m[1]);
   }
 
   for (let i = 0; i < ctx.lines.length; i++) {
@@ -317,6 +329,10 @@ export const pathTraversalRule: Rule = {
     const vulnerabilities: Vulnerability[] = [];
     const ast = ctx.ast as AST | null;
 
+    const sanitizedVars = ast
+      ? collectJsSanitizedVars(ast, walkAST as (a: unknown, v: (n: TSESTree.Node) => void) => void)
+      : new Map<string, Set<string>>();
+
     for (let i = 0; i < ctx.lines.length; i++) {
       const line = ctx.lines[i];
       if (!PATH_TRAVERSAL_REGEX.test(line) && !PATH_JOIN_REGEX.test(line)) continue;
@@ -324,7 +340,13 @@ export const pathTraversalRule: Rule = {
       const lineNum = i + 1;
 
       if (ast) {
-        if (!hasPathTraversalAST(ast, lineNum)) continue;
+        if (!hasPathTraversalAST(ast, lineNum, sanitizedVars)) continue;
+      }
+
+      // Lower confidence if path boundary check is nearby
+      let confidence: "high" | "medium" | "low" = "high";
+      if (surroundingHasSanitizer(ctx.lines, i, "path", ctx.language as "javascript" | "typescript")) {
+        confidence = "medium";
       }
 
       vulnerabilities.push({
@@ -333,7 +355,7 @@ export const pathTraversalRule: Rule = {
         filePath: ctx.filePath, line: lineNum, column: 1,
         snippet: line.trim(),
         cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
-          confidence: "high",
+        confidence,
       });
     }
     return vulnerabilities;

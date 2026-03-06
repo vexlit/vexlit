@@ -4,6 +4,7 @@ import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
+import { collectJsSanitizedVars, collectPySanitizedVars, collectPySanitizedVarsRegex, isJsSanitizerCall, hasJsNumericGuard } from "../sanitizers.js";
 
 // ── Shared ──
 
@@ -24,7 +25,7 @@ const SQL_INJECTION_PATTERNS: { name: string; pattern: RegExp }[] = [
   },
 ];
 
-function hasSqlConcatAtLine(ast: AST, line: number): boolean {
+function hasSqlConcatAtLine(ast: AST, line: number, sanitizedVars: Map<string, Set<string>>): boolean {
   let found = false;
   walkAST(ast, (node: TSESTree.Node) => {
     if (found) return;
@@ -36,8 +37,9 @@ function hasSqlConcatAtLine(ast: AST, line: number): boolean {
       node.loc &&
       node.loc.start.line === line
     ) {
-      // Check if left side contains a SQL keyword string literal
       if (containsSqlLiteral(node.left)) {
+        // Safe if right side is sanitized (parseInt, Number, mysql.escape, etc.)
+        if (isSqlSanitizedExpr(node.right, sanitizedVars)) return;
         found = true;
       }
     }
@@ -52,11 +54,19 @@ function hasSqlConcatAtLine(ast: AST, line: number): boolean {
     ) {
       const quasis = node.quasis.map((q) => q.value.raw).join("");
       if (SQL_KEYWORDS.test(quasis)) {
-        found = true;
+        // Safe if all interpolated expressions are sanitized
+        const allSafe = node.expressions.every((expr) => isSqlSanitizedExpr(expr, sanitizedVars));
+        if (!allSafe) found = true;
       }
     }
   });
   return found;
+}
+
+function isSqlSanitizedExpr(node: TSESTree.Node, sanitizedVars: Map<string, Set<string>>): boolean {
+  if (isJsSanitizerCall(node, "sql")) return true;
+  if (node.type === "Identifier" && sanitizedVars.get(node.name)?.has("sql")) return true;
+  return false;
 }
 
 function containsSqlLiteral(node: TSESTree.Node): boolean {
@@ -134,6 +144,10 @@ function scanPySqlTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabil
       userTainted.add(left.text);
     }
   });
+
+  // Collect sanitized variables: safe_id = int(user_id)
+  const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "sql");
+  for (const v of sanitized) userTainted.delete(v);
 
   // Track variables containing SQL strings built from concatenation/f-string
   const sqlTainted = new Set<string>();
@@ -213,11 +227,15 @@ function scanPySqlTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabil
 function scanPySqlRegex(ctx: ScanContext): Vulnerability[] {
   const vulns: Vulnerability[] = [];
 
+  // Collect sanitized variables
+  const sanitized = collectPySanitizedVarsRegex(ctx.lines, "sql");
+
   // Track SQL-tainted variables: query = "SELECT..." + var
   const sqlTainted = new Set<string>();
   for (const l of ctx.lines) {
     const m = l.match(/^\s*(\w+)\s*=/);
     if (!m) continue;
+    if (sanitized.has(m[1])) continue; // skip sanitized vars
     const rhs = l.slice(l.indexOf("=") + 1);
     if (SQL_KEYWORDS.test(rhs) && /[+]|\.format\s*\(|^.*f["']/.test(rhs)) {
       sqlTainted.add(m[1]);
@@ -296,6 +314,10 @@ export const sqlInjectionRule: Rule = {
     const vulnerabilities: Vulnerability[] = [];
     const ast = ctx.ast as AST | null;
 
+    const sanitizedVars = ast
+      ? collectJsSanitizedVars(ast, walkAST as (a: unknown, v: (n: TSESTree.Node) => void) => void)
+      : new Map<string, Set<string>>();
+
     for (let i = 0; i < ctx.lines.length; i++) {
       const line = ctx.lines[i];
 
@@ -306,7 +328,13 @@ export const sqlInjectionRule: Rule = {
 
         // AST verification for JS/TS: confirm BinaryExpression or TemplateLiteral
         if (ast) {
-          if (!hasSqlConcatAtLine(ast, lineNum)) continue;
+          if (!hasSqlConcatAtLine(ast, lineNum, sanitizedVars)) continue;
+        }
+
+        // Lower confidence if numeric guard (isNaN/isFinite) is present nearby
+        let confidence: "high" | "medium" | "low" = "high";
+        if (hasJsNumericGuard(ctx.lines, i)) {
+          confidence = "medium";
         }
 
         vulnerabilities.push({
@@ -321,7 +349,7 @@ export const sqlInjectionRule: Rule = {
           cwe: this.cwe,
           owasp: this.owasp,
           suggestion: this.suggestion,
-          confidence: "high",
+          confidence,
         });
       }
     }

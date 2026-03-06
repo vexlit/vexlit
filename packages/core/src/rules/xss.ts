@@ -4,6 +4,7 @@ import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
+import { collectJsSanitizedVars, collectPySanitizedVars, collectPySanitizedVarsRegex, isJsSanitizerCall, surroundingHasSanitizer } from "../sanitizers.js";
 
 const XSS_PATTERNS: { name: string; pattern: RegExp }[] = [
   {
@@ -32,7 +33,7 @@ const XSS_PATTERNS: { name: string; pattern: RegExp }[] = [
   },
 ];
 
-function hasInnerHtmlAssignmentAtLine(ast: AST, line: number): boolean {
+function hasInnerHtmlAssignmentAtLine(ast: AST, line: number, sanitizedVars: Map<string, Set<string>>): boolean {
   let found = false;
   walkAST(ast, (node: TSESTree.Node) => {
     if (found) return;
@@ -46,10 +47,13 @@ function hasInnerHtmlAssignmentAtLine(ast: AST, line: number): boolean {
       node.left.property.type === "Identifier" &&
       (node.left.property.name === "innerHTML" || node.left.property.name === "outerHTML")
     ) {
-      // Only flag if right side is NOT a static string literal
-      if (node.right.type !== "Literal") {
-        found = true;
-      }
+      // Safe: static string literal
+      if (node.right.type === "Literal") return;
+      // Safe: sanitizer call — DOMPurify.sanitize(x), sanitizeHtml(x)
+      if (isJsSanitizerCall(node.right, "xss")) return;
+      // Safe: variable that was previously sanitized
+      if (node.right.type === "Identifier" && sanitizedVars.get(node.right.name)?.has("xss")) return;
+      found = true;
     }
   });
   return found;
@@ -105,7 +109,7 @@ function hasDangerouslySetInnerHTMLAtLine(ast: AST, line: number): boolean {
   return found;
 }
 
-function hasResSendWithTemplateAtLine(ast: AST, line: number): boolean {
+function hasResSendWithTemplateAtLine(ast: AST, line: number, sanitizedVars: Map<string, Set<string>>): boolean {
   let found = false;
   walkAST(ast, (node: TSESTree.Node) => {
     if (found) return;
@@ -122,12 +126,17 @@ function hasResSendWithTemplateAtLine(ast: AST, line: number): boolean {
       const firstArg = node.arguments[0];
       // res.send(`...${expr}...`)
       if (firstArg.type === "TemplateLiteral" && firstArg.expressions.length > 0) {
-        found = true;
+        // Safe if all interpolated expressions are sanitized
+        const allSanitized = firstArg.expressions.every((expr) =>
+          isJsSanitizerCall(expr, "xss") ||
+          (expr.type === "Identifier" && sanitizedVars.get(expr.name)?.has("xss"))
+        );
+        if (!allSanitized) found = true;
         return;
       }
       // res.send("<h1>" + name + "</h1>")
       if (firstArg.type === "BinaryExpression" && firstArg.operator === "+") {
-        if (containsHtmlLiteral(firstArg)) {
+        if (containsHtmlLiteral(firstArg) && !binaryAllSanitized(firstArg, sanitizedVars)) {
           found = true;
           return;
         }
@@ -135,6 +144,16 @@ function hasResSendWithTemplateAtLine(ast: AST, line: number): boolean {
     }
   });
   return found;
+}
+
+function binaryAllSanitized(node: TSESTree.Node, sanitizedVars: Map<string, Set<string>>): boolean {
+  if (node.type === "Literal") return true;
+  if (node.type === "Identifier") return !!sanitizedVars.get(node.name)?.has("xss");
+  if (isJsSanitizerCall(node, "xss")) return true;
+  if (node.type === "BinaryExpression" && node.operator === "+") {
+    return binaryAllSanitized(node.left, sanitizedVars) && binaryAllSanitized(node.right, sanitizedVars);
+  }
+  return false;
 }
 
 function containsHtmlLiteral(node: TSESTree.Node): boolean {
@@ -187,10 +206,15 @@ function scanPyXss(ctx: ScanContext): Vulnerability[] {
   }
 
   // Regex fallback
+  const sanitizedRegex = collectPySanitizedVarsRegex(ctx.lines, "xss");
   for (let i = 0; i < ctx.lines.length; i++) {
     const line = ctx.lines[i];
     for (const { name, pattern } of PY_XSS_PATTERNS) {
       if (!pattern.test(line)) continue;
+
+      // Skip if line only uses sanitized variables
+      if ([...sanitizedRegex].some((v) => new RegExp(`\\b${v}\\b`).test(line)) &&
+          !PY_USER_INPUT_XSS.test(line)) continue;
 
       const isTainted = PY_USER_INPUT_XSS.test(line);
       vulns.push({
@@ -226,9 +250,12 @@ function scanPyXssTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabil
     if (PY_USER_INPUT_XSS.test(right.text)) tainted.add(left.text);
   });
 
+  // Collect sanitized variables (html.escape, markupsafe.escape, bleach.clean)
+  const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "xss");
+  // Remove sanitized vars from tainted set
+  for (const v of sanitized) tainted.delete(v);
+
   walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
-    // Detect: return f"<html>{var}" or make_response(f"<html>{var}")
-    // or mark_safe(f"...{var}")
     if (node.type !== "call" && node.type !== "return_statement") return;
 
     const lineText = ctx.lines[node.startPosition.row] ?? "";
@@ -239,6 +266,9 @@ function scanPyXssTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabil
       const isTainted =
         PY_USER_INPUT_XSS.test(lineText) ||
         [...tainted].some((v) => new RegExp(`\\b${v}\\b`).test(lineText));
+
+      // Skip if only sanitized variables are used on this line
+      if (!isTainted && [...sanitized].some((v) => new RegExp(`\\b${v}\\b`).test(lineText))) continue;
 
       vulns.push({
         ruleId: "VEXLIT-003",
@@ -282,6 +312,11 @@ export const xssRule: Rule = {
     const vulnerabilities: Vulnerability[] = [];
     const ast = ctx.ast as AST | null;
 
+    // Collect sanitized variables for FP reduction
+    const sanitizedVars = ast
+      ? collectJsSanitizedVars(ast, walkAST as (a: unknown, v: (n: TSESTree.Node) => void) => void)
+      : new Map<string, Set<string>>();
+
     for (let i = 0; i < ctx.lines.length; i++) {
       const line = ctx.lines[i];
 
@@ -294,17 +329,23 @@ export const xssRule: Rule = {
         // AST verification
         if (ast) {
           if (name === "innerHTML assignment" || name === "outerHTML assignment") {
-            confirmed = hasInnerHtmlAssignmentAtLine(ast, lineNum);
+            confirmed = hasInnerHtmlAssignmentAtLine(ast, lineNum, sanitizedVars);
           } else if (name === "document.write usage") {
             confirmed = hasDocumentWriteAtLine(ast, lineNum);
           } else if (name === "dangerouslySetInnerHTML") {
             confirmed = hasDangerouslySetInnerHTMLAtLine(ast, lineNum);
           } else if (name === "Express response injection" || name === "Express response HTML concatenation") {
-            confirmed = hasResSendWithTemplateAtLine(ast, lineNum);
+            confirmed = hasResSendWithTemplateAtLine(ast, lineNum, sanitizedVars);
           }
         }
 
         if (!confirmed) continue;
+
+        // Context-aware confidence: lower if surrounding lines contain sanitizer calls
+        let confidence: "high" | "medium" | "low" = "high";
+        if (surroundingHasSanitizer(ctx.lines, i, "xss", ctx.language as "javascript" | "typescript")) {
+          confidence = "medium";
+        }
 
         vulnerabilities.push({
           ruleId: this.id,
@@ -318,7 +359,7 @@ export const xssRule: Rule = {
           cwe: this.cwe,
           owasp: this.owasp,
           suggestion: this.suggestion,
-          confidence: "high",
+          confidence,
         });
       }
     }

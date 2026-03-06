@@ -4,6 +4,7 @@ import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
+import { collectPySanitizedVars, isPySanitizerCallForCategory } from "../sanitizers.js";
 
 // ── JS/TS detection ──
 
@@ -97,10 +98,19 @@ function scanPyEvalTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabi
     }
   });
 
+  // Collect sanitized variables (ast.literal_eval)
+  const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "eval");
+  for (const v of sanitized) tainted.delete(v);
+
   walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
     if (node.type !== "call") return;
     const func = node.childForFieldName("function");
-    if (!func || func.type !== "identifier") return;
+    if (!func) return;
+
+    // Safe: ast.literal_eval() is not dangerous
+    if (isPySanitizerCallForCategory(node, "eval")) return;
+
+    if (func.type !== "identifier") return;
     if (func.text !== "eval" && func.text !== "exec") return;
 
     const argsNode = node.childForFieldName("arguments");
@@ -110,6 +120,9 @@ function scanPyEvalTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabi
 
     // Safe: pure string literal with no interpolation
     if (firstArg.type === "string" && !firstArg.namedChildren.some((c: TreeSitterNode) => c.type === "interpolation")) return;
+
+    // Safe: variable that was sanitized
+    if (firstArg.type === "identifier" && sanitized.has(firstArg.text)) return;
 
     const isTainted =
       PY_USER_INPUT.test(firstArg.text) ||

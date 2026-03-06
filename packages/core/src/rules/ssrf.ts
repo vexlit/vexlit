@@ -4,6 +4,7 @@ import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
+import { collectJsSanitizedVars, collectPySanitizedVars, collectPySanitizedVarsRegex, surroundingHasSanitizer } from "../sanitizers.js";
 
 const SSRF_REGEX =
   /(?:fetch|axios\.get|axios\.post|axios\(|http\.get|http\.request|https\.get|https\.request|got\(|request\()\s*\(\s*(?:req\.|request\.|query\.|params\.|body\.|`|\w)/;
@@ -12,7 +13,7 @@ const HTTP_CALLEES = new Set([
   "fetch", "get", "post", "put", "patch", "delete", "request",
 ]);
 
-function hasSsrfAST(ast: AST, line: number): boolean {
+function hasSsrfAST(ast: AST, line: number, sanitizedVars: Map<string, Set<string>>): boolean {
   // First pass: collect variable names assigned from user input
   const taintedVars = new Set<string>();
   walkAST(ast, (node: TSESTree.Node) => {
@@ -66,6 +67,8 @@ function hasSsrfAST(ast: AST, line: number): boolean {
         }
         // Indirect via tainted variable: fetch(url) where url came from req.query
         if (firstArg.type === "Identifier" && taintedVars.has(firstArg.name)) {
+          // Safe if the variable was sanitized (e.g. validator.isURL, encodeURIComponent)
+          if (sanitizedVars.get(firstArg.name)?.has("ssrf")) return;
           found = true;
           return;
         }
@@ -77,6 +80,7 @@ function hasSsrfAST(ast: AST, line: number): boolean {
               return;
             }
             if (expr.type === "Identifier" && taintedVars.has(expr.name)) {
+              if (sanitizedVars.get(expr.name)?.has("ssrf")) continue;
               found = true;
               return;
             }
@@ -156,6 +160,10 @@ function scanPySsrfTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabi
     }
   });
 
+  // Collect sanitized variables (urllib.parse.quote, etc.)
+  const sanitized = collectPySanitizedVars(tree.rootNode, walkTreeSitter, "ssrf");
+  for (const v of sanitized) tainted.delete(v);
+
   walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
     if (node.type !== "call") return;
     const func = node.childForFieldName("function");
@@ -215,11 +223,14 @@ function scanPySsrfTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabi
 function scanPySsrfRegex(ctx: ScanContext): Vulnerability[] {
   const vulns: Vulnerability[] = [];
 
+  // Collect sanitized variables
+  const sanitized = collectPySanitizedVarsRegex(ctx.lines, "ssrf");
+
   // Collect tainted vars
   const tainted = new Set<string>();
   for (const l of ctx.lines) {
     const m = l.match(/^\s*(\w+)\s*=\s*.*\b(?:request\.\w+|input\s*\(|sys\.argv)/);
-    if (m) tainted.add(m[1]);
+    if (m && !sanitized.has(m[1])) tainted.add(m[1]);
   }
 
   for (let i = 0; i < ctx.lines.length; i++) {
@@ -275,11 +286,21 @@ export const ssrfRule: Rule = {
     const vulnerabilities: Vulnerability[] = [];
     const ast = ctx.ast as AST | null;
 
+    const sanitizedVars = ast
+      ? collectJsSanitizedVars(ast, walkAST as (a: unknown, v: (n: TSESTree.Node) => void) => void)
+      : new Map<string, Set<string>>();
+
     for (let i = 0; i < ctx.lines.length; i++) {
       if (!SSRF_REGEX.test(ctx.lines[i])) continue;
       const lineNum = i + 1;
 
-      if (ast && !hasSsrfAST(ast, lineNum)) continue;
+      if (ast && !hasSsrfAST(ast, lineNum, sanitizedVars)) continue;
+
+      // URL allowlist pattern: if surrounding code has URL validation, lower confidence
+      let confidence: "high" | "medium" | "low" = "high";
+      if (surroundingHasSanitizer(ctx.lines, i, "ssrf", ctx.language as "javascript" | "typescript")) {
+        confidence = "medium";
+      }
 
       vulnerabilities.push({
         ruleId: this.id, ruleName: this.name, severity: this.severity,
@@ -287,7 +308,7 @@ export const ssrfRule: Rule = {
         filePath: ctx.filePath, line: lineNum, column: 1,
         snippet: ctx.lines[i].trim(),
         cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
-          confidence: "high",
+        confidence,
       });
     }
     return vulnerabilities;

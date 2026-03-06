@@ -4,6 +4,7 @@ import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
 import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
 import { walkTreeSitter } from "../tree-sitter.js";
+import { collectJsSanitizedVars, isJsSanitizerCall, surroundingHasSanitizer } from "../sanitizers.js";
 
 // ── JS/TS detection ──
 
@@ -15,7 +16,7 @@ const SHELL_EXEC_METHODS = new Set([
   "spawn", "spawnSync", "fork",
 ]);
 
-function hasCommandInjectionAST(ast: AST, line: number): boolean {
+function hasCommandInjectionAST(ast: AST, line: number, sanitizedVars: Map<string, Set<string>>): boolean {
   let found = false;
   walkAST(ast, (node: TSESTree.Node) => {
     if (found) return;
@@ -28,10 +29,22 @@ function hasCommandInjectionAST(ast: AST, line: number): boolean {
       const calleeName = getCalleeName(node.callee);
       if (!calleeName || !SHELL_EXEC_METHODS.has(calleeName)) return;
 
+      // Safe: execFile/spawn with array arguments (no shell injection)
+      if ((calleeName === "execFile" || calleeName === "execFileSync" ||
+           calleeName === "spawn" || calleeName === "spawnSync") &&
+          node.arguments.length >= 2 && node.arguments[1].type === "ArrayExpression") {
+        return;
+      }
+
       const firstArg = node.arguments[0];
 
       if (firstArg.type === "TemplateLiteral" && firstArg.expressions.length > 0) {
-        found = true;
+        // Safe if all interpolated expressions are sanitized
+        const allSafe = firstArg.expressions.every((expr) =>
+          isJsSanitizerCall(expr, "cmd") ||
+          (expr.type === "Identifier" && sanitizedVars.get(expr.name)?.has("cmd"))
+        );
+        if (!allSafe) found = true;
         return;
       }
 
@@ -39,6 +52,9 @@ function hasCommandInjectionAST(ast: AST, line: number): boolean {
         found = true;
         return;
       }
+
+      // Safe: sanitized variable
+      if (firstArg.type === "Identifier" && sanitizedVars.get(firstArg.name)?.has("cmd")) return;
 
       if (firstArg.type === "BinaryExpression" && firstArg.operator === "+") {
         if (containsUserInput(firstArg)) {
@@ -369,6 +385,10 @@ export const commandInjectionRule: Rule = {
     const vulnerabilities: Vulnerability[] = [];
     const ast = ctx.ast as AST | null;
 
+    const sanitizedVars = ast
+      ? collectJsSanitizedVars(ast, walkAST as (a: unknown, v: (n: TSESTree.Node) => void) => void)
+      : new Map<string, Set<string>>();
+
     for (let i = 0; i < ctx.lines.length; i++) {
       const line = ctx.lines[i];
       if (!CMD_INJECTION_REGEX.test(line)) continue;
@@ -376,7 +396,12 @@ export const commandInjectionRule: Rule = {
       const lineNum = i + 1;
 
       if (ast) {
-        if (!hasCommandInjectionAST(ast, lineNum)) continue;
+        if (!hasCommandInjectionAST(ast, lineNum, sanitizedVars)) continue;
+      }
+
+      let confidence: "high" | "medium" | "low" = "high";
+      if (surroundingHasSanitizer(ctx.lines, i, "cmd", ctx.language as "javascript" | "typescript")) {
+        confidence = "medium";
       }
 
       vulnerabilities.push({
@@ -385,7 +410,7 @@ export const commandInjectionRule: Rule = {
         filePath: ctx.filePath, line: lineNum, column: 1,
         snippet: line.trim(),
         cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
-          confidence: "high",
+        confidence,
       });
     }
     return vulnerabilities;
