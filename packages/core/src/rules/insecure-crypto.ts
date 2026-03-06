@@ -109,6 +109,19 @@ export const insecureCryptoRule: Rule = {
 
         if (!confirmed) continue;
 
+        // Context-aware confidence for MD5/SHA1:
+        // If surrounding code suggests non-password usage (file checksum, ETag, cache key),
+        // lower confidence to "medium" to reduce false positives
+        let confidence: "high" | "medium" | "low" = "high";
+        if (name === "MD5 usage" || name === "SHA1 usage") {
+          const surroundingContext = ctx.lines.slice(Math.max(0, i - 3), Math.min(ctx.lines.length, i + 4)).join(" ").toLowerCase();
+          const isPasswordContext = /password|passwd|secret|token|credential|auth/.test(surroundingContext);
+          const isChecksumContext = /checksum|file|buffer|etag|cache|digest|fingerprint|integrity/.test(surroundingContext);
+          if (isChecksumContext && !isPasswordContext) {
+            confidence = "medium";
+          }
+        }
+
         vulnerabilities.push({
           ruleId: this.id,
           ruleName: this.name,
@@ -121,7 +134,7 @@ export const insecureCryptoRule: Rule = {
           cwe: this.cwe,
           owasp: this.owasp,
           suggestion: this.suggestion,
-          confidence: "high",
+          confidence,
         });
       }
     }

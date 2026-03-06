@@ -179,7 +179,7 @@ const express: JsRulePattern[] = [
     cwe: "CWE-693",
     owasp: "A05:2021",
     suggestion: "Add helmet middleware: app.use(helmet())",
-    pattern: /(?:express|fastify)\s*\(\s*\)/,
+    pattern: /app\.(?:use|get|post|put|delete|listen)\s*\(/,
     antiPattern: /helmet/,
   },
   {
@@ -494,6 +494,8 @@ export const jsExtendedRules: Rule[] = allJsPatterns.map((p) => ({
       // For helmet: only flag if entire file has no mention of helmet
       const hasAntiPattern = p.antiPattern.test(ctx.content);
       if (hasAntiPattern) return vulns;
+      // Also require express() call to be present (not just any app.use)
+      if (!/(?:express|fastify)\s*\(\s*\)/.test(ctx.content)) return vulns;
     }
 
     for (let i = 0; i < ctx.lines.length; i++) {
@@ -526,6 +528,9 @@ export const jsExtendedRules: Rule[] = allJsPatterns.map((p) => ({
         suggestion: p.suggestion,
         confidence: p.confidence,
       });
+
+      // File-level rules: only report once
+      if (p.id === "VEXLIT-044") break;
     }
 
     return vulns;

@@ -4,13 +4,47 @@ import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
 
 const SSRF_REGEX =
-  /(?:fetch|axios\.get|axios\.post|axios\(|http\.get|http\.request|https\.get|https\.request|got\(|request\()\s*\(\s*(?:req\.|request\.|query\.|params\.|body\.|`)/;
+  /(?:fetch|axios\.get|axios\.post|axios\(|http\.get|http\.request|https\.get|https\.request|got\(|request\()\s*\(\s*(?:req\.|request\.|query\.|params\.|body\.|`|\w)/;
 
 const HTTP_CALLEES = new Set([
   "fetch", "get", "post", "put", "patch", "delete", "request",
 ]);
 
 function hasSsrfAST(ast: AST, line: number): boolean {
+  // First pass: collect variable names assigned from user input
+  const taintedVars = new Set<string>();
+  walkAST(ast, (node: TSESTree.Node) => {
+    // const { url } = req.query  OR  const url = req.query.url
+    if (
+      node.type === "VariableDeclarator" &&
+      node.init
+    ) {
+      if (isUserInput(node.init)) {
+        if (node.id.type === "Identifier") taintedVars.add(node.id.name);
+        if (node.id.type === "ObjectPattern") {
+          for (const prop of node.id.properties) {
+            if (prop.type === "Property" && prop.value.type === "Identifier") {
+              taintedVars.add(prop.value.name);
+            }
+          }
+        }
+      }
+      // Destructuring: const { url } = req.query
+      if (
+        node.id.type === "ObjectPattern" &&
+        node.init.type === "MemberExpression" &&
+        isUserInput(node.init)
+      ) {
+        for (const prop of node.id.properties) {
+          if (prop.type === "Property" && prop.value.type === "Identifier") {
+            taintedVars.add(prop.value.name);
+          }
+        }
+      }
+    }
+  });
+
+  // Second pass: check HTTP calls at the target line
   let found = false;
   walkAST(ast, (node: TSESTree.Node) => {
     if (found) return;
@@ -23,12 +57,24 @@ function hasSsrfAST(ast: AST, line: number): boolean {
       const calleeName = getCalleeName(node.callee);
       if (calleeName && HTTP_CALLEES.has(calleeName)) {
         const firstArg = node.arguments[0];
+        // Direct user input: fetch(req.query.url)
         if (isUserInput(firstArg)) {
           found = true;
+          return;
         }
+        // Indirect via tainted variable: fetch(url) where url came from req.query
+        if (firstArg.type === "Identifier" && taintedVars.has(firstArg.name)) {
+          found = true;
+          return;
+        }
+        // Template literal with user input or tainted var
         if (firstArg.type === "TemplateLiteral" && firstArg.expressions.length > 0) {
           for (const expr of firstArg.expressions) {
             if (isUserInput(expr)) {
+              found = true;
+              return;
+            }
+            if (expr.type === "Identifier" && taintedVars.has(expr.name)) {
               found = true;
               return;
             }

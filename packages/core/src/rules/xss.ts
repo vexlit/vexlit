@@ -20,6 +20,10 @@ const XSS_PATTERNS: { name: string; pattern: RegExp }[] = [
     name: "dangerouslySetInnerHTML",
     pattern: /dangerouslySetInnerHTML/,
   },
+  {
+    name: "Express response injection",
+    pattern: /res\.send\s*\(\s*`/,
+  },
 ];
 
 function hasInnerHtmlAssignmentAtLine(ast: AST, line: number): boolean {
@@ -95,6 +99,29 @@ function hasDangerouslySetInnerHTMLAtLine(ast: AST, line: number): boolean {
   return found;
 }
 
+function hasResSendWithTemplateAtLine(ast: AST, line: number): boolean {
+  let found = false;
+  walkAST(ast, (node: TSESTree.Node) => {
+    if (found) return;
+
+    // res.send(`...${expr}...`)
+    if (
+      node.type === "CallExpression" &&
+      node.loc &&
+      node.loc.start.line === line &&
+      node.callee.type === "MemberExpression" &&
+      node.callee.property.type === "Identifier" &&
+      node.callee.property.name === "send" &&
+      node.arguments.length > 0 &&
+      node.arguments[0].type === "TemplateLiteral" &&
+      node.arguments[0].expressions.length > 0
+    ) {
+      found = true;
+    }
+  });
+  return found;
+}
+
 export const xssRule: Rule = {
   id: "VEXLIT-003",
   name: "Cross-Site Scripting (XSS)",
@@ -126,6 +153,8 @@ export const xssRule: Rule = {
             confirmed = hasDocumentWriteAtLine(ast, lineNum);
           } else if (name === "dangerouslySetInnerHTML") {
             confirmed = hasDangerouslySetInnerHTMLAtLine(ast, lineNum);
+          } else if (name === "Express response injection") {
+            confirmed = hasResSendWithTemplateAtLine(ast, lineNum);
           }
         }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FadeIn, ScrollReveal, StaggerContainer, StaggerItem } from "./motion-wrapper";
 import { AnimatedCounter } from "./counter";
 import { LiveDemo } from "./live-demo";
+import { RepoScanInput } from "./repo-scan-input";
 
 interface Rule {
   id: string;
@@ -99,6 +100,14 @@ export function LandingClient({
               {ICONS.github && <span className="w-5 h-5">{ICONS.github}</span>}
               View on GitHub
             </a>
+          </div>
+        </FadeIn>
+        <FadeIn delay={0.4}>
+          <div className="mt-10 pt-8 border-t border-gray-800/50">
+            <p className="text-gray-500 text-sm mb-3">
+              Scan any public GitHub repository — no sign-in required
+            </p>
+            <RepoScanInput />
           </div>
         </FadeIn>
       </section>
