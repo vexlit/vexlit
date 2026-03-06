@@ -68,9 +68,19 @@ export async function POST(
   const startTime = Date.now();
 
   try {
-    // Mark as running (only on first chunk)
+    // Mark as running (only on first chunk) with atomic check to prevent race condition
     if (scan.status === "pending") {
-      await admin.from("scans").update({ status: "running" }).eq("id", id);
+      const { data: updated } = await admin
+        .from("scans")
+        .update({ status: "running" })
+        .eq("id", id)
+        .eq("status", "pending")
+        .select("id");
+
+      // Another request already started processing
+      if (!updated || updated.length === 0) {
+        return NextResponse.json({ status: "running" });
+      }
     }
 
     const { RuleEngine } = await import("@vexlit/core");
