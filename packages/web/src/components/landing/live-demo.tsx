@@ -51,7 +51,7 @@ function quickScan(code: string): DemoVuln[] {
   const lines = code.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (/query\s*\(.*\+/.test(line)) {
+    if (/query\s*\(.*\+/.test(line) || /query\s*\(\s*`[^`]*\$\{/.test(line)) {
       vulns.push({ line: i + 1, severity: "critical", rule: "SQL Injection", message: "String concatenation in SQL query" });
     }
     if (/exec\s*\(.*req\./.test(line) || /exec\s*\(.*body/.test(line)) {
@@ -121,7 +121,7 @@ export function LiveDemo() {
       }
     } catch (err) {
       if (err instanceof Error && err.name !== "AbortError") {
-        setScanError("Full scan unavailable. Showing quick results.");
+        setScanError(t("fullScanUnavailable"));
       }
     } finally {
       setFullScanning(false);

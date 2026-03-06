@@ -2,15 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import type { Profile } from "@/lib/types";
 import { toast } from "sonner";
 
-const FEATURES = [
-  { key: "feature_pr_check", label: "PR Security Check" },
-  { key: "feature_scheduled_scan", label: "Scheduled Security Scan" },
-  { key: "feature_security_alerts", label: "Security Alerts" },
-  { key: "feature_code_analysis", label: "Static Code Analysis" },
+const FEATURE_KEYS = [
+  "feature_pr_check",
+  "feature_scheduled_scan",
+  "feature_security_alerts",
+  "feature_code_analysis",
 ] as const;
+
+const FEATURE_LABEL_MAP: Record<string, string> = {
+  feature_pr_check: "prCheck",
+  feature_scheduled_scan: "scheduledScan",
+  feature_security_alerts: "securityAlertsFeature",
+  feature_code_analysis: "codeAnalysis",
+};
 
 export function SettingsClient({
   profile,
@@ -20,6 +28,7 @@ export function SettingsClient({
   email: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("settingsClient");
   const [repoScope, setRepoScope] = useState<"public_only" | "all">(
     profile?.repo_scope ?? "public_only"
   );
@@ -39,13 +48,12 @@ export function SettingsClient({
   };
 
   const handleSave = async () => {
-    // Validate webhook URLs before saving
     if (
       slackWebhook &&
       !slackWebhook.startsWith("https://hooks.slack.com/") &&
       !slackWebhook.startsWith("https://hooks.slack-gov.com/")
     ) {
-      toast.error("Invalid Slack webhook URL");
+      toast.error(t("invalidSlack"));
       return;
     }
     if (
@@ -53,7 +61,7 @@ export function SettingsClient({
       !discordWebhook.startsWith("https://discord.com/api/webhooks/") &&
       !discordWebhook.startsWith("https://discordapp.com/api/webhooks/")
     ) {
-      toast.error("Invalid Discord webhook URL");
+      toast.error(t("invalidDiscord"));
       return;
     }
 
@@ -71,10 +79,10 @@ export function SettingsClient({
         }),
       });
       if (res.ok) {
-        toast.success("Settings saved");
+        toast.success(t("settingsSaved"));
         router.refresh();
       } else {
-        toast.error("Failed to save settings");
+        toast.error(t("failedToSave"));
       }
     } finally {
       setSaving(false);
@@ -85,16 +93,16 @@ export function SettingsClient({
     <div className="space-y-6 max-w-2xl">
       {/* Account */}
       <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-white font-semibold mb-4">Account</h2>
+        <h2 className="text-white font-semibold mb-4">{t("account")}</h2>
         <div className="space-y-3">
           <div>
-            <label className="text-gray-500 text-xs">Email</label>
-            <p className="text-white text-sm">{email}</p>
+            <label htmlFor="settings-email" className="text-gray-500 text-xs">{t("email")}</label>
+            <p id="settings-email" className="text-white text-sm">{email}</p>
           </div>
           {profile?.terms_accepted_at && (
             <div>
-              <label className="text-gray-500 text-xs">Terms accepted</label>
-              <p className="text-gray-400 text-sm">
+              <label htmlFor="settings-terms" className="text-gray-500 text-xs">{t("termsAccepted")}</label>
+              <p id="settings-terms" className="text-gray-400 text-sm">
                 {profile.terms_version} — {new Date(profile.terms_accepted_at).toLocaleDateString()}
               </p>
             </div>
@@ -104,7 +112,7 @@ export function SettingsClient({
 
       {/* Repo scope */}
       <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-white font-semibold mb-4">Repository Access</h2>
+        <h2 className="text-white font-semibold mb-4">{t("repoAccess")}</h2>
         <div className="space-y-3">
           <label
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
@@ -120,7 +128,7 @@ export function SettingsClient({
               onChange={() => setRepoScope("public_only")}
               className="text-red-600 focus:ring-red-500"
             />
-            <span className="text-white text-sm">Public repositories only</span>
+            <span className="text-white text-sm">{t("publicOnly")}</span>
           </label>
           <label
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
@@ -136,33 +144,33 @@ export function SettingsClient({
               onChange={() => setRepoScope("all")}
               className="text-red-600 focus:ring-red-500"
             />
-            <span className="text-white text-sm">All repositories (including private)</span>
+            <span className="text-white text-sm">{t("allRepos")}</span>
           </label>
         </div>
       </section>
 
       {/* Feature toggles */}
       <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-white font-semibold mb-4">Automation</h2>
+        <h2 className="text-white font-semibold mb-4">{t("automation")}</h2>
         <div className="space-y-3">
-          {FEATURES.map((f) => (
+          {FEATURE_KEYS.map((key) => (
             <div
-              key={f.key}
+              key={key}
               className="flex items-center justify-between p-3 rounded-lg border border-gray-800"
             >
-              <span className="text-white text-sm">{f.label}</span>
+              <span className="text-white text-sm">{t(FEATURE_LABEL_MAP[key])}</span>
               <button
                 type="button"
                 role="switch"
-                aria-checked={features[f.key]}
-                onClick={() => toggleFeature(f.key)}
+                aria-checked={features[key]}
+                onClick={() => toggleFeature(key)}
                 className={`relative w-10 h-6 rounded-full transition-colors ${
-                  features[f.key] ? "bg-red-600" : "bg-gray-700"
+                  features[key] ? "bg-red-600" : "bg-gray-700"
                 }`}
               >
                 <span
                   className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    features[f.key] ? "translate-x-4" : ""
+                    features[key] ? "translate-x-4" : ""
                   }`}
                 />
               </button>
@@ -173,14 +181,15 @@ export function SettingsClient({
 
       {/* Security Alerts */}
       <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-white font-semibold mb-1">Security Alerts</h2>
+        <h2 className="text-white font-semibold mb-1">{t("securityAlerts")}</h2>
         <p className="text-gray-500 text-xs mb-4">
-          Receive scan results in Slack or Discord
+          {t("alertsDesc")}
         </p>
         <div className="space-y-3">
           <div>
-            <label className="text-gray-500 text-xs">Slack Webhook URL</label>
+            <label htmlFor="slack-webhook" className="text-gray-500 text-xs">{t("slackWebhook")}</label>
             <input
+              id="slack-webhook"
               type="url"
               value={slackWebhook}
               onChange={(e) => setSlackWebhook(e.target.value)}
@@ -189,8 +198,9 @@ export function SettingsClient({
             />
           </div>
           <div>
-            <label className="text-gray-500 text-xs">Discord Webhook URL</label>
+            <label htmlFor="discord-webhook" className="text-gray-500 text-xs">{t("discordWebhook")}</label>
             <input
+              id="discord-webhook"
               type="url"
               value={discordWebhook}
               onChange={(e) => setDiscordWebhook(e.target.value)}
@@ -203,9 +213,9 @@ export function SettingsClient({
 
       {/* Notifications */}
       <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-white font-semibold mb-4">Notifications</h2>
+        <h2 className="text-white font-semibold mb-4">{t("notificationsSection")}</h2>
         <label className="flex items-center justify-between p-3 rounded-lg border border-gray-800 cursor-pointer">
-          <span className="text-white text-sm">Marketing emails</span>
+          <span className="text-white text-sm">{t("marketingEmails")}</span>
           <button
             type="button"
             role="switch"
@@ -230,7 +240,7 @@ export function SettingsClient({
         disabled={saving}
         className="px-6 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-all disabled:opacity-50"
       >
-        {saving ? "Saving..." : "Save Changes"}
+        {saving ? t("saving") : t("saveChanges")}
       </button>
     </div>
   );

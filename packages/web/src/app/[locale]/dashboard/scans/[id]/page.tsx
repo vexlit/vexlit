@@ -6,6 +6,7 @@ import { LazySeverityDonut as SeverityDonut } from "@/components/charts/lazy-sev
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { DeleteButton } from "@/components/delete-button";
+import { getTranslations } from "next-intl/server";
 import type { Scan, Vulnerability } from "@/lib/types";
 
 export default async function ScanDetailPage({
@@ -14,6 +15,7 @@ export default async function ScanDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("scanDetail");
   const supabase = await createSupabaseServer();
 
   const [{ data: scan }, { data: vulnerabilities }] = await Promise.all([
@@ -48,7 +50,7 @@ export default async function ScanDetailPage({
               href="/dashboard"
               className="text-gray-500 hover:text-gray-300 transition-colors"
             >
-              Dashboard
+              {t("dashboard")}
             </Link>
             <span className="text-gray-600">/</span>
             {typedScan.projects && (
@@ -65,7 +67,7 @@ export default async function ScanDetailPage({
             <span className="text-gray-400 font-mono">{id.slice(0, 8)}</span>
           </div>
           <h1 className="text-2xl font-bold text-white mt-1">
-            {typedScan.projects?.name ?? "Scan Results"}
+            {typedScan.projects?.name ?? t("scanResults")}
           </h1>
         </div>
         <div className="flex items-center gap-3">
@@ -73,8 +75,8 @@ export default async function ScanDetailPage({
           <DeleteButton
             endpoint={`/api/scan/${id}`}
             redirectTo={`/dashboard/projects/${typedScan.project_id}`}
-            label="Delete Scan"
-            confirmMessage="Delete this scan and its results?"
+            label={t("deleteScan")}
+            confirmMessage={t("deleteScanConfirm")}
           />
         </div>
       </div>
@@ -89,29 +91,29 @@ export default async function ScanDetailPage({
             size={48}
           />
           <div>
-            <p className="text-gray-500 text-xs">Total</p>
+            <p className="text-gray-500 text-xs">{t("total")}</p>
             <p className="text-xl font-bold text-white">
               {typedScan.total_vulnerabilities}
             </p>
           </div>
         </div>
         <SummaryCard
-          label="Critical"
+          label={t("critical")}
           value={typedScan.critical_count}
           color="text-red-400"
         />
         <SummaryCard
-          label="Warning"
+          label={t("warning")}
           value={typedScan.warning_count}
           color="text-yellow-400"
         />
         <SummaryCard
-          label="Info"
+          label={t("info")}
           value={typedScan.info_count}
           color="text-blue-400"
         />
         <SummaryCard
-          label="Duration"
+          label={t("duration")}
           value={
             typedScan.duration_ms
               ? `${(typedScan.duration_ms / 1000).toFixed(1)}s`
@@ -119,7 +121,7 @@ export default async function ScanDetailPage({
           }
         />
         <SummaryCard
-          label="Files"
+          label={t("files")}
           value={new Set(vulns.map((v) => v.file_path)).size || "-"}
         />
       </div>
@@ -127,7 +129,7 @@ export default async function ScanDetailPage({
       {/* Metadata */}
       {typedScan.commit_sha && (
         <p className="text-gray-500 text-sm">
-          Commit:{" "}
+          {t("commit")}:{" "}
           <code className="text-gray-400 bg-gray-900 px-1.5 py-0.5 rounded text-xs">
             {typedScan.commit_sha.slice(0, 7)}
           </code>
@@ -148,7 +150,7 @@ export default async function ScanDetailPage({
       {typedScan.status === "failed" && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
           <p className="text-red-400 text-sm">
-            Scan failed: {typedScan.error_message ?? "Unknown error"}
+            {t("scanFailed", { error: typedScan.error_message ?? "Unknown error" })}
           </p>
         </div>
       )}
@@ -160,9 +162,9 @@ export default async function ScanDetailPage({
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-green-400 text-lg font-medium">
-            No vulnerabilities found
+            {t("noVulns")}
           </p>
-          <p className="text-gray-500 text-sm mt-1">Your code looks clean!</p>
+          <p className="text-gray-500 text-sm mt-1">{t("codeLooksClean")}</p>
         </div>
       )}
 
