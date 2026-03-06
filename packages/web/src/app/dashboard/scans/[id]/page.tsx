@@ -5,6 +5,7 @@ import { ScanResultsClient } from "@/components/scan-results-client";
 import { LazySeverityDonut as SeverityDonut } from "@/components/charts/lazy-severity-donut";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { DeleteButton } from "@/components/delete-button";
 import type { Scan, Vulnerability } from "@/lib/types";
 
 export default async function ScanDetailPage({
@@ -66,7 +67,15 @@ export default async function ScanDetailPage({
             {typedScan.projects?.name ?? "Scan Results"}
           </h1>
         </div>
-        <StatusPill status={typedScan.status} />
+        <div className="flex items-center gap-3">
+          <StatusPill status={typedScan.status} />
+          <DeleteButton
+            endpoint={`/api/scan/${id}`}
+            redirectTo={`/dashboard/projects/${typedScan.project_id}`}
+            label="Delete Scan"
+            confirmMessage="Delete this scan and its results?"
+          />
+        </div>
       </div>
 
       {/* Summary cards */}

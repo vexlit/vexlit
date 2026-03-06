@@ -4,6 +4,7 @@ import { LazyTrendChart as TrendChart } from "@/components/charts/lazy-trend-cha
 import { QuickRescan } from "@/components/quick-rescan";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { DeleteButton } from "@/components/delete-button";
 import type { Scan } from "@/lib/types";
 
 export default async function ProjectDetailPage({
@@ -76,7 +77,15 @@ export default async function ProjectDetailPage({
             </a>
           )}
         </div>
-        <QuickRescan projectId={id} />
+        <div className="flex items-center gap-3">
+          <QuickRescan projectId={id} />
+          <DeleteButton
+            endpoint={`/api/projects/${id}`}
+            redirectTo="/dashboard"
+            label="Delete Project"
+            confirmMessage="Delete this project and all scans?"
+          />
+        </div>
       </div>
 
       {/* Trend chart */}
