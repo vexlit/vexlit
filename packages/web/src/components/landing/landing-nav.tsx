@@ -5,6 +5,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { LanguageSelector } from "../language-selector";
+import { VexlitLogo } from "../vexlit-logo";
 
 // ── Nav menu data ──
 
@@ -240,7 +241,7 @@ function MobileMenu({
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
       <div className="fixed top-0 right-0 w-80 max-w-[85vw] h-full bg-gray-950 border-l border-gray-800 overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <span className="text-white font-bold text-lg">VEXLIT</span>
+          <span className="flex items-center gap-2 text-white font-bold text-lg"><VexlitLogo size={24} />VEXLIT</span>
           <button onClick={onClose} className="text-gray-400 hover:text-white p-1">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -373,7 +374,8 @@ export function LandingNav() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Left: Logo + Nav links */}
         <div className="flex items-center gap-1">
-          <Link href="/" className="text-xl font-bold text-white mr-6">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white mr-6">
+            <VexlitLogo size={28} />
             VEXLIT
           </Link>
 

@@ -1,0 +1,62 @@
+{
+  "common": {
+    "vexlit": "VEXLIT",
+    "signOut": "Sign out",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close",
+    "github": "GitHub",
+    "home": "Home"
+  },
+  "nav": {
+    "product": "Product",
+    "liveDemo": "Live Demo",
+    "secretDetection": "Secret Detection",
+    "aiVerification": "AI Verification",
+    "supportedLanguages": "Supported Languages",
+    "resources": "Resources",
+    "compareTools": "Compare Tools",
+    "securityRules": "Security Rules",
+    "cli": "CLI",
+    "install": "Install",
+    "documentation": "Documentation",
+    "pricing": "Pricing",
+    "scanRepo": "Scan Repo",
+    "dashboard": "Dashboard",
+    "login": "Log in",
+    "startFree": "Start Free",
+    "signIn": "Sign in",
+    "getStarted": "Get Started",
+    "signInForFeatures": "Sign in for full features",
+    "signInFree": "Sign In Free"
+  },
+  "sidebar": {
+    "overview": "Overview",
+    "scans": "Scans",
+    "projects": "Projects",
+    "settings": "Settings",
+    "newScan": "New Scan",
+    "scan": "Scan"
+  },
+  "language": {
+    "en": "English",
+    "ko": "Korean",
+    "select": "Language"
+  },
+  "login": {
+    "title": "VEXLIT",
+    "subtitle": "AI-powered code security scanner",
+    "signInWithGithub": "Sign in with GitHub"
+  },
+  "deleteButton": {
+    "deletedSuccess": "Deleted successfully",
+    "failedToDelete": "Failed to delete",
+    "deleting": "Deleting...",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "dashboard": {
+    "title": "대시보드",
+    "subtitle": "모든 프로젝트의 보안 개요",
+    "newScan": "새 스캔",
+    "projects": "프로젝트",
+    "activeVulnerabilities": "활성 취약점",
+    "critical": "치명적",
+    "warning": "경고",
+    "securityScore": "보안 점수",
+    "recentVulnerabilities": "최근 취약점",
+    "noVulnerabilities": "아직 발견된 취약점이 없습니다",
+    "trendChart": "취약점 추세"
+  },
+  "scans": {
+    "title": "스캔",
+    "subtitle": "모든 프로젝트의 스캔 기록",
+    "newScan": "새 스캔",
+    "noScans": "아직 스캔이 없습니다.",
+    "startFirst": "첫 번째 스캔을 시작하세요",
+    "project": "프로젝트",
+    "status": "상태",
+    "vulnerabilities": "취약점",
+    "duration": "소요 시간",
+    "date": "날짜",
+    "clean": "안전",
+    "delete": "삭제",
+    "deleteConfirm": "이 스캔을 삭제하시겠습니까?"
+  },
+  "projectsPage": {
+    "title": "프로젝트",
+    "registered": "{count}개 프로젝트 등록됨",
+    "newScan": "새 스캔",
+    "noProjects": "아직 프로젝트가 없습니다.",
+    "createFirst": "첫 번째 스캔을 시작하세요",
+    "noCompletedScans": "완료된 스캔 없음"
+  },
+  "scanDetail": {
+    "dashboard": "대시보드",
+    "scanResults": "스캔 결과",
+    "total": "전체",
+    "critical": "치명적",
+    "warning": "경고",
+    "info": "정보",
+    "duration": "소요 시간",
+    "files": "파일",
+    "commit": "커밋",
+    "scanFailed": "스캔 실패: {error}",
+    "noVulns": "취약점이 발견되지 않았습니다",
+    "codeLooksClean": "코드가 안전합니다!",
+    "deleteScan": "스캔 삭제",
+    "deleteScanConfirm": "이 스캔과 결과를 삭제하시겠습니까?"
+  },
+  "notifications": {
+    "title": "알림",
+    "markAllRead": "모두 읽음",
+    "empty": "아직 알림이 없습니다"
+  }
+}

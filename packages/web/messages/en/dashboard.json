@@ -1,0 +1,59 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Security overview across all projects",
+    "newScan": "New Scan",
+    "projects": "Projects",
+    "activeVulnerabilities": "Active Vulnerabilities",
+    "critical": "Critical",
+    "warning": "Warning",
+    "securityScore": "Security Score",
+    "recentVulnerabilities": "Recent Vulnerabilities",
+    "noVulnerabilities": "No vulnerabilities found yet",
+    "trendChart": "Vulnerability Trend"
+  },
+  "scans": {
+    "title": "Scans",
+    "subtitle": "All scan history across your projects",
+    "newScan": "New Scan",
+    "noScans": "No scans yet.",
+    "startFirst": "Start your first scan",
+    "project": "Project",
+    "status": "Status",
+    "vulnerabilities": "Vulnerabilities",
+    "duration": "Duration",
+    "date": "Date",
+    "clean": "Clean",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this scan?"
+  },
+  "projectsPage": {
+    "title": "Projects",
+    "registered": "{count} project{count, plural, one {} other {s}} registered",
+    "newScan": "New Scan",
+    "noProjects": "No projects yet.",
+    "createFirst": "Create your first scan",
+    "noCompletedScans": "No completed scans"
+  },
+  "scanDetail": {
+    "dashboard": "Dashboard",
+    "scanResults": "Scan Results",
+    "total": "Total",
+    "critical": "Critical",
+    "warning": "Warning",
+    "info": "Info",
+    "duration": "Duration",
+    "files": "Files",
+    "commit": "Commit",
+    "scanFailed": "Scan failed: {error}",
+    "noVulns": "No vulnerabilities found",
+    "codeLooksClean": "Your code looks clean!",
+    "deleteScan": "Delete Scan",
+    "deleteScanConfirm": "Delete this scan and its results?"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet"
+  }
+}

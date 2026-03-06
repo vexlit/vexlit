@@ -1,6 +1,7 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
 import { Link } from "@/i18n/navigation";
+import { DeleteButton } from "@/components/delete-button";
 import { getTranslations } from "next-intl/server";
 import type { Scan } from "@/lib/types";
 
@@ -55,6 +56,7 @@ export default async function ScansPage() {
                   <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">{t("vulnerabilities")}</th>
                   <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">{t("duration")}</th>
                   <th className="text-left text-gray-400 text-xs font-medium px-4 py-3">{t("date")}</th>
+                  <th className="text-right text-gray-400 text-xs font-medium px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -80,6 +82,14 @@ export default async function ScansPage() {
                     <td className="px-4 py-3 text-gray-500 text-sm">
                       {new Date(scan.created_at).toLocaleDateString()}
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      <DeleteButton
+                        endpoint={`/api/scan/${scan.id}`}
+                        redirectTo="/dashboard/scans"
+                        label={t("delete")}
+                        confirmMessage={t("deleteConfirm")}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -89,19 +99,29 @@ export default async function ScansPage() {
           {/* Mobile list */}
           <div className="sm:hidden bg-gray-900 border border-gray-800 rounded-xl overflow-hidden divide-y divide-gray-800">
             {scanList.map((scan) => (
-              <Link key={scan.id} href={`/dashboard/scans/${scan.id}`} className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="text-white text-sm">{scan.projects?.name ?? "Unknown"}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <StatusBadge status={scan.status} />
-                    <span className="text-gray-600 text-xs">{new Date(scan.created_at).toLocaleDateString()}</span>
+              <div key={scan.id} className="px-4 py-3">
+                <Link href={`/dashboard/scans/${scan.id}`} className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white text-sm">{scan.projects?.name ?? "Unknown"}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <StatusBadge status={scan.status} />
+                      <span className="text-gray-600 text-xs">{new Date(scan.created_at).toLocaleDateString()}</span>
+                    </div>
                   </div>
+                  <div className="flex gap-1.5">
+                    {scan.critical_count > 0 && <SeverityBadge severity="critical" count={scan.critical_count} />}
+                    {scan.warning_count > 0 && <SeverityBadge severity="warning" count={scan.warning_count} />}
+                  </div>
+                </Link>
+                <div className="mt-2 flex justify-end">
+                  <DeleteButton
+                    endpoint={`/api/scan/${scan.id}`}
+                    redirectTo="/dashboard/scans"
+                    label={t("delete")}
+                    confirmMessage={t("deleteConfirm")}
+                  />
                 </div>
-                <div className="flex gap-1.5">
-                  {scan.critical_count > 0 && <SeverityBadge severity="critical" count={scan.critical_count} />}
-                  {scan.warning_count > 0 && <SeverityBadge severity="warning" count={scan.warning_count} />}
-                </div>
-              </Link>
+              </div>
             ))}
           </div>
         </>

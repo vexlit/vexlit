@@ -39,7 +39,20 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const messages = (await import(`../../../messages/${locale}.json`)).default;
+  const [common, landing, dashboard, settings, docs] = await Promise.all([
+    import(`../../../messages/${locale}/common.json`),
+    import(`../../../messages/${locale}/landing.json`),
+    import(`../../../messages/${locale}/dashboard.json`),
+    import(`../../../messages/${locale}/settings.json`),
+    import(`../../../messages/${locale}/docs.json`),
+  ]);
+  const messages = {
+    ...common.default,
+    ...landing.default,
+    ...dashboard.default,
+    ...settings.default,
+    ...docs.default,
+  };
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>

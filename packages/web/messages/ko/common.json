@@ -1,0 +1,62 @@
+{
+  "common": {
+    "vexlit": "VEXLIT",
+    "signOut": "로그아웃",
+    "loading": "로딩 중...",
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "back": "뒤로",
+    "next": "다음",
+    "close": "닫기",
+    "github": "GitHub",
+    "home": "홈"
+  },
+  "nav": {
+    "product": "제품",
+    "liveDemo": "라이브 데모",
+    "secretDetection": "시크릿 탐지",
+    "aiVerification": "AI 검증",
+    "supportedLanguages": "지원 언어",
+    "resources": "리소스",
+    "compareTools": "도구 비교",
+    "securityRules": "보안 규칙",
+    "cli": "CLI",
+    "install": "설치",
+    "documentation": "문서",
+    "pricing": "가격",
+    "scanRepo": "저장소 스캔",
+    "dashboard": "대시보드",
+    "login": "로그인",
+    "startFree": "무료 시작",
+    "signIn": "로그인",
+    "getStarted": "시작하기",
+    "signInForFeatures": "로그인하여 전체 기능 사용",
+    "signInFree": "무료 로그인"
+  },
+  "sidebar": {
+    "overview": "개요",
+    "scans": "스캔",
+    "projects": "프로젝트",
+    "settings": "설정",
+    "newScan": "새 스캔",
+    "scan": "스캔"
+  },
+  "language": {
+    "en": "English",
+    "ko": "한국어",
+    "select": "언어"
+  },
+  "login": {
+    "title": "VEXLIT",
+    "subtitle": "AI 기반 코드 보안 스캐너",
+    "signInWithGithub": "GitHub으로 로그인"
+  },
+  "deleteButton": {
+    "deletedSuccess": "성공적으로 삭제되었습니다",
+    "failedToDelete": "삭제에 실패했습니다",
+    "deleting": "삭제 중...",
+    "confirm": "확인",
+    "cancel": "취소"
+  }
+}

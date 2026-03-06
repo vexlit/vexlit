@@ -67,6 +67,15 @@ function quickScan(code: string): DemoVuln[] {
       vulns.push({ line: i + 1, severity: "critical", rule: "XSS", message: "Unsanitized DOM manipulation" });
     }
   }
+  // Multiline template literal SQL injection (query(`...${...}...`))
+  const sqlTplRe = /query\s*\(\s*`[\s\S]*?\$\{[\s\S]*?`\s*\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = sqlTplRe.exec(code)) !== null) {
+    const lineNum = code.slice(0, m.index).split("\n").length;
+    if (!vulns.some((v) => v.rule === "SQL Injection" && v.line === lineNum)) {
+      vulns.push({ line: lineNum, severity: "critical", rule: "SQL Injection", message: "Template literal with interpolation in SQL query" });
+    }
+  }
   return vulns;
 }
 
