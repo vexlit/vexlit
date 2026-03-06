@@ -103,17 +103,25 @@ const PYTHON_CMD_BASELINE =
 const PYTHON_USER_INPUT =
   /\b(?:request\.\w+|input\s*\(|sys\.argv)/;
 
+/** Known Python sanitizer functions that neutralize command injection */
+const PYTHON_SANITIZERS = new Set([
+  "shlex.quote",
+  "quote",        // from shlex import quote
+  "pipes.quote",
+]);
+
 /** Check if a tree-sitter node is a safe (non-injectable) argument */
-function isPySafeArg(node: TreeSitterNode): boolean {
+function isPySafeArg(node: TreeSitterNode, sanitized: Set<string>): boolean {
   // Pure string literal: "hardcoded"
   if (node.type === "string") {
-    // f-strings contain interpolation children — not safe
     return node.namedChildren.length === 0;
   }
-  // List of string literals: ["cmd", "arg1", "arg2"]
-  if (node.type === "list") {
-    return node.namedChildren.every((c) => c.type === "string" && c.namedChildren.length === 0);
-  }
+  // List argument: subprocess.run(["echo", user_input]) — no shell injection
+  if (node.type === "list") return true;
+  // Variable that passed through a sanitizer
+  if (node.type === "identifier" && sanitized.has(node.text)) return true;
+  // Direct sanitizer call: os.system(shlex.quote(x))
+  if (isPySanitizerCall(node)) return true;
   return false;
 }
 
@@ -141,9 +149,29 @@ function containsTaintedRef(node: TreeSitterNode, tainted: Set<string>): boolean
   return node.namedChildren.some((c) => containsTaintedRef(c, tainted));
 }
 
-/** Collect variables assigned from user input (with 1-level transitive propagation) */
-function collectPyTaintedVars(tree: TreeSitterTree): Set<string> {
+/** Check if a tree-sitter node is a call to a known sanitizer (e.g. shlex.quote) */
+function isPySanitizerCall(node: TreeSitterNode): boolean {
+  if (node.type !== "call") return false;
+  const func = node.childForFieldName("function");
+  if (!func) return false;
+  // shlex.quote(x) → attribute node
+  if (func.type === "attribute") {
+    const obj = func.childForFieldName("object");
+    const attr = func.childForFieldName("attribute");
+    if (obj && attr) {
+      const fullName = `${obj.text}.${attr.text}`;
+      if (PYTHON_SANITIZERS.has(fullName)) return true;
+    }
+  }
+  // quote(x) → identifier node (from shlex import quote)
+  if (func.type === "identifier" && PYTHON_SANITIZERS.has(func.text)) return true;
+  return false;
+}
+
+/** Collect tainted and sanitized variable sets */
+function collectPyTaintState(tree: TreeSitterTree): { tainted: Set<string>; sanitized: Set<string> } {
   const tainted = new Set<string>();
+  const sanitized = new Set<string>();
 
   // Pass 1: direct user input sources
   walkTreeSitter(tree.rootNode, (node) => {
@@ -168,7 +196,34 @@ function collectPyTaintedVars(tree: TreeSitterTree): Set<string> {
     }
   });
 
-  return tainted;
+  // Pass 3: variables that pass through a sanitizer are safe
+  // e.g. safe = shlex.quote(cmd) → "safe" is sanitized
+  walkTreeSitter(tree.rootNode, (node) => {
+    if (node.type !== "assignment") return;
+    const left = node.childForFieldName("left");
+    const right = node.childForFieldName("right");
+    if (!left || !right || left.type !== "identifier") return;
+    if (isPySanitizerCall(right)) {
+      tainted.delete(left.text);
+      sanitized.add(left.text);
+    }
+  });
+
+  return { tainted, sanitized };
+}
+
+/** Check if a binary expression like "echo " + safe has no tainted leaves */
+function isBinaryAllSanitized(node: TreeSitterNode, tainted: Set<string>, sanitized: Set<string>): boolean {
+  if (node.type !== "binary_operator") return false;
+  // All identifier leaves must be either sanitized or not tainted
+  const identifiers: TreeSitterNode[] = [];
+  function collectIds(n: TreeSitterNode) {
+    if (n.type === "identifier") { identifiers.push(n); return; }
+    for (const c of n.namedChildren) collectIds(c);
+  }
+  collectIds(node);
+  // If any identifier is tainted (and not sanitized), it's not safe
+  return identifiers.every((id) => sanitized.has(id.text) || !tainted.has(id.text));
 }
 
 function makePyVuln(
@@ -198,7 +253,7 @@ function makePyVuln(
 /** Scan Python using tree-sitter AST */
 function scanPyTreeSitter(ctx: ScanContext): Vulnerability[] {
   const tree = ctx.treeSitterTree as TreeSitterTree;
-  const tainted = collectPyTaintedVars(tree);
+  const { tainted, sanitized } = collectPyTaintState(tree);
   const vulns: Vulnerability[] = [];
 
   walkTreeSitter(tree.rootNode, (node) => {
@@ -218,7 +273,10 @@ function scanPyTreeSitter(ctx: ScanContext): Vulnerability[] {
     if (!argsNode || argsNode.namedChildren.length === 0) return;
 
     const firstArg = argsNode.namedChildren[0];
-    if (isPySafeArg(firstArg)) return;
+    if (isPySafeArg(firstArg, sanitized)) return;
+
+    // Check if the entire expression is sanitized (e.g. "echo " + sanitized_var)
+    if (isBinaryAllSanitized(firstArg, tainted, sanitized)) return;
 
     const isTainted = isPyTainted(firstArg, tainted);
     vulns.push(makePyVuln(ctx, node.startPosition.row + 1, isTainted));
@@ -249,15 +307,29 @@ function scanPyRegex(ctx: ScanContext): Vulnerability[] {
       }
     }
   }
+  // Collect sanitized variables: x = shlex.quote(y) → x is safe
+  const sanitized = new Set<string>();
+  for (const l of ctx.lines) {
+    const m = l.match(/^\s*(\w+)\s*=\s*(?:shlex\.quote|pipes\.quote|quote)\s*\(/);
+    if (m) {
+      tainted.delete(m[1]);
+      sanitized.add(m[1]);
+    }
+  }
 
   for (let i = 0; i < ctx.lines.length; i++) {
     const line = ctx.lines[i];
     if (!PYTHON_CMD_BASELINE.test(line)) continue;
 
-    // Safe: first argument is a list literal
+    // Safe: first argument is a list literal (no shell injection possible)
     if (/\(\s*\[/.test(line)) continue;
     // Safe: first argument is a plain string literal (no concatenation or f-string)
     if (/\(\s*["'][^"']*["']\s*[,)]/.test(line)) continue;
+    // Safe: first argument is a sanitized variable
+    if ([...sanitized].some((v) => new RegExp(`\\(\\s*${v}\\b`).test(line))) continue;
+    // Safe: all variables on the line are sanitized (e.g. "echo " + safe)
+    if ([...sanitized].some((v) => new RegExp(`\\b${v}\\b`).test(line)) &&
+        ![...tainted].some((v) => new RegExp(`\\b${v}\\b`).test(line))) continue;
 
     const isTainted =
       PYTHON_USER_INPUT.test(line) ||
