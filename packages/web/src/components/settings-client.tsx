@@ -140,14 +140,19 @@ export function SettingsClient({
                 type="button"
                 role="switch"
                 aria-checked={features[f.key]}
-                onClick={() => toggleFeature(f.key)}
+                disabled={f.comingSoon}
+                onClick={() => !f.comingSoon && toggleFeature(f.key)}
                 className={`relative w-10 h-6 rounded-full transition-colors ${
-                  features[f.key] ? "bg-red-600" : "bg-gray-700"
+                  f.comingSoon
+                    ? "bg-gray-800 cursor-not-allowed opacity-50"
+                    : features[f.key]
+                      ? "bg-red-600"
+                      : "bg-gray-700"
                 }`}
               >
                 <span
                   className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    features[f.key] ? "translate-x-4" : ""
+                    !f.comingSoon && features[f.key] ? "translate-x-4" : ""
                   }`}
                 />
               </button>
