@@ -15,12 +15,18 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // RLS ensures user can only delete own projects
+  // Ownership check + RLS double verification
   // CASCADE deletes scans → vulnerabilities automatically
-  const { error } = await supabase.from("projects").delete().eq("id", id);
+  const { data, error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("id")
+    .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !data) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
 
   return NextResponse.json({ success: true });

@@ -42,7 +42,18 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify ownership via RLS — delete vulnerabilities cascade automatically
+  // Verify ownership: scan must belong to user's project
+  const { data: scan } = await supabase
+    .from("scans")
+    .select("project_id, projects!inner(user_id)")
+    .eq("id", id)
+    .single();
+
+  if (!scan) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+
+  // RLS + CASCADE deletes vulnerabilities automatically
   const { error } = await supabase.from("scans").delete().eq("id", id);
 
   if (error) {
