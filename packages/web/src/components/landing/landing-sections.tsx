@@ -315,14 +315,14 @@ export function SupportedLanguages() {
 /* ─────────────────────────── Comparison Table ─────────────────────────── */
 
 const COMPARISON_ROWS = [
-  { feature: "Static Analysis (SAST)", vexlit: true, snyk: true, sonar: true },
-  { feature: "AI-Powered Fix Suggestions", vexlit: true, snyk: false, sonar: false },
-  { feature: "PR Security Check", vexlit: true, snyk: true, sonar: true },
-  { feature: "Scheduled Scans", vexlit: true, snyk: true, sonar: true },
-  { feature: "Slack / Discord Alerts", vexlit: true, snyk: true, sonar: false },
-  { feature: "Open Source Rules", vexlit: true, snyk: false, sonar: false },
-  { feature: "Free Tier (Unlimited)", vexlit: true, snyk: false, sonar: false },
-  { feature: "No Credit Card Required", vexlit: true, snyk: true, sonar: false },
+  { feature: "Static Analysis (SAST)", vexlit: true, others: "Paid plans" },
+  { feature: "AI-Powered Fix Suggestions", vexlit: true, others: "Limited or none" },
+  { feature: "PR Security Check", vexlit: true, others: "Paid plans" },
+  { feature: "Scheduled Scans", vexlit: true, others: "Paid plans" },
+  { feature: "Slack / Discord Alerts", vexlit: true, others: "Partial" },
+  { feature: "Open Source Rules", vexlit: true, others: "Closed source" },
+  { feature: "Unlimited Free Scans", vexlit: true, others: "Usage limits" },
+  { feature: "No Credit Card Required", vexlit: true, others: "Varies" },
 ];
 
 function CheckIcon() {
@@ -363,10 +363,7 @@ export function ComparisonTable() {
                   <span className="text-red-400 font-bold text-sm">VEXLIT</span>
                 </th>
                 <th className="py-3 px-4 text-center">
-                  <span className="text-gray-400 text-sm">Snyk</span>
-                </th>
-                <th className="py-3 px-4 text-center">
-                  <span className="text-gray-400 text-sm">SonarQube</span>
+                  <span className="text-gray-400 text-sm">Others</span>
                 </th>
               </tr>
             </thead>
@@ -375,8 +372,7 @@ export function ComparisonTable() {
                 <tr key={row.feature} className="border-b border-gray-800/50 hover:bg-gray-900/50 transition-colors">
                   <td className="py-3 px-4 text-white text-sm">{row.feature}</td>
                   <td className="py-3 px-4">{row.vexlit ? <CheckIcon /> : <CrossIcon />}</td>
-                  <td className="py-3 px-4">{row.snyk ? <CheckIcon /> : <CrossIcon />}</td>
-                  <td className="py-3 px-4">{row.sonar ? <CheckIcon /> : <CrossIcon />}</td>
+                  <td className="py-3 px-4 text-center text-gray-500 text-sm">{row.others}</td>
                 </tr>
               ))}
             </tbody>
