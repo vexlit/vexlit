@@ -29,13 +29,7 @@ const EXT_MAP: Record<string, "javascript" | "typescript" | "python"> = {
 };
 
 export async function POST(request: Request) {
-  // Production guard: require Upstash env vars in production
-  if (process.env.NODE_ENV === "production" && !redis) {
-    return NextResponse.json(
-      { error: "Rate limiting is not configured" },
-      { status: 503 }
-    );
-  }
+  // If Redis is not configured, rate limiting is skipped (limiter will be null)
 
   const ip =
     request.headers.get("x-real-ip") ??
