@@ -34,7 +34,7 @@
     "@typescript-eslint/parser": "^8.56.1",
     "@typescript-eslint/typescript-estree": "^8.56.1",
     "tree-sitter-wasms": "^0.1.13",
-    "web-tree-sitter": "^0.26.6"
+    "web-tree-sitter": "^0.24.7"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

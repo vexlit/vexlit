@@ -25,15 +25,21 @@ export interface TreeSitterNode {
 
 interface TreeSitterLanguage {}
 
-interface TreeSitterInit {
-  init(options?: { locateFile?: (file: string) => string }): Promise<void>;
+// web-tree-sitter v0.24 CJS export:
+// module.exports = TreeSitter (constructor function)
+// TreeSitter.init() → initializes WASM
+// TreeSitter.Language.load() → loads grammar
+// new TreeSitter() → parser instance
+interface TreeSitterConstructor {
+  init(options?: { locateFile?: (file: string, prefix: string) => string }): Promise<void>;
   Language: {
     load(path: string): Promise<TreeSitterLanguage>;
   };
   new (): TreeSitterParser;
 }
 
-let Parser: TreeSitterInit | null = null;
+let TreeSitter: TreeSitterConstructor | null = null;
+let initialized = false;
 let initFailed = false;
 const languageCache = new Map<string, TreeSitterLanguage>();
 
@@ -48,18 +54,22 @@ function dynamicResolve(mod: string): string {
   return eval("require.resolve")(mod) as string;
 }
 
-async function ensureInit(): Promise<TreeSitterInit | null> {
-  if (Parser) return Parser;
+async function ensureInit(): Promise<TreeSitterConstructor | null> {
+  if (initialized && TreeSitter) return TreeSitter;
   if (initFailed) return null;
 
   try {
-    const wasmPath = dynamicResolve("web-tree-sitter/web-tree-sitter.wasm");
-    const TreeSitter = dynamicRequire("web-tree-sitter") as TreeSitterInit;
-    await TreeSitter.init({
-      locateFile: () => wasmPath,
+    const TS = dynamicRequire("web-tree-sitter") as TreeSitterConstructor;
+    const tsModulePath = dynamicResolve("web-tree-sitter");
+    const tsDir = path.dirname(tsModulePath);
+
+    await TS.init({
+      locateFile: (file: string) => path.join(tsDir, file),
     });
-    Parser = TreeSitter;
-    return Parser;
+
+    TreeSitter = TS;
+    initialized = true;
+    return TreeSitter;
   } catch {
     initFailed = true;
     return null;
