@@ -1,8 +1,12 @@
+/**
+ * Public GitHub repo scanner utilities.
+ * Set GITHUB_TOKEN env var for 5000 req/hr (vs 60 unauthenticated).
+ */
 const GITHUB_API = "https://api.github.com";
 
 const SUPPORTED_EXTENSIONS = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py"];
-const MAX_FILE_SIZE = 100_000;
-const MAX_SCANNABLE_FILES = 100; // Lower limit for public scans
+const MAX_FILE_SIZE = 1_000_000; // 1MB per file
+const MAX_SCANNABLE_FILES = 200;
 
 const SKIP_DIRECTORIES = [
   "node_modules", "dist", "build", "out", "target", "tmp",

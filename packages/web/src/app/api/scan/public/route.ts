@@ -5,28 +5,83 @@ import { NextResponse } from "next/server";
 // Anonymous user ID for public scans
 const ANON_USER_ID = "00000000-0000-0000-0000-000000000000";
 
-// Simple rate limiter: max 10 public scans per minute per IP
-const rateMap = new Map<string, { count: number; resetAt: number }>();
+// --- Rate limiting ---
+// Per-minute burst limit + daily cap per IP.
+// In-memory; resets on cold start — acceptable for serverless since
+// Vercel spins down idle functions and each instance tracks its own window.
+const BURST_LIMIT = 5; // max scans per minute per IP
+const DAILY_LIMIT = 30; // max scans per day per IP
 
-function checkRateLimit(ip: string): boolean {
+interface RateEntry {
+  minuteCount: number;
+  minuteResetAt: number;
+  dailyCount: number;
+  dailyResetAt: number;
+}
+
+const rateMap = new Map<string, RateEntry>();
+
+// Periodically clean stale entries to prevent memory leak
+let lastCleanup = Date.now();
+function cleanupRateMap() {
   const now = Date.now();
-  const entry = rateMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateMap.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
+  if (now - lastCleanup < 300_000) return; // every 5 min
+  lastCleanup = now;
+  for (const [key, entry] of rateMap) {
+    if (now > entry.dailyResetAt) rateMap.delete(key);
   }
-  if (entry.count >= 10) return false;
-  entry.count++;
-  return true;
+}
+
+function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
+  cleanupRateMap();
+  const now = Date.now();
+  let entry = rateMap.get(ip);
+
+  if (!entry || now > entry.dailyResetAt) {
+    entry = {
+      minuteCount: 1,
+      minuteResetAt: now + 60_000,
+      dailyCount: 1,
+      dailyResetAt: now + 86_400_000,
+    };
+    rateMap.set(ip, entry);
+    return { allowed: true };
+  }
+
+  // Reset minute window if expired
+  if (now > entry.minuteResetAt) {
+    entry.minuteCount = 0;
+    entry.minuteResetAt = now + 60_000;
+  }
+
+  if (entry.dailyCount >= DAILY_LIMIT) {
+    const retryAfter = Math.ceil((entry.dailyResetAt - now) / 1000);
+    return { allowed: false, retryAfter };
+  }
+
+  if (entry.minuteCount >= BURST_LIMIT) {
+    const retryAfter = Math.ceil((entry.minuteResetAt - now) / 1000);
+    return { allowed: false, retryAfter };
+  }
+
+  entry.minuteCount++;
+  entry.dailyCount++;
+  return { allowed: true };
 }
 
 export async function POST(request: Request) {
   // Rate limiting
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (!checkRateLimit(ip)) {
+  const rateCheck = checkRateLimit(ip);
+  if (!rateCheck.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please wait a moment." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: rateCheck.retryAfter
+          ? { "Retry-After": String(rateCheck.retryAfter) }
+          : undefined,
+      }
     );
   }
 
