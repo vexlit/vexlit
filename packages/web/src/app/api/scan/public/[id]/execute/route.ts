@@ -157,8 +157,33 @@ export async function POST(
       }
     }
 
-    const { RuleEngine } = await import("@vexlit/core");
+    const { RuleEngine, scaDependencies } = await import("@vexlit/core");
     const engine = new RuleEngine();
+
+    // Run SCA once when all files are still available (before chunking removes them)
+    const isFirstScanChunk = scan.status !== "running";
+    if (isFirstScanChunk) {
+      const scaVulns = await scaDependencies(files);
+      if (scaVulns.length > 0) {
+        await admin.from("vulnerabilities").insert(
+          scaVulns.map((v) => ({
+            scan_id: id,
+            rule_id: v.ruleId,
+            rule_name: v.ruleName,
+            severity: v.severity,
+            confidence: v.confidence ?? "high",
+            message: v.message,
+            file_path: v.filePath,
+            line: v.line,
+            column: v.column,
+            snippet: v.snippet ?? null,
+            cwe: v.cwe ?? null,
+            owasp: v.owasp ?? null,
+            suggestion: v.suggestion ?? null,
+          }))
+        );
+      }
+    }
 
     const chunk = files.slice(0, CHUNK_SIZE);
     const remaining = files.slice(CHUNK_SIZE);
