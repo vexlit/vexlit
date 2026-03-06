@@ -10,17 +10,18 @@ export default async function ProjectsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("user_id", user!.id)
-    .order("updated_at", { ascending: false });
-
-  const { data: recentScans } = await supabase
-    .from("scans")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const [{ data: projects }, { data: recentScans }] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", user!.id)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("scans")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
 
   // Build per-project latest completed scan map
   const projectScans = new Map<string, Scan>();

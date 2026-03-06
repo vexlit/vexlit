@@ -23,30 +23,31 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { count: projectCount } = await supabase
-    .from("projects")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user!.id);
-
-  const { data: recentScans } = await supabase
-    .from("scans")
-    .select("*, projects(name)")
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  // Fetch recent vulnerabilities for timeline
   const admin = createSupabaseAdmin();
-  const { data: recentVulns } = await admin
-    .from("vulnerabilities")
-    .select("*, scans!inner(project_id, projects!inner(name, user_id))")
-    .order("created_at", { ascending: false })
-    .limit(10);
+
+  // Run all queries in parallel
+  const [{ count: projectCount }, { data: recentScans }, { data: recentVulns }] =
+    await Promise.all([
+      supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user!.id),
+      supabase
+        .from("scans")
+        .select("*, projects(name)")
+        .order("created_at", { ascending: false })
+        .limit(10),
+      admin
+        .from("vulnerabilities")
+        .select("*, scans!inner(project_id, projects!inner(name, user_id))")
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
 
   // Filter to user's vulnerabilities
-  const userVulns = (recentVulns ?? []).filter(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (v: any) => v.scans?.projects?.user_id === user!.id
-  ) as (Vulnerability & { scans: { project_id: string; projects: { name: string } } })[];
+  const userVulns = ((recentVulns ?? []) as (Vulnerability & { scans: { project_id: string; projects: { name: string; user_id: string } } })[]).filter(
+    (v) => v.scans?.projects?.user_id === user!.id
+  );
 
   // Build per-project latest scan map
   const projectScans = new Map<string, Scan>();
