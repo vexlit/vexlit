@@ -182,7 +182,7 @@ function scanPySsrfTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabi
     const firstArg = argsNode.namedChildren[0];
 
     // Safe: pure string literal
-    if (firstArg.type === "string" && firstArg.namedChildren.length === 0) return;
+    if (firstArg.type === "string" && !firstArg.namedChildren.some((c: TreeSitterNode) => c.type === "interpolation")) return;
 
     const isTainted =
       PY_USER_INPUT.test(firstArg.text) ||

@@ -114,7 +114,7 @@ const PYTHON_SANITIZERS = new Set([
 function isPySafeArg(node: TreeSitterNode, sanitized: Set<string>): boolean {
   // Pure string literal: "hardcoded"
   if (node.type === "string") {
-    return node.namedChildren.length === 0;
+    return !node.namedChildren.some((c) => c.type === "interpolation");
   }
   // List argument: subprocess.run(["echo", user_input]) — no shell injection
   if (node.type === "list") return true;
@@ -215,6 +215,8 @@ function collectPyTaintState(tree: TreeSitterTree): { tainted: Set<string>; sani
 /** Check if a binary expression like "echo " + safe has no tainted leaves */
 function isBinaryAllSanitized(node: TreeSitterNode, tainted: Set<string>, sanitized: Set<string>): boolean {
   if (node.type !== "binary_operator") return false;
+  // If the expression contains direct user input patterns, it's not safe
+  if (PYTHON_USER_INPUT.test(node.text)) return false;
   // All identifier leaves must be either sanitized or not tainted
   const identifiers: TreeSitterNode[] = [];
   function collectIds(n: TreeSitterNode) {

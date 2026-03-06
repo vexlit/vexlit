@@ -6,11 +6,11 @@ import type { AST } from "../ast-parser.js";
 const INSECURE_CRYPTO_PATTERNS: { name: string; pattern: RegExp }[] = [
   {
     name: "MD5 usage",
-    pattern: /(?:createHash|hashlib\.md5|MD5)\s*\(\s*["']?md5["']?\s*\)/i,
+    pattern: /(?:createHash\s*\(\s*["']md5["']|hashlib\.md5\s*\(|MD5\s*\(\s*["']md5["'])/i,
   },
   {
     name: "SHA1 usage",
-    pattern: /(?:createHash|hashlib\.sha1)\s*\(\s*["']?sha1["']?\s*\)/i,
+    pattern: /(?:createHash\s*\(\s*["']sha1["']|hashlib\.sha1\s*\()/i,
   },
   {
     name: "Math.random for security",

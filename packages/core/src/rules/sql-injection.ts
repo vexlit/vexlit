@@ -102,8 +102,38 @@ function scanPySql(ctx: ScanContext): Vulnerability[] {
   return scanPySqlRegex(ctx);
 }
 
+/** Check if a tree-sitter node contains user input or tainted references */
+function hasPyTaintedRef(node: TreeSitterNode, tainted: Set<string>): boolean {
+  if (node.type === "identifier" && tainted.has(node.text)) return true;
+  if (PY_USER_INPUT.test(node.text)) return true;
+  return node.namedChildren.some((c: TreeSitterNode) => hasPyTaintedRef(c, tainted));
+}
+
 function scanPySqlTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerability[] {
   const vulns: Vulnerability[] = [];
+
+  // Collect user-input tainted variables
+  const userTainted = new Set<string>();
+  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
+    if (node.type !== "assignment") return;
+    const left = node.childForFieldName("left");
+    const right = node.childForFieldName("right");
+    if (!left || !right || left.type !== "identifier") return;
+    if (PY_USER_INPUT.test(right.text)) userTainted.add(left.text);
+  });
+  // Transitive
+  walkTreeSitter(tree.rootNode, (node: TreeSitterNode) => {
+    if (node.type !== "assignment") return;
+    const left = node.childForFieldName("left");
+    const right = node.childForFieldName("right");
+    if (!left || !right || left.type !== "identifier") return;
+    if (userTainted.has(left.text)) return;
+    if (right.namedChildren.some((c: TreeSitterNode) =>
+      c.type === "identifier" && userTainted.has(c.text)
+    )) {
+      userTainted.add(left.text);
+    }
+  });
 
   // Track variables containing SQL strings built from concatenation/f-string
   const sqlTainted = new Set<string>();
@@ -119,7 +149,7 @@ function scanPySqlTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabil
       // Check if it's a dynamic SQL (concat, f-string, format)
       const isDynamic =
         right.type === "binary_operator" ||
-        (right.type === "string" && right.namedChildren.length > 0) || // f-string
+        (right.type === "string" && right.namedChildren.some((c: TreeSitterNode) => c.type === "interpolation")) || // f-string
         right.type === "call"; // "...".format(...)
       if (isDynamic) {
         sqlTainted.add(left.text);
@@ -147,16 +177,26 @@ function scanPySqlTreeSitter(ctx: ScanContext, tree: TreeSitterTree): Vulnerabil
     const firstArg = argsNode.namedChildren[0];
 
     // Safe: parameterized query (string literal followed by comma with params)
-    if (firstArg.type === "string" && firstArg.namedChildren.length === 0) return;
+    if (firstArg.type === "string" && !firstArg.namedChildren.some((c: TreeSitterNode) => c.type === "interpolation")) return;
+
+    // Safe: parameterized query with tuple/list as second arg
+    // e.g. execute("SELECT ... WHERE id = %s", (user_id,))
+    if (firstArg.type === "string" && argsNode.namedChildren.length >= 2) return;
 
     // Case A: Inline SQL — f-string or concat directly in execute()
     if (SQL_KEYWORDS.test(firstArg.text)) {
       const isDynamic =
         firstArg.type === "binary_operator" ||
-        (firstArg.type === "string" && firstArg.namedChildren.length > 0) ||
+        (firstArg.type === "string" && firstArg.namedChildren.some((c: TreeSitterNode) => c.type === "interpolation")) ||
         firstArg.type === "call";
       if (isDynamic) {
-        vulns.push(makeSqlVuln(ctx, node.startPosition.row + 1, true));
+        // Only flag if the dynamic part contains user input or tainted variables
+        const isTainted = hasPyTaintedRef(firstArg, userTainted);
+        if (isTainted) {
+          vulns.push(makeSqlVuln(ctx, node.startPosition.row + 1, true));
+        } else {
+          vulns.push(makeSqlVuln(ctx, node.startPosition.row + 1, false));
+        }
         return;
       }
     }
@@ -186,6 +226,12 @@ function scanPySqlRegex(ctx: ScanContext): Vulnerability[] {
 
   for (let i = 0; i < ctx.lines.length; i++) {
     const line = ctx.lines[i];
+
+    // Safe: parameterized query — execute("...%s...", (val,)) or execute("...?...", (val,))
+    if (/\.execute\w*\s*\(\s*["'][^"']*(?:%s|\?)[^"']*["']\s*,/.test(line)) continue;
+
+    // Safe: static string query — execute("SELECT COUNT(*) FROM users")
+    if (/\.execute\w*\s*\(\s*["'][^"']*["']\s*\)/.test(line) && !/%s/.test(line)) continue;
 
     // Check inline patterns first
     let matched = false;
