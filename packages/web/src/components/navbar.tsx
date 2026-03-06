@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationBell } from "./notification-bell";
 
 export function Navbar({ email }: { email: string }) {
   const router = useRouter();
@@ -35,9 +36,16 @@ export function Navbar({ email }: { email: string }) {
               >
                 New Scan
               </Link>
+              <Link
+                href="/dashboard/settings"
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
+                Settings
+              </Link>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <ThemeToggle />
             <span className="text-gray-400 text-sm hidden sm:inline">{email}</span>
             <button
