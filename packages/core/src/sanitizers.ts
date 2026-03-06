@@ -32,23 +32,25 @@ const JS_SANITIZERS: JsSanitizer[] = [
 
   // Validation libraries
   { name: "validator.escape", categories: ["xss"] },
-  { name: "validator.isURL", categories: ["ssrf"] },
+  // validator.isURL is validation only, not sanitization — SSRF bypass possible (e.g. http://169.254.169.254)
   { name: "validator.isEmail", categories: ["universal"] },
   { name: "validator.isInt", categories: ["sql", "cmd", "path"] },
   { name: "validator.isNumeric", categories: ["sql", "cmd", "path"] },
 
-  // Number coercion (safe for injection if used with validation)
-  { name: "parseInt", categories: ["sql", "cmd", "path", "ssrf"] },
-  { name: "parseFloat", categories: ["sql", "cmd", "path", "ssrf"] },
-  { name: "Number", categories: ["sql", "cmd", "path", "ssrf"] },
+  // Number coercion — safe for cmd/path/ssrf (output is always numeric)
+  // NOT included in "sql" category: use parameterized queries instead.
+  // SQL injection FP reduction is handled by hasJsNumericGuard (isNaN/isFinite check).
+  { name: "parseInt", categories: ["cmd", "path", "ssrf"] },
+  { name: "parseFloat", categories: ["cmd", "path", "ssrf"] },
+  { name: "Number", categories: ["cmd", "path", "ssrf"] },
 
   // Schema validation
   { name: "zod.parse", categories: ["universal"] },
   { name: "Joi.validate", categories: ["universal"] },
 
-  // Path sanitizers
-  { name: "path.basename", categories: ["path"] },
-  { name: "path.normalize", categories: ["path"] },
+  // Path sanitizers — only resolve+startsWith is truly safe
+  // basename alone is NOT a full sanitizer (upload/../../etc/passwd → passwd looks safe but input was traversal)
+  // basename/normalize are handled as confidence downgrade via surroundingHasSanitizer, not as full sanitizers
 
   // SQL sanitizers
   { name: "escape", categories: ["sql"] },
@@ -163,12 +165,12 @@ interface PySanitizer {
 const PY_SANITIZERS: PySanitizer[] = [
   // XSS
   { names: ["html.escape", "markupsafe.escape", "markupsafe.Markup", "bleach.clean", "escape"], categories: ["xss"] },
-  // SQL
-  { names: ["int", "float"], categories: ["sql", "cmd", "path", "ssrf"] },
+  // Numeric coercion — NOT included in "sql" (use parameterized queries instead)
+  { names: ["int", "float"], categories: ["cmd", "path", "ssrf"] },
   // Command
   { names: ["shlex.quote", "pipes.quote", "quote"], categories: ["cmd"] },
-  // Path
-  { names: ["os.path.basename", "os.path.realpath", "os.path.abspath"], categories: ["path"] },
+  // Path — basename/realpath alone are NOT full sanitizers; they are handled as confidence downgrade
+  // Only included here for cmd/ssrf where numeric path doesn't apply
   // URL
   { names: ["urllib.parse.quote", "urllib.parse.quote_plus"], categories: ["ssrf"] },
   // Eval
@@ -289,8 +291,12 @@ export function jsLineHasSanitizer(line: string, category: SanitizerCategory): b
   return false;
 }
 
+// Partial mitigations that warrant confidence downgrade but are NOT full sanitizers
+const JS_PATH_PARTIAL_MITIGATIONS = /\b(?:path\.basename|path\.normalize|path\.resolve|\.startsWith\s*\(|\.includes\s*\(\s*["']\.\.)/;
+const PY_PATH_PARTIAL_MITIGATIONS = /\b(?:os\.path\.basename|os\.path\.normpath|os\.path\.realpath|os\.path\.abspath|\.startswith\s*\()/;
+
 /**
- * Check if the surrounding context (±3 lines) contains sanitizer usage for the category.
+ * Check if the surrounding context (±5 lines) contains sanitizer usage for the category.
  */
 export function surroundingHasSanitizer(
   lines: string[],
@@ -305,5 +311,14 @@ export function surroundingHasSanitizer(
   for (let i = start; i < end; i++) {
     if (checker(lines[i], category)) return true;
   }
+
+  // For path category: also check partial mitigations (basename, normalize, startsWith)
+  if (category === "path") {
+    const pattern = language === "python" ? PY_PATH_PARTIAL_MITIGATIONS : JS_PATH_PARTIAL_MITIGATIONS;
+    for (let i = start; i < end; i++) {
+      if (pattern.test(lines[i])) return true;
+    }
+  }
+
   return false;
 }
