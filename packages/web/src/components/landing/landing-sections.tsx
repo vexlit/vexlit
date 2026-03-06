@@ -11,21 +11,20 @@ const DEMO_TABS = [
     label: "SQL Injection",
     vulnerable: `// Express API handler
 app.get("/users", (req, res) => {
-  const query = \`SELECT * FROM users
-    WHERE name = '\${req.query.name}'\`;
-  db.query(query);
+  db.query(\`SELECT * FROM users
+    WHERE name = '\${req.query.name}'\`);
 });`,
     fixed: `// Express API handler
 app.get("/users", (req, res) => {
-  const query = "SELECT * FROM users WHERE name = ?";
-  db.query(query, [req.query.name]);
+  db.query("SELECT * FROM users WHERE name = ?",
+    [req.query.name]);
 });`,
     finding: {
       rule: "SQL Injection",
       id: "VEXLIT-002",
       severity: "critical",
       line: 3,
-      message: "User input directly interpolated into SQL query. Use parameterized queries.",
+      message: "Template literal in SQL query — possible SQL injection. Use parameterized queries.",
       cwe: "CWE-89",
     },
   },
@@ -75,9 +74,9 @@ function Comment({ text }) {
     finding: {
       rule: "Cross-Site Scripting",
       id: "VEXLIT-003",
-      severity: "critical",
+      severity: "warning",
       line: 5,
-      message: "Unsanitized HTML rendered via dangerouslySetInnerHTML. Sanitize with DOMPurify.",
+      message: "dangerouslySetInnerHTML — potential XSS vector. Sanitize with DOMPurify.",
       cwe: "CWE-79",
     },
   },
@@ -145,12 +144,12 @@ export function BeforeAfterDemo() {
         {/* Finding card */}
         <div className="mt-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0" />
+            <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${demo.finding.severity === "critical" ? "bg-red-500" : demo.finding.severity === "warning" ? "bg-yellow-500" : "bg-blue-500"}`} />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-white font-medium text-sm">{demo.finding.rule}</span>
                 <span className="text-gray-600 text-xs font-mono">{demo.finding.id}</span>
-                <span className="px-1.5 py-0.5 bg-red-500/10 text-red-400 rounded text-xs font-medium">
+                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${demo.finding.severity === "critical" ? "bg-red-500/10 text-red-400" : demo.finding.severity === "warning" ? "bg-yellow-500/10 text-yellow-400" : "bg-blue-500/10 text-blue-400"}`}>
                   {demo.finding.severity}
                 </span>
                 <span className="text-gray-600 text-xs">{demo.finding.cwe}</span>

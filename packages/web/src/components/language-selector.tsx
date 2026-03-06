@@ -24,6 +24,8 @@ export function LanguageSelector() {
   }, []);
 
   const switchLocale = (newLocale: string) => {
+    // Persist locale preference in cookie (read by next-intl middleware)
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
     // Replace the locale segment in the pathname
     const segments = pathname.split("/");
     if (routing.locales.includes(segments[1] as "en" | "ko")) {
@@ -59,7 +61,7 @@ export function LanguageSelector() {
                   : "text-gray-400 hover:text-white hover:bg-gray-800/50"
               }`}
             >
-              {t(loc)}
+              {loc === "en" ? "🇺🇸" : "🇰🇷"} {t(loc)}
             </button>
           ))}
         </div>
