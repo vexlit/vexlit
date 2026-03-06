@@ -1,6 +1,7 @@
 import { Rule, Vulnerability, Language, VexlitConfig, ScanContext } from "./types.js";
 import { allRules } from "./rules/index.js";
 import { parseAST } from "./ast-parser.js";
+import { parseTreeSitter } from "./tree-sitter.js";
 
 export class RuleEngine {
   private registry: Map<string, Rule> = new Map();
@@ -23,27 +24,29 @@ export class RuleEngine {
     return this.registry.get(id);
   }
 
-  createContext(
+  async createContext(
     filePath: string,
     content: string,
     language: Language
-  ): ScanContext {
+  ): Promise<ScanContext> {
+    const treeSitterTree = await parseTreeSitter(content, language);
     return {
       filePath,
       content,
       lines: content.split("\n"),
       language,
       ast: parseAST(content, language),
+      treeSitterTree,
     };
   }
 
-  execute(
+  async execute(
     filePath: string,
     content: string,
     language: Language,
     config?: VexlitConfig
-  ): Vulnerability[] {
-    const ctx = this.createContext(filePath, content, language);
+  ): Promise<Vulnerability[]> {
+    const ctx = await this.createContext(filePath, content, language);
     const vulnerabilities: Vulnerability[] = [];
 
     for (const rule of this.registry.values()) {

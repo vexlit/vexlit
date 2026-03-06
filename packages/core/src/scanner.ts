@@ -54,15 +54,15 @@ function collectFiles(
 
 const engine = new RuleEngine();
 
-export function scanFile(
+export async function scanFile(
   filePath: string,
   config?: VexlitConfig
-): ScanResult | null {
+): Promise<ScanResult | null> {
   const language = detectLanguage(filePath);
   if (!language) return null;
 
   const content = fs.readFileSync(filePath, "utf-8");
-  const vulnerabilities = engine.execute(filePath, content, language, config);
+  const vulnerabilities = await engine.execute(filePath, content, language, config);
 
   return {
     filePath,
@@ -72,7 +72,7 @@ export function scanFile(
   };
 }
 
-export function scan(options: ScanOptions): ScanResult[] {
+export async function scan(options: ScanOptions): Promise<ScanResult[]> {
   const rootDir = path.resolve(options.paths[0]);
   const resolvedRoot = fs.statSync(rootDir).isDirectory()
     ? rootDir
@@ -91,13 +91,13 @@ export function scan(options: ScanOptions): ScanResult[] {
 
     if (stat.isFile()) {
       if (!isIgnored(targetPath, ignorePatterns)) {
-        const result = scanFile(targetPath, config);
+        const result = await scanFile(targetPath, config);
         if (result) results.push(result);
       }
     } else if (stat.isDirectory()) {
       const files = collectFiles(targetPath, languages, ignorePatterns);
       for (const file of files) {
-        const result = scanFile(file, config);
+        const result = await scanFile(file, config);
         if (result) results.push(result);
       }
     }

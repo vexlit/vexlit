@@ -181,6 +181,157 @@ const social: SecretPattern[] = [
   { id: "LINKEDIN_SECRET", name: "LinkedIn Client Secret", pattern: /(?:linkedin[_-]?(?:client[_-]?)?secret)\s*[:=]\s*["'`][A-Za-z0-9]{16}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
 ];
 
+// ---------- CI/CD ----------
+const cicd: SecretPattern[] = [
+  { id: "BUILDKITE_AGENT_TOKEN", name: "Buildkite Agent Token", pattern: /(?:buildkite[_-]?agent[_-]?token)\s*[:=]\s*["'`][0-9a-f]{40,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "BUILDKITE_API_TOKEN", name: "Buildkite API Token", pattern: /(?:buildkite[_-]?api[_-]?(?:access[_-]?)?token)\s*[:=]\s*["'`][0-9a-f]{40}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "CODECOV_TOKEN", name: "Codecov Token", pattern: /(?:codecov[_-]?token)\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "COVERALLS_TOKEN", name: "Coveralls Repo Token", pattern: /(?:coveralls[_-]?(?:repo[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9]{32,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "DRONE_TOKEN", name: "Drone CI Token", pattern: /(?:drone[_-]?(?:server[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9]{32,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "SEMAPHORE_TOKEN", name: "Semaphore CI Token", pattern: /(?:semaphore[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][0-9a-f]{32,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "AZURE_DEVOPS_PAT", name: "Azure DevOps PAT", pattern: /(?:azure[_-]?devops[_-]?(?:pat|token))\s*[:=]\s*["'`][A-Za-z0-9]{52}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "BUDDY_TOKEN", name: "Buddy CI Token", pattern: /(?:buddy[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9]{40,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Infrastructure ----------
+const infra: SecretPattern[] = [
+  { id: "TERRAFORM_TOKEN", name: "Terraform Cloud Token", pattern: /(?:terraform[_-]?(?:cloud[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9.]{14,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "TERRAFORM_TOKEN_V2", name: "Terraform Cloud API Token", pattern: /\b[A-Za-z0-9]{14}\.atlasv1\.[A-Za-z0-9_-]{60,}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PULUMI_TOKEN", name: "Pulumi Access Token", pattern: /\bpul-[0-9a-f]{40}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "VAULT_TOKEN", name: "HashiCorp Vault Token", pattern: /(?:vault[_-]?token)\s*[:=]\s*["'`](?:hvs\.|s\.)[A-Za-z0-9_-]{20,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "CONSUL_TOKEN", name: "Consul ACL Token", pattern: /(?:consul[_-]?(?:acl[_-]?)?token)\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "ANSIBLE_VAULT_PW", name: "Ansible Vault Password", pattern: /(?:ansible[_-]?vault[_-]?passw(?:ord|d))\s*[:=]\s*["'`][^"'`\s]{8,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Cloud - Extended ----------
+const cloudExtended: SecretPattern[] = [
+  { id: "ORACLE_CLOUD_KEY", name: "Oracle Cloud API Key", pattern: /(?:oracle[_-]?(?:cloud[_-]?)?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9+/=]{40,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "LINODE_TOKEN", name: "Linode API Token", pattern: /(?:linode[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][0-9a-f]{64}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "VULTR_API_KEY", name: "Vultr API Key", pattern: /(?:vultr[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9]{36}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "HETZNER_TOKEN", name: "Hetzner API Token", pattern: /(?:hetzner[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9]{64}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "SCALEWAY_KEY", name: "Scaleway API Key", pattern: /(?:scaleway[_-]?(?:api[_-]?)?(?:key|token))\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "RENDER_API_KEY", name: "Render API Key", pattern: /\brnd_[A-Za-z0-9]{32,}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "FLY_TOKEN", name: "Fly.io API Token", pattern: /\bfo1_[A-Za-z0-9_-]{40,}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "RAILWAY_TOKEN", name: "Railway API Token", pattern: /(?:railway[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Payment - Extended ----------
+const paymentExtended: SecretPattern[] = [
+  { id: "ADYEN_API_KEY", name: "Adyen API Key", pattern: /(?:adyen[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`]AQE[A-Za-z0-9+/=]{40,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "RAZORPAY_KEY", name: "Razorpay API Key", pattern: /\brzp_(?:live|test)_[A-Za-z0-9]{14,}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "MOLLIE_API_KEY", name: "Mollie API Key", pattern: /\b(?:live|test)_[A-Za-z0-9]{30,}\b/, confidence: "medium", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PADDLE_API_KEY", name: "Paddle API Key", pattern: /(?:paddle[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][0-9a-f]{32,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "WISE_API_TOKEN", name: "Wise (TransferWise) API Token", pattern: /(?:wise[_-]?(?:api[_-]?)?token|transferwise[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][0-9a-f-]{36,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- AI - Extended ----------
+const aiExtended: SecretPattern[] = [
+  { id: "GEMINI_API_KEY", name: "Google Gemini API Key", pattern: /(?:gemini[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`]AIza[0-9A-Za-z_-]{35}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "MISTRAL_API_KEY", name: "Mistral AI API Key", pattern: /(?:mistral[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9]{32}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "GROQ_API_KEY", name: "Groq API Key", pattern: /\bgsk_[A-Za-z0-9]{48,}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PERPLEXITY_API_KEY", name: "Perplexity API Key", pattern: /\bpplx-[A-Za-z0-9]{48}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "STABILITY_API_KEY", name: "Stability AI Key", pattern: /\bsk-[A-Za-z0-9]{48,}\b/, confidence: "medium", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "ELEVENLABS_KEY", name: "ElevenLabs API Key", pattern: /(?:eleven[_-]?labs[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][0-9a-f]{32}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Communication - Extended ----------
+const commExtended: SecretPattern[] = [
+  { id: "VONAGE_API_KEY", name: "Vonage/Nexmo API Key", pattern: /(?:vonage|nexmo)[_-]?(?:api[_-]?)?(?:key|secret)\s*[:=]\s*["'`][A-Za-z0-9]{8,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "MESSAGEBIRD_KEY", name: "MessageBird API Key", pattern: /(?:messagebird[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9]{25}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "BANDWIDTH_TOKEN", name: "Bandwidth API Token", pattern: /(?:bandwidth[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9_-]{32,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "SPARKPOST_KEY", name: "SparkPost API Key", pattern: /(?:sparkpost[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][0-9a-f]{40}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "SES_SMTP_PASSWORD", name: "Amazon SES SMTP Password", pattern: /(?:ses[_-]?smtp[_-]?password)\s*[:=]\s*["'`][A-Za-z0-9+/=]{44}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Search ----------
+const search: SecretPattern[] = [
+  { id: "ALGOLIA_API_KEY", name: "Algolia API Key", pattern: /(?:algolia[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][0-9a-f]{32}["'`]/i, confidence: "high", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "ALGOLIA_ADMIN_KEY", name: "Algolia Admin Key", pattern: /(?:algolia[_-]?admin[_-]?key)\s*[:=]\s*["'`][0-9a-f]{32}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "MEILISEARCH_KEY", name: "Meilisearch API Key", pattern: /(?:meili(?:search)?[_-]?(?:api[_-]?)?(?:key|master[_-]?key))\s*[:=]\s*["'`][A-Za-z0-9_-]{20,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "TYPESENSE_KEY", name: "Typesense API Key", pattern: /(?:typesense[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9]{20,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Notification ----------
+const notification: SecretPattern[] = [
+  { id: "PUSHOVER_TOKEN", name: "Pushover API Token", pattern: /(?:pushover[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][a-z0-9]{30}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "ONESIGNAL_KEY", name: "OneSignal API Key", pattern: /(?:onesignal[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "FCM_SERVER_KEY", name: "Firebase Cloud Messaging Key", pattern: /(?:fcm[_-]?(?:server[_-]?)?key)\s*[:=]\s*["'`]AAAA[A-Za-z0-9_-]{100,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PUSHER_SECRET", name: "Pusher App Secret", pattern: /(?:pusher[_-]?(?:app[_-]?)?secret)\s*[:=]\s*["'`][0-9a-f]{20}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Testing ----------
+const testing: SecretPattern[] = [
+  { id: "SAUCELABS_KEY", name: "Sauce Labs Access Key", pattern: /(?:sauce[_-]?(?:labs[_-]?)?access[_-]?key)\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "BROWSERSTACK_KEY", name: "BrowserStack Access Key", pattern: /(?:browserstack[_-]?(?:access[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9]{20}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "CYPRESS_RECORD_KEY", name: "Cypress Record Key", pattern: /(?:cypress[_-]?record[_-]?key)\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PERCY_TOKEN", name: "Percy Token", pattern: /(?:percy[_-]?token)\s*[:=]\s*["'`][0-9a-f]{64}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Database - Extended ----------
+const dbExtended: SecretPattern[] = [
+  { id: "COCKROACHDB_URI", name: "CockroachDB Connection String", pattern: /cockroachdb:\/\/[^:\s]+:[^@\s]+@[^/\s]+/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PLANETSCALE_TOKEN", name: "PlanetScale Token", pattern: /\bpscale_tkn_[A-Za-z0-9_-]{32,}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PLANETSCALE_PW", name: "PlanetScale Password", pattern: /\bpscale_pw_[A-Za-z0-9_-]{32,}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "NEON_DB_URL", name: "Neon Database URL", pattern: /postgres(?:ql)?:\/\/[^:\s]+:[^@\s]+@[^/\s]*neon\.tech/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "TURSO_TOKEN", name: "Turso Database Token", pattern: /(?:turso[_-]?(?:auth[_-]?)?token)\s*[:=]\s*["'`]eyJ[A-Za-z0-9_-]+["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "FAUNA_SECRET", name: "FaunaDB Secret Key", pattern: /\bfnA[A-Za-z0-9_-]{38,}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Security Tools ----------
+const securityTools: SecretPattern[] = [
+  { id: "SNYK_TOKEN", name: "Snyk API Token", pattern: /(?:snyk[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "SONARQUBE_TOKEN", name: "SonarQube Token", pattern: /(?:sonar[_-]?(?:qube[_-]?)?token)\s*[:=]\s*["'`]squ_[0-9a-f]{40}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "GITGUARDIAN_KEY", name: "GitGuardian API Key", pattern: /(?:gitguardian[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9_-]{40,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Project Management ----------
+const projectMgmt: SecretPattern[] = [
+  { id: "JIRA_API_TOKEN", name: "Jira API Token", pattern: /(?:jira[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9]{24,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "LINEAR_API_KEY", name: "Linear API Key", pattern: /\blin_api_[A-Za-z0-9]{40}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "ASANA_TOKEN", name: "Asana Access Token", pattern: /(?:asana[_-]?(?:access[_-]?)?token)\s*[:=]\s*["'`][0-9]\/[0-9]+:[A-Za-z0-9]+["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "NOTION_SECRET", name: "Notion Integration Secret", pattern: /\bsecret_[A-Za-z0-9]{43}\b/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "MONDAY_TOKEN", name: "Monday.com API Token", pattern: /\beyJ[A-Za-z0-9_-]{80,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/, confidence: "medium", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Customer Support ----------
+const support: SecretPattern[] = [
+  { id: "ZENDESK_TOKEN", name: "Zendesk API Token", pattern: /(?:zendesk[_-]?(?:api[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9]{40}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "INTERCOM_TOKEN", name: "Intercom Access Token", pattern: /(?:intercom[_-]?(?:access[_-]?)?token)\s*[:=]\s*["'`][A-Za-z0-9=_-]{44,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "FRESHDESK_KEY", name: "Freshdesk API Key", pattern: /(?:freshdesk[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9]{20}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "HUBSPOT_KEY", name: "HubSpot API Key", pattern: /(?:hubspot[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Analytics - Extended ----------
+const analyticsExtended: SecretPattern[] = [
+  { id: "POSTHOG_KEY", name: "PostHog API Key", pattern: /\bphc_[A-Za-z0-9]{32,}\b/, confidence: "high", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "HEAP_APP_ID", name: "Heap Analytics App ID", pattern: /(?:heap[_-]?(?:app[_-]?)?id)\s*[:=]\s*["'`][0-9]{9,}["'`]/i, confidence: "medium", severity: "info", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PLAUSIBLE_KEY", name: "Plausible Analytics Key", pattern: /(?:plausible[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9_-]{40,}["'`]/i, confidence: "high", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Media ----------
+const media: SecretPattern[] = [
+  { id: "VIMEO_TOKEN", name: "Vimeo Access Token", pattern: /(?:vimeo[_-]?(?:access[_-]?)?token)\s*[:=]\s*["'`][0-9a-f]{32}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "SPOTIFY_SECRET", name: "Spotify Client Secret", pattern: /(?:spotify[_-]?(?:client[_-]?)?secret)\s*[:=]\s*["'`][0-9a-f]{32}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "GIPHY_KEY", name: "Giphy API Key", pattern: /(?:giphy[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`][A-Za-z0-9]{32}["'`]/i, confidence: "high", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "YOUTUBE_API_KEY", name: "YouTube API Key", pattern: /(?:youtube[_-]?(?:api[_-]?)?key)\s*[:=]\s*["'`]AIza[0-9A-Za-z_-]{35}["'`]/i, confidence: "high", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Signing / Certificates ----------
+const signing: SecretPattern[] = [
+  { id: "PGP_PRIVATE_KEY", name: "PGP Private Key Block", pattern: /-----BEGIN PGP PRIVATE KEY BLOCK-----/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "PKCS8_PRIVATE_KEY", name: "PKCS8 Private Key", pattern: /-----BEGIN ENCRYPTED PRIVATE KEY-----/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "X509_CERTIFICATE_KEY", name: "X.509 Private Key", pattern: /-----BEGIN CERTIFICATE-----[\s\S]{100,}-----END CERTIFICATE-----/, confidence: "medium", severity: "warning", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
+// ---------- Container Registry ----------
+const containerRegistry: SecretPattern[] = [
+  { id: "DOCKER_HUB_PASSWORD", name: "Docker Hub Password", pattern: /(?:docker[_-]?(?:hub[_-]?)?password)\s*[:=]\s*["'`][^"'`\s]{8,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "GCR_SERVICE_KEY", name: "Google Container Registry Key", pattern: /(?:gcr[_-]?(?:service[_-]?)?key)\s*[:=]\s*["'`]\{[^}]+\}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "ECR_ACCESS_KEY", name: "AWS ECR Access Key", pattern: /(?:ecr[_-]?(?:access[_-]?)?key)\s*[:=]\s*["'`]AKIA[0-9A-Z]{16}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "GITHUB_CR_TOKEN", name: "GitHub Container Registry Token", pattern: /(?:ghcr[_-]?(?:io[_-]?)?token)\s*[:=]\s*["'`]ghp_[A-Za-z0-9]{36}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+  { id: "HARBOR_PASSWORD", name: "Harbor Registry Password", pattern: /(?:harbor[_-]?(?:registry[_-]?)?password)\s*[:=]\s*["'`][^"'`\s]{8,}["'`]/i, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
+];
+
 // ---------- Generic Credentials ----------
 const generic: SecretPattern[] = [
   { id: "PRIVATE_KEY_BLOCK", name: "Private Key", pattern: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----/, confidence: "high", severity: "critical", cwe: "CWE-798", owasp: "A02:2021" },
@@ -193,14 +344,20 @@ const generic: SecretPattern[] = [
 
 export const allSecretPatterns: SecretPattern[] = [
   ...cloud,
+  ...cloudExtended,
   ...payment,
+  ...paymentExtended,
   ...communication,
+  ...commExtended,
   ...chat,
   ...vcs,
   ...ai,
+  ...aiExtended,
   ...database,
+  ...dbExtended,
   ...auth,
   ...monitoring,
+  ...analyticsExtended,
   ...storage,
   ...cms,
   ...maps,
@@ -208,4 +365,15 @@ export const allSecretPatterns: SecretPattern[] = [
   ...ecommerce,
   ...social,
   ...generic,
+  ...cicd,
+  ...infra,
+  ...search,
+  ...notification,
+  ...testing,
+  ...securityTools,
+  ...projectMgmt,
+  ...support,
+  ...media,
+  ...signing,
+  ...containerRegistry,
 ];

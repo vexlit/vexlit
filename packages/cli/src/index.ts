@@ -157,7 +157,7 @@ program
           ? "json"
           : (options.format ?? "table");
 
-      const results = scan({ paths });
+      const results = await scan({ paths });
 
       if (options.llm) {
         const apiKey =

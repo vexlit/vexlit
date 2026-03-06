@@ -50,6 +50,7 @@ export interface ScanContext {
   lines: string[];
   language: Language;
   ast: unknown | null;
+  treeSitterTree: unknown | null;
 }
 
 export interface Rule {

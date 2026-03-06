@@ -6,6 +6,8 @@ export { loadConfig } from "./config.js";
 export { loadIgnorePatterns, isIgnored } from "./ignore.js";
 export { analyzeLlm } from "./llm.js";
 export { parseAST, walkAST, findNodes } from "./ast-parser.js";
+export { parseTreeSitter, walkTreeSitter, findTreeSitterNodes } from "./tree-sitter.js";
+export type { TreeSitterTree, TreeSitterNode } from "./tree-sitter.js";
 export type {
   Vulnerability,
   ScanResult,

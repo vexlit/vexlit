@@ -261,7 +261,7 @@ export async function POST(
       const language = extMap[ext];
       if (!language) continue;
 
-      const vulns = engine.execute(file.path, file.content, language);
+      const vulns = await engine.execute(file.path, file.content, language);
 
       for (const v of vulns) {
         chunkVulnerabilities.push({
