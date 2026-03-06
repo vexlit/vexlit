@@ -3,14 +3,20 @@ import type { Dependency } from "./types.js";
 import { parseDependencies, isDependencyFile } from "./parser.js";
 import { queryOsv } from "./osv.js";
 
+export interface ScaResult {
+  vulnerabilities: Vulnerability[];
+  depCount: number;
+  skipped: boolean;
+}
+
 /**
  * Run SCA analysis on a set of files.
  * Detects dependency manifests, parses them, queries OSV,
- * and returns Vulnerability[] compatible with the existing scan pipeline.
+ * and returns vulnerabilities + metadata.
  */
 export async function scaDependencies(
   files: { path: string; content: string }[]
-): Promise<Vulnerability[]> {
+): Promise<ScaResult> {
   // Step 1: Find and parse all dependency files
   const allDeps: Dependency[] = [];
   for (const file of files) {
@@ -19,7 +25,7 @@ export async function scaDependencies(
     allDeps.push(...deps);
   }
 
-  if (!allDeps.length) return [];
+  if (!allDeps.length) return { vulnerabilities: [], depCount: 0, skipped: false };
 
   // Step 2: Deduplicate — same package may appear in multiple manifests
   const seen = new Map<string, Dependency>();
@@ -33,7 +39,13 @@ export async function scaDependencies(
   }
 
   // Step 3: Query OSV for known vulnerabilities (deduplicated)
-  const advisoryMap = await queryOsv(uniqueDeps);
+  let advisoryMap: Map<string, import("./types.js").Advisory[]>;
+  try {
+    advisoryMap = await queryOsv(uniqueDeps);
+  } catch {
+    // OSV unreachable after retries — skip SCA
+    return { vulnerabilities: [], depCount: uniqueDeps.length, skipped: true };
+  }
 
   // Step 4: Convert to Vulnerability[] (report against all source files)
   const vulnerabilities: Vulnerability[] = [];
@@ -67,5 +79,5 @@ export async function scaDependencies(
     }
   }
 
-  return vulnerabilities;
+  return { vulnerabilities, depCount: uniqueDeps.length, skipped: false };
 }

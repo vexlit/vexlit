@@ -3,7 +3,8 @@ import type { Dependency, Advisory } from "./types.js";
 const OSV_BATCH_URL = "https://api.osv.dev/v1/querybatch";
 const OSV_VULN_URL = "https://api.osv.dev/v1/vulns";
 const BATCH_SIZE = 100;
-const TIMEOUT_MS = 15_000;
+const TIMEOUT_MS = 5_000;
+const MAX_RETRIES = 1;
 
 interface OsvQuery {
   package: { name: string; ecosystem: string };
@@ -28,19 +29,26 @@ interface OsvVuln {
   database_specific?: { severity?: string };
 }
 
-/** Fetch with timeout */
+/** Fetch with timeout and retry */
 async function fetchWithTimeout(
   url: string,
   init: RequestInit,
   timeoutMs = TIMEOUT_MS
 ): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...init, signal: controller.signal });
+      clearTimeout(timer);
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      lastError = err;
+    }
   }
+  throw lastError;
 }
 
 /**
@@ -53,8 +61,12 @@ export async function queryOsv(
   const result = new Map<string, Advisory[]>();
   if (!deps.length) return result;
 
+  let successCount = 0;
+  let totalBatches = 0;
+
   // Process in batches
   for (let i = 0; i < deps.length; i += BATCH_SIZE) {
+    totalBatches++;
     const batch = deps.slice(i, i + BATCH_SIZE);
     const queries: OsvQuery[] = batch.map((d) => ({
       package: { name: d.name, ecosystem: d.ecosystem },
@@ -69,6 +81,7 @@ export async function queryOsv(
       });
 
       if (!res.ok) continue;
+      successCount++;
 
       const data = (await res.json()) as OsvBatchResult;
 
@@ -101,8 +114,13 @@ export async function queryOsv(
         result.set(depKey, existing);
       }
     } catch {
-      // Network error — skip this batch silently
+      // Network error — skip this batch
     }
+  }
+
+  // If ALL batches failed, throw so the caller knows SCA was skipped
+  if (successCount === 0 && totalBatches > 0) {
+    throw new Error("OSV API unreachable");
   }
 
   return result;

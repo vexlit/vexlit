@@ -9,7 +9,7 @@ export { parseAST, walkAST, findNodes } from "./ast-parser.js";
 export { parseTreeSitter, walkTreeSitter, findTreeSitterNodes } from "./tree-sitter.js";
 export type { TreeSitterTree, TreeSitterNode } from "./tree-sitter.js";
 export { scaDependencies, isDependencyFile, parseDependencies } from "./sca/index.js";
-export type { Dependency, Advisory, ScaDependencyResult } from "./sca/index.js";
+export type { Dependency, Advisory, ScaDependencyResult, ScaResult } from "./sca/index.js";
 export type {
   Vulnerability,
   ScanResult,

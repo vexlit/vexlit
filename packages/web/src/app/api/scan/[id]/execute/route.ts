@@ -244,10 +244,10 @@ export async function POST(
 
     // Run SCA once on the first chunk (all files still available)
     if (isFirstChunk) {
-      const scaVulns = await scaDependencies(files);
-      if (scaVulns.length > 0) {
+      const scaResult = await scaDependencies(files);
+      if (scaResult.vulnerabilities.length > 0) {
         await admin.from("vulnerabilities").insert(
-          scaVulns.map((v) => ({
+          scaResult.vulnerabilities.map((v) => ({
             scan_id: id,
             rule_id: v.ruleId,
             rule_name: v.ruleName,
@@ -263,6 +263,20 @@ export async function POST(
             suggestion: v.suggestion ?? null,
           }))
         );
+      } else if (scaResult.skipped && scaResult.depCount > 0) {
+        await admin.from("vulnerabilities").insert({
+          scan_id: id,
+          rule_id: "SCA-SKIPPED",
+          rule_name: "SCA skipped",
+          severity: "info",
+          confidence: "low",
+          message: `SCA analysis was skipped because the vulnerability database was unreachable. ${scaResult.depCount} dependencies were not checked.`,
+          file_path: "-",
+          line: 0,
+          column: 1,
+          snippet: null, cwe: null, owasp: null,
+          suggestion: "Re-run the scan to retry SCA analysis.",
+        });
       }
     }
 

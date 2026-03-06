@@ -121,9 +121,21 @@ export default async function PublicScanPage({
               {t("vulnCount", { count: vulns.length })}
             </h2>
 
+            {/* SCA skipped banner */}
+            {(() => {
+              const skipped = vulns.find((v) => v.rule_id === "SCA-SKIPPED");
+              if (!skipped) return null;
+              return (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3">
+                  <p className="text-yellow-400 text-sm font-medium">SCA Skipped</p>
+                  <p className="text-gray-400 text-xs">{skipped.message}</p>
+                </div>
+              );
+            })()}
+
             {/* SCA results grouped by package */}
             {(() => {
-              const scaVulns = vulns.filter((v) => v.rule_id.startsWith("SCA-"));
+              const scaVulns = vulns.filter((v) => v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED");
               if (!scaVulns.length) return null;
 
               const pkgGroups = new Map<string, Vulnerability[]>();
@@ -142,13 +154,25 @@ export default async function PublicScanPage({
                   </div>
                   {Array.from(pkgGroups.entries()).map(([pkg, pvulns]) => {
                     const isDev = pvulns.some((v) => v.rule_name.includes("(dev)"));
+                    const fixVersion = (() => {
+                      for (const v of pvulns) {
+                        const m = v.suggestion?.match(/Upgrade to ([^\s]+) or later/);
+                        if (m) return m[1];
+                      }
+                      return null;
+                    })();
                     return (
                       <div key={pkg} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                        <div className="px-4 py-2.5 border-b border-gray-800 bg-gray-900/50 flex items-center gap-2">
-                          <SeverityDot severity={pvulns.some((v) => v.severity === "critical") ? "critical" : pvulns.some((v) => v.severity === "warning") ? "warning" : "info"} />
-                          <span className="text-gray-200 text-sm font-medium">{pkg}</span>
-                          {isDev && <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-900/40 text-purple-400 border border-purple-800">dev</span>}
-                          <span className="text-gray-600 text-xs ml-auto">{pvulns.length} CVE{pvulns.length > 1 ? "s" : ""}</span>
+                        <div className="px-4 py-2.5 border-b border-gray-800 bg-gray-900/50">
+                          <div className="flex items-center gap-2">
+                            <SeverityDot severity={pvulns.some((v) => v.severity === "critical") ? "critical" : pvulns.some((v) => v.severity === "warning") ? "warning" : "info"} />
+                            <span className="text-gray-200 text-sm font-medium">{pkg}</span>
+                            {isDev && <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-900/40 text-purple-400 border border-purple-800">dev</span>}
+                            <span className="text-gray-600 text-xs ml-auto">{pvulns.length} CVE{pvulns.length > 1 ? "s" : ""}</span>
+                          </div>
+                          {fixVersion && (
+                            <p className="text-green-400/80 text-xs mt-1 ml-4">Fix available: {pkg} {fixVersion}</p>
+                          )}
                         </div>
                         <div className="divide-y divide-gray-800">
                           {pvulns.map((v, i) => (
@@ -158,7 +182,6 @@ export default async function PublicScanPage({
                                 <span className="text-white text-sm font-mono">{v.rule_id.replace("SCA-", "")}</span>
                               </div>
                               <p className="text-gray-400 text-sm">{v.message}</p>
-                              {v.suggestion && <p className="text-green-400/70 text-xs mt-1">{v.suggestion}</p>}
                             </div>
                           ))}
                         </div>
@@ -171,10 +194,10 @@ export default async function PublicScanPage({
 
             {/* SAST results */}
             {(() => {
-              const sastVulns = vulns.filter((v) => !v.rule_id.startsWith("SCA-"));
+              const sastVulns = vulns.filter((v) => !v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED");
               if (!sastVulns.length) return null;
 
-              const scaExists = vulns.some((v) => v.rule_id.startsWith("SCA-"));
+              const scaExists = vulns.some((v) => v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED");
 
               return (
                 <>

@@ -80,22 +80,24 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
   const [activeTab, setActiveTab] = useState<"all" | "sast" | "sca">("all");
   const [hideDevDeps, setHideDevDeps] = useState(false);
 
-  // Separate SCA and SAST vulns
-  const scaVulns = useMemo(() => vulns.filter((v) => v.rule_id.startsWith("SCA-")), [vulns]);
-  const sastVulns = useMemo(() => vulns.filter((v) => !v.rule_id.startsWith("SCA-")), [vulns]);
+  // Separate SCA and SAST vulns (exclude SCA-SKIPPED marker from vuln lists)
+  const scaSkipped = useMemo(() => vulns.find((v) => v.rule_id === "SCA-SKIPPED"), [vulns]);
+  const realVulns = useMemo(() => vulns.filter((v) => v.rule_id !== "SCA-SKIPPED"), [vulns]);
+  const scaVulns = useMemo(() => realVulns.filter((v) => v.rule_id.startsWith("SCA-")), [realVulns]);
+  const sastVulns = useMemo(() => realVulns.filter((v) => !v.rule_id.startsWith("SCA-")), [realVulns]);
 
   // Unique values for filter dropdowns
-  const files = useMemo(() => [...new Set(vulns.map((v) => v.file_path))], [vulns]);
-  const rules = useMemo(() => [...new Set(vulns.map((v) => v.rule_name))], [vulns]);
+  const files = useMemo(() => [...new Set(realVulns.map((v) => v.file_path))], [realVulns]);
+  const rules = useMemo(() => [...new Set(realVulns.map((v) => v.rule_name))], [realVulns]);
 
   const exploitableCount = useMemo(
-    () => vulns.filter((v) => v.severity === "critical" && v.confidence === "high").length,
-    [vulns]
+    () => realVulns.filter((v) => v.severity === "critical" && v.confidence === "high").length,
+    [realVulns]
   );
 
   // Filtered + searched vulns
   const filtered = useMemo(() => {
-    const base = activeTab === "sast" ? sastVulns : activeTab === "sca" ? scaVulns : vulns;
+    const base = activeTab === "sast" ? sastVulns : activeTab === "sca" ? scaVulns : realVulns;
     return base.filter((v) => {
       if (exploitableOnly && (v.severity !== "critical" || v.confidence !== "high")) return false;
       if (severityFilter !== "all" && v.severity !== severityFilter) return false;
@@ -115,7 +117,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
       }
       return true;
     });
-  }, [vulns, sastVulns, scaVulns, activeTab, severityFilter, fileFilter, ruleFilter, search, exploitableOnly, hideDevDeps]);
+  }, [realVulns, sastVulns, scaVulns, activeTab, severityFilter, fileFilter, ruleFilter, search, exploitableOnly, hideDevDeps]);
 
   // Split filtered into SAST (group by file) and SCA (group by package)
   const filteredSast = useMemo(() => filtered.filter((v) => !v.rule_id.startsWith("SCA-")), [filtered]);
@@ -167,7 +169,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
       {scaVulns.length > 0 && (
         <div className="flex items-center gap-2">
           {(["all", "sast", "sca"] as const).map((tab) => {
-            const label = tab === "all" ? `All (${vulns.length})` : tab === "sast" ? `SAST (${sastVulns.length})` : `SCA (${scaVulns.length})`;
+            const label = tab === "all" ? `All (${realVulns.length})` : tab === "sast" ? `SAST (${sastVulns.length})` : `SCA (${scaVulns.length})`;
             return (
               <button
                 key={tab}
@@ -196,6 +198,19 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
               {hideDevDeps ? "Dev deps hidden" : "Hide dev deps"}
             </button>
           )}
+        </div>
+      )}
+
+      {/* SCA skipped banner */}
+      {scaSkipped && (
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
+          <svg className="w-5 h-5 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <div>
+            <p className="text-yellow-400 text-sm font-medium">SCA Skipped</p>
+            <p className="text-gray-400 text-xs">{scaSkipped.message}</p>
+          </div>
         </div>
       )}
 
@@ -291,13 +306,21 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
 
       {/* Result count */}
       <p className="text-gray-500 text-sm">
-        Showing {filtered.length} of {vulns.length} vulnerabilities
+        Showing {filtered.length} of {realVulns.length} vulnerabilities
       </p>
 
       {/* Results */}
       {filtered.length === 0 && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
           <p className="text-gray-400">No vulnerabilities match your filters.</p>
+        </div>
+      )}
+
+      {/* Empty SCA message */}
+      {activeTab === "sca" && filteredSca.length === 0 && !scaSkipped && (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-6 text-center">
+          <p className="text-green-400 text-sm font-medium">No dependency vulnerabilities found</p>
+          <p className="text-gray-500 text-xs mt-1">All scanned dependencies are free of known vulnerabilities.</p>
         </div>
       )}
 
@@ -323,27 +346,40 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
             const maxSeverity = pkgVulns.some((v) => v.severity === "critical") ? "critical"
               : pkgVulns.some((v) => v.severity === "warning") ? "warning" : "info";
 
+            // Extract fix version from suggestion (e.g. "Upgrade to 4.17.21 or later.")
+            const fixVersions = [...new Set(pkgVulns.map((v) => {
+              const m = v.suggestion?.match(/Upgrade to ([^\s]+) or later/);
+              return m?.[1] ?? "";
+            }).filter(Boolean))];
+
             return (
               <div
                 key={pkgName}
                 className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden"
               >
-                <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <SeverityBadge severity={maxSeverity} />
-                    <span className="text-gray-200 text-sm font-medium">{pkgName}</span>
-                    {versions.length > 0 && (
-                      <span className="text-gray-500 text-xs font-mono">@{versions.join(", @")}</span>
-                    )}
-                    {isDev && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-900/40 text-purple-400 border border-purple-800">
-                        dev
-                      </span>
-                    )}
+                <div className="px-4 py-3 border-b border-gray-800 bg-gray-900/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <SeverityBadge severity={maxSeverity} />
+                      <span className="text-gray-200 text-sm font-medium">{pkgName}</span>
+                      {versions.length > 0 && (
+                        <span className="text-gray-500 text-xs font-mono">@{versions.join(", @")}</span>
+                      )}
+                      {isDev && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-900/40 text-purple-400 border border-purple-800">
+                          dev
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-gray-600 text-xs">
+                      {pkgVulns.length} CVE{pkgVulns.length > 1 ? "s" : ""}
+                    </span>
                   </div>
-                  <span className="text-gray-600 text-xs">
-                    {pkgVulns.length} CVE{pkgVulns.length > 1 ? "s" : ""}
-                  </span>
+                  {fixVersions.length > 0 && (
+                    <p className="text-green-400/80 text-xs mt-1.5 ml-7">
+                      Fix available: {pkgName} {fixVersions[0]}
+                    </p>
+                  )}
                 </div>
 
                 <div className="divide-y divide-gray-800">

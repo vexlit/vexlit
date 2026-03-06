@@ -169,8 +169,8 @@ export async function GET(request: Request) {
       }
 
       // Run SCA on dependency files
-      const scaVulns = await scaDependencies(files);
-      for (const v of scaVulns) {
+      const scaResult = await scaDependencies(files);
+      for (const v of scaResult.vulnerabilities) {
         allVulns.push({
           scan_id: scan.id,
           rule_id: v.ruleId,
@@ -185,6 +185,21 @@ export async function GET(request: Request) {
           owasp: v.owasp ?? null,
           suggestion: v.suggestion ?? null,
           confidence: v.confidence ?? "high",
+        });
+      }
+      if (scaResult.skipped && scaResult.depCount > 0) {
+        allVulns.push({
+          scan_id: scan.id,
+          rule_id: "SCA-SKIPPED",
+          rule_name: "SCA skipped",
+          severity: "info",
+          confidence: "low",
+          message: `SCA analysis was skipped because the vulnerability database was unreachable. ${scaResult.depCount} dependencies were not checked.`,
+          file_path: "-",
+          line: 0,
+          column: 1,
+          snippet: null, cwe: null, owasp: null,
+          suggestion: "Re-run the scan to retry SCA analysis.",
         });
       }
 
