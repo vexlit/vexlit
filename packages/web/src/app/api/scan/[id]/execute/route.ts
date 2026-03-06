@@ -235,6 +235,7 @@ export async function POST(
       rule_id: string;
       rule_name: string;
       severity: string;
+      confidence: string;
       message: string;
       file_path: string;
       line: number;
@@ -276,6 +277,7 @@ export async function POST(
           cwe: v.cwe ?? null,
           owasp: v.owasp ?? null,
           suggestion: v.suggestion ?? null,
+          confidence: v.confidence ?? "medium",
         });
       }
     }

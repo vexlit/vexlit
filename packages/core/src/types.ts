@@ -1,11 +1,14 @@
 export type Severity = "critical" | "warning" | "info";
 
+export type Confidence = "high" | "medium" | "low";
+
 export type Language = "javascript" | "typescript" | "python";
 
 export interface Vulnerability {
   ruleId: string;
   ruleName: string;
   severity: Severity;
+  confidence: Confidence;
   message: string;
   filePath: string;
   line: number;

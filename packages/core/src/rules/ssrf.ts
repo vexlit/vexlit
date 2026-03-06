@@ -88,6 +88,7 @@ export const ssrfRule: Rule = {
         filePath: ctx.filePath, line: lineNum, column: 1,
         snippet: ctx.lines[i].trim(),
         cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
+          confidence: "high",
       });
     }
     return vulnerabilities;

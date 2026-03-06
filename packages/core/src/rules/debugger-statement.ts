@@ -30,6 +30,7 @@ export const debuggerStatementRule: Rule = {
           column: node.loc.start.column + 1,
           snippet: ctx.lines[node.loc.start.line - 1]?.trim() ?? "debugger",
           cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
+          confidence: "high",
         });
       }
     } else {
@@ -42,6 +43,7 @@ export const debuggerStatementRule: Rule = {
             filePath: ctx.filePath, line: i + 1, column: 1,
             snippet: ctx.lines[i].trim(),
             cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
+          confidence: "high",
           });
         }
       }

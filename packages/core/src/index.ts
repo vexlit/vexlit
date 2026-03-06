@@ -14,6 +14,7 @@ export type {
   VexlitConfig,
   RuleConfig,
   Severity,
+  Confidence,
   Language,
   Rule,
 } from "./types.js";

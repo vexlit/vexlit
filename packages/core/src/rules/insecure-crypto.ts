@@ -121,6 +121,7 @@ export const insecureCryptoRule: Rule = {
           cwe: this.cwe,
           owasp: this.owasp,
           suggestion: this.suggestion,
+          confidence: "high",
         });
       }
     }

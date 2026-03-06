@@ -41,6 +41,7 @@ export const redosRule: Rule = {
             filePath: ctx.filePath, line: i + 1, column: 1,
             snippet: line.trim(),
             cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
+          confidence: "high",
           });
           break;
         }

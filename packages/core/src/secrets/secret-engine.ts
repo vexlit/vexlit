@@ -48,6 +48,7 @@ export const secretPatternRules: Rule[] = allSecretPatterns.map((sp) => ({
         cwe: sp.cwe,
         owasp: sp.owasp,
         suggestion: this.suggestion,
+        confidence: sp.confidence,
       });
     }
 

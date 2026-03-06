@@ -39,6 +39,7 @@ export interface Vulnerability {
   cwe: string | null;
   owasp: string | null;
   suggestion: string | null;
+  confidence: "high" | "medium" | "low";
   created_at: string;
 }
 

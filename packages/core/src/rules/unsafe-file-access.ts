@@ -154,6 +154,7 @@ export const unsafeFileAccessRule: Rule = {
           cwe: this.cwe,
           owasp: this.owasp,
           suggestion: this.suggestion,
+          confidence: "high",
         });
       }
     }

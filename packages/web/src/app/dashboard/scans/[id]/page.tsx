@@ -150,6 +150,7 @@ export default async function ScanDetailPage({
                       <span className="text-white text-sm font-medium">
                         {v.rule_name}
                       </span>
+                      <ConfidenceBadge confidence={v.confidence} />
                       <span className="text-gray-600 text-xs">
                         Line {v.line}:{v.column}
                       </span>
@@ -237,6 +238,26 @@ function SummaryCard({
         {value}
       </p>
     </div>
+  );
+}
+
+function ConfidenceBadge({
+  confidence,
+}: {
+  confidence: "high" | "medium" | "low";
+}) {
+  const styles: Record<string, string> = {
+    high: "bg-green-900/40 text-green-400 border-green-800",
+    medium: "bg-yellow-900/40 text-yellow-400 border-yellow-800",
+    low: "bg-gray-800 text-gray-400 border-gray-700",
+  };
+
+  return (
+    <span
+      className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${styles[confidence] ?? styles.medium}`}
+    >
+      {confidence}
+    </span>
   );
 }
 

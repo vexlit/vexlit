@@ -140,6 +140,7 @@ export const hardcodedSecretsRule: Rule = {
           cwe: this.cwe,
           owasp: this.owasp,
           suggestion: this.suggestion,
+          confidence: "high",
         });
       }
     }

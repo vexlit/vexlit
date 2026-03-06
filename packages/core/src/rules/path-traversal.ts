@@ -122,6 +122,7 @@ export const pathTraversalRule: Rule = {
         filePath: ctx.filePath, line: lineNum, column: 1,
         snippet: line.trim(),
         cwe: this.cwe, owasp: this.owasp, suggestion: this.suggestion,
+          confidence: "high",
       });
     }
     return vulnerabilities;

@@ -1,9 +1,10 @@
-import type { Rule, Vulnerability, ScanContext, Severity } from "../types.js";
+import type { Rule, Vulnerability, ScanContext, Severity, Confidence } from "../types.js";
 
 interface JsRulePattern {
   id: string;
   name: string;
   severity: Severity;
+  confidence: Confidence;
   description: string;
   cwe: string;
   owasp: string;
@@ -17,7 +18,7 @@ const react: JsRulePattern[] = [
   {
     id: "VEXLIT-030",
     name: "React javascript: URI",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "javascript: protocol in React href enables XSS attacks",
     cwe: "CWE-79",
     owasp: "A03:2021",
@@ -27,7 +28,7 @@ const react: JsRulePattern[] = [
   {
     id: "VEXLIT-031",
     name: "React target=_blank without rel",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "target=\"_blank\" without rel=\"noopener noreferrer\" exposes window.opener",
     cwe: "CWE-1022",
     owasp: "A05:2021",
@@ -38,7 +39,7 @@ const react: JsRulePattern[] = [
   {
     id: "VEXLIT-032",
     name: "React UNSAFE lifecycle method",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "UNSAFE_ lifecycle methods may cause security issues and are deprecated",
     cwe: "CWE-477",
     owasp: "A06:2021",
@@ -48,7 +49,7 @@ const react: JsRulePattern[] = [
   {
     id: "VEXLIT-033",
     name: "React useEffect missing cleanup",
-    severity: "info",
+    confidence: "low", severity: "info",
     description: "useEffect with subscriptions or timers should return a cleanup function",
     cwe: "CWE-404",
     owasp: "A06:2021",
@@ -63,7 +64,7 @@ const nextjs: JsRulePattern[] = [
   {
     id: "VEXLIT-034",
     name: "Next.js NEXT_PUBLIC sensitive data",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "NEXT_PUBLIC_ variables are exposed to the browser and should not contain secrets",
     cwe: "CWE-200",
     owasp: "A01:2021",
@@ -73,7 +74,7 @@ const nextjs: JsRulePattern[] = [
   {
     id: "VEXLIT-035",
     name: "Next.js API route without auth check",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "API route handler without authentication check may expose data",
     cwe: "CWE-306",
     owasp: "A07:2021",
@@ -84,7 +85,7 @@ const nextjs: JsRulePattern[] = [
   {
     id: "VEXLIT-036",
     name: "Next.js unsafe redirect",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Unvalidated redirect destination may lead to open redirect attacks",
     cwe: "CWE-601",
     owasp: "A01:2021",
@@ -94,7 +95,7 @@ const nextjs: JsRulePattern[] = [
   {
     id: "VEXLIT-037",
     name: "Next.js server action data exposure",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Server component passing sensitive data to client components",
     cwe: "CWE-200",
     owasp: "A01:2021",
@@ -108,7 +109,7 @@ const nodejs: JsRulePattern[] = [
   {
     id: "VEXLIT-038",
     name: "Node.js Buffer() constructor",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Buffer() constructor is deprecated and can cause security issues",
     cwe: "CWE-131",
     owasp: "A06:2021",
@@ -118,7 +119,7 @@ const nodejs: JsRulePattern[] = [
   {
     id: "VEXLIT-039",
     name: "Node.js HTTP without TLS",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Using http.createServer instead of https exposes data in transit",
     cwe: "CWE-319",
     owasp: "A02:2021",
@@ -129,7 +130,7 @@ const nodejs: JsRulePattern[] = [
   {
     id: "VEXLIT-040",
     name: "Node.js fs chmod 0777",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Setting file permissions to 0777 gives everyone read/write/execute access",
     cwe: "CWE-732",
     owasp: "A01:2021",
@@ -139,7 +140,7 @@ const nodejs: JsRulePattern[] = [
   {
     id: "VEXLIT-041",
     name: "Node.js unsafe regex from input",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Creating RegExp from user input enables ReDoS attacks",
     cwe: "CWE-1333",
     owasp: "A03:2021",
@@ -149,7 +150,7 @@ const nodejs: JsRulePattern[] = [
   {
     id: "VEXLIT-042",
     name: "Node.js child_process with shell",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Using shell option in child_process enables command injection",
     cwe: "CWE-78",
     owasp: "A03:2021",
@@ -159,7 +160,7 @@ const nodejs: JsRulePattern[] = [
   {
     id: "VEXLIT-043",
     name: "Node.js unhandled rejection",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Missing unhandledRejection handler can crash the process or leak errors",
     cwe: "CWE-755",
     owasp: "A09:2021",
@@ -173,7 +174,7 @@ const express: JsRulePattern[] = [
   {
     id: "VEXLIT-044",
     name: "Express missing helmet",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Express app without helmet middleware is missing security headers",
     cwe: "CWE-693",
     owasp: "A05:2021",
@@ -184,7 +185,7 @@ const express: JsRulePattern[] = [
   {
     id: "VEXLIT-045",
     name: "Express no body size limit",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Missing body parser size limit enables denial-of-service via large payloads",
     cwe: "CWE-400",
     owasp: "A05:2021",
@@ -194,7 +195,7 @@ const express: JsRulePattern[] = [
   {
     id: "VEXLIT-046",
     name: "Express static dotfiles",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Serving static files may expose dotfiles like .env or .git",
     cwe: "CWE-538",
     owasp: "A01:2021",
@@ -205,7 +206,7 @@ const express: JsRulePattern[] = [
   {
     id: "VEXLIT-047",
     name: "Express session insecure config",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Session middleware without secure configuration exposes session tokens",
     cwe: "CWE-614",
     owasp: "A02:2021",
@@ -216,7 +217,7 @@ const express: JsRulePattern[] = [
   {
     id: "VEXLIT-048",
     name: "Express error stack exposure",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Sending error stack traces to clients exposes internal details",
     cwe: "CWE-209",
     owasp: "A04:2021",
@@ -230,7 +231,7 @@ const dom: JsRulePattern[] = [
   {
     id: "VEXLIT-049",
     name: "postMessage without origin check",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Handling postMessage events without verifying origin enables XSS",
     cwe: "CWE-346",
     owasp: "A07:2021",
@@ -241,7 +242,7 @@ const dom: JsRulePattern[] = [
   {
     id: "VEXLIT-050",
     name: "localStorage sensitive data",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Storing sensitive data in localStorage is accessible to XSS attacks",
     cwe: "CWE-922",
     owasp: "A04:2021",
@@ -251,7 +252,7 @@ const dom: JsRulePattern[] = [
   {
     id: "VEXLIT-051",
     name: "window.open without noopener",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "window.open without noopener gives the new window access to window.opener",
     cwe: "CWE-1022",
     owasp: "A05:2021",
@@ -262,7 +263,7 @@ const dom: JsRulePattern[] = [
   {
     id: "VEXLIT-052",
     name: "document.domain manipulation",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Setting document.domain relaxes same-origin policy and enables attacks",
     cwe: "CWE-346",
     owasp: "A07:2021",
@@ -272,7 +273,7 @@ const dom: JsRulePattern[] = [
   {
     id: "VEXLIT-053",
     name: "URL scheme bypass",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "URL validation that doesn't check scheme allows javascript: or data: URIs",
     cwe: "CWE-79",
     owasp: "A03:2021",
@@ -286,7 +287,7 @@ const authSecurity: JsRulePattern[] = [
   {
     id: "VEXLIT-054",
     name: "Weak password validation",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Password validation regex is too permissive (short minimum length)",
     cwe: "CWE-521",
     owasp: "A07:2021",
@@ -296,7 +297,7 @@ const authSecurity: JsRulePattern[] = [
   {
     id: "VEXLIT-055",
     name: "Missing CSRF token",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Form submission without CSRF protection enables cross-site request forgery",
     cwe: "CWE-352",
     owasp: "A01:2021",
@@ -307,7 +308,7 @@ const authSecurity: JsRulePattern[] = [
   {
     id: "VEXLIT-056",
     name: "JWT stored in localStorage",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "JWTs in localStorage are vulnerable to XSS. Use httpOnly cookies instead",
     cwe: "CWE-922",
     owasp: "A04:2021",
@@ -317,7 +318,7 @@ const authSecurity: JsRulePattern[] = [
   {
     id: "VEXLIT-057",
     name: "Timing-safe comparison missing",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "String comparison for secrets is vulnerable to timing attacks",
     cwe: "CWE-208",
     owasp: "A02:2021",
@@ -332,7 +333,7 @@ const config: JsRulePattern[] = [
   {
     id: "VEXLIT-058",
     name: "Debug mode in production",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Debug mode enabled in production exposes sensitive information",
     cwe: "CWE-489",
     owasp: "A05:2021",
@@ -343,7 +344,7 @@ const config: JsRulePattern[] = [
   {
     id: "VEXLIT-059",
     name: "Verbose error logging",
-    severity: "info",
+    confidence: "low", severity: "info",
     description: "Logging full error objects may expose stack traces and internal paths",
     cwe: "CWE-532",
     owasp: "A09:2021",
@@ -354,7 +355,7 @@ const config: JsRulePattern[] = [
   {
     id: "VEXLIT-060",
     name: "Hardcoded IP address",
-    severity: "info",
+    confidence: "low", severity: "info",
     description: "Hardcoded IP addresses make infrastructure changes difficult and may leak internal topology",
     cwe: "CWE-547",
     owasp: "A05:2021",
@@ -365,7 +366,7 @@ const config: JsRulePattern[] = [
   {
     id: "VEXLIT-061",
     name: "Disabled SSL verification",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Disabling SSL certificate verification enables man-in-the-middle attacks",
     cwe: "CWE-295",
     owasp: "A07:2021",
@@ -379,7 +380,7 @@ const dataHandling: JsRulePattern[] = [
   {
     id: "VEXLIT-062",
     name: "JSON.parse without try-catch",
-    severity: "info",
+    confidence: "low", severity: "info",
     description: "JSON.parse without error handling can crash on malformed input",
     cwe: "CWE-20",
     owasp: "A03:2021",
@@ -390,7 +391,7 @@ const dataHandling: JsRulePattern[] = [
   {
     id: "VEXLIT-063",
     name: "Unvalidated file upload type",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Accepting file uploads without MIME type validation enables arbitrary file upload",
     cwe: "CWE-434",
     owasp: "A04:2021",
@@ -401,7 +402,7 @@ const dataHandling: JsRulePattern[] = [
   {
     id: "VEXLIT-064",
     name: "Template literal in SQL query",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Using template literals in SQL queries without parameterization enables SQL injection",
     cwe: "CWE-89",
     owasp: "A03:2021",
@@ -412,7 +413,7 @@ const dataHandling: JsRulePattern[] = [
   {
     id: "VEXLIT-065",
     name: "Unsafe object spread from request",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Spreading request body directly into database queries enables mass assignment",
     cwe: "CWE-915",
     owasp: "A08:2021",
@@ -422,7 +423,7 @@ const dataHandling: JsRulePattern[] = [
   {
     id: "VEXLIT-066",
     name: "Logging sensitive data",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Logging sensitive data (passwords, tokens) may expose it in log files",
     cwe: "CWE-532",
     owasp: "A09:2021",
@@ -433,7 +434,7 @@ const dataHandling: JsRulePattern[] = [
   {
     id: "VEXLIT-067",
     name: "Unsafe HTML template",
-    severity: "critical",
+    confidence: "high", severity: "critical",
     description: "Interpolating user input into HTML templates without escaping enables XSS",
     cwe: "CWE-79",
     owasp: "A03:2021",
@@ -443,7 +444,7 @@ const dataHandling: JsRulePattern[] = [
   {
     id: "VEXLIT-068",
     name: "Missing input length validation",
-    severity: "info",
+    confidence: "low", severity: "info",
     description: "Not validating input length can lead to denial-of-service or buffer overflow",
     cwe: "CWE-20",
     owasp: "A03:2021",
@@ -454,7 +455,7 @@ const dataHandling: JsRulePattern[] = [
   {
     id: "VEXLIT-069",
     name: "Unsafe iframe embedding",
-    severity: "warning",
+    confidence: "medium", severity: "warning",
     description: "Embedding untrusted content in iframes without sandbox may enable attacks",
     cwe: "CWE-1021",
     owasp: "A05:2021",
@@ -523,6 +524,7 @@ export const jsExtendedRules: Rule[] = allJsPatterns.map((p) => ({
         cwe: p.cwe,
         owasp: p.owasp,
         suggestion: p.suggestion,
+        confidence: p.confidence,
       });
     }
 
