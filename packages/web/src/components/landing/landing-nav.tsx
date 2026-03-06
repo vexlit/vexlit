@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { LanguageSelector } from "../language-selector";
 
 // ── Nav menu data ──
 
@@ -68,81 +70,36 @@ const DROPDOWN_ICONS = {
   ),
 };
 
-const NAV_ITEMS: NavItem[] = [
-  {
-    label: "Product",
-    children: [
-      {
-        label: "Live Demo",
-        description: "See vulnerability detection with before/after examples",
-        href: "/#demo",
-        icon: DROPDOWN_ICONS.sast,
-      },
-      {
-        label: "Secret Detection",
-        description: "200+ detectors for API keys, tokens, and credentials",
-        href: "/#rules",
-        icon: DROPDOWN_ICONS.secret,
-      },
-      {
-        label: "AI Verification",
-        description: "Three-step process from scan to AI-powered fix guidance",
-        href: "/#how-it-works",
-        icon: DROPDOWN_ICONS.ai,
-      },
-      {
-        label: "Supported Languages",
-        description: "JS, TS, Python supported — Go, Java, Rust coming soon",
-        href: "/#languages",
-        icon: DROPDOWN_ICONS.languages,
-      },
-    ],
-  },
-  {
-    label: "Resources",
-    children: [
-      {
-        label: "Compare Tools",
-        description: "Feature comparison with other security tools",
-        href: "/#comparison",
-        icon: DROPDOWN_ICONS.comparison,
-      },
-      {
-        label: "Security Rules",
-        description: "Browse all SAST rules and CWE coverage",
-        href: "/#features",
-        icon: DROPDOWN_ICONS.rules,
-      },
-    ],
-  },
-  {
-    label: "CLI",
-    children: [
-      {
-        label: "Install",
-        description: "npm install -g @vexlit/cli",
-        href: "https://www.npmjs.com/package/@vexlit/cli",
-        icon: DROPDOWN_ICONS.install,
-      },
-      {
-        label: "Documentation",
-        description: "Installation, commands, and examples",
-        href: "/docs",
-        icon: DROPDOWN_ICONS.docs,
-      },
-      {
-        label: "GitHub",
-        description: "Source code, issues, and contributions",
-        href: "https://github.com/vexlit/vexlit",
-        icon: DROPDOWN_ICONS.github,
-      },
-    ],
-  },
-  {
-    label: "Pricing",
-    href: "/#pricing",
-  },
-];
+function useNavItems(): NavItem[] {
+  const t = useTranslations("nav");
+  return useMemo(() => [
+    {
+      label: t("product"),
+      children: [
+        { label: t("liveDemo"), description: "", href: "/#demo", icon: DROPDOWN_ICONS.sast },
+        { label: t("secretDetection"), description: "", href: "/#rules", icon: DROPDOWN_ICONS.secret },
+        { label: t("aiVerification"), description: "", href: "/#how-it-works", icon: DROPDOWN_ICONS.ai },
+        { label: t("supportedLanguages"), description: "", href: "/#languages", icon: DROPDOWN_ICONS.languages },
+      ],
+    },
+    {
+      label: t("resources"),
+      children: [
+        { label: t("compareTools"), description: "", href: "/#comparison", icon: DROPDOWN_ICONS.comparison },
+        { label: t("securityRules"), description: "", href: "/#features", icon: DROPDOWN_ICONS.rules },
+      ],
+    },
+    {
+      label: t("cli"),
+      children: [
+        { label: t("install"), description: "npm install -g @vexlit/cli", href: "https://www.npmjs.com/package/@vexlit/cli", icon: DROPDOWN_ICONS.install },
+        { label: t("documentation"), description: "", href: "/docs", icon: DROPDOWN_ICONS.docs },
+        { label: "GitHub", description: "", href: "https://github.com/vexlit/vexlit", icon: DROPDOWN_ICONS.github },
+      ],
+    },
+    { label: t("pricing"), href: "/#pricing" },
+  ], [t]);
+}
 
 // ── Dropdown component ──
 
@@ -238,7 +195,9 @@ function NavDropdown({
                   )}
                   <div>
                     <p className="text-white text-sm font-medium">{child.label}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">{child.description}</p>
+                    {child.description && (
+                      <p className="text-gray-500 text-xs mt-0.5">{child.description}</p>
+                    )}
                   </div>
                 </Comp>
               );
@@ -257,12 +216,16 @@ function MobileMenu({
   onClose,
   isLoggedIn,
   loading,
+  navItems,
 }: {
   open: boolean;
   onClose: () => void;
   isLoggedIn: boolean;
   loading: boolean;
+  navItems: NavItem[];
 }) {
+  const t = useTranslations("nav");
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -286,7 +249,7 @@ function MobileMenu({
         </div>
 
         <div className="px-6 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <div key={item.label}>
               {item.children ? (
                 <div className="py-2">
@@ -351,7 +314,7 @@ function MobileMenu({
               className="block w-full text-center px-4 py-2.5 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
               onClick={onClose}
             >
-              Dashboard
+              {t("dashboard")}
             </Link>
           ) : (
             <>
@@ -360,7 +323,7 @@ function MobileMenu({
                 className="block w-full text-center px-4 py-2.5 border border-gray-700 rounded-lg text-sm font-medium text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
                 onClick={onClose}
               >
-                Sign in
+                {t("login")}
               </Link>
               <button
                 onClick={() => {
@@ -377,7 +340,7 @@ function MobileMenu({
                 }}
                 className="block w-full text-center px-4 py-2.5 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
               >
-                Scan Repo
+                {t("scanRepo")}
               </button>
             </>
           )}
@@ -394,6 +357,8 @@ export function LandingNav() {
   const [loading, setLoading] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navItems = useNavItems();
+  const t = useTranslations("nav");
 
   useEffect(() => {
     const supabase = createSupabaseBrowser();
@@ -414,7 +379,7 @@ export function LandingNav() {
 
           {/* Desktop nav items */}
           <div className="hidden lg:flex items-center">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <NavDropdown
                 key={item.label}
                 item={item}
@@ -428,6 +393,8 @@ export function LandingNav() {
 
         {/* Right: Auth actions */}
         <div className="flex items-center gap-3">
+          <LanguageSelector />
+
           {/* GitHub star link */}
           <a
             href="https://github.com/vexlit/vexlit"
@@ -448,7 +415,7 @@ export function LandingNav() {
                   href="/dashboard"
                   className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
                 >
-                  Dashboard
+                  {t("dashboard")}
                 </Link>
               ) : (
                 <>
@@ -456,7 +423,7 @@ export function LandingNav() {
                     href="/login"
                     className="text-gray-400 hover:text-white text-sm font-medium transition-colors px-3 py-2"
                   >
-                    Sign in
+                    {t("login")}
                   </Link>
                   <button
                     onClick={() => {
@@ -470,7 +437,7 @@ export function LandingNav() {
                     }}
                     className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
                   >
-                    Scan Repo
+                    {t("scanRepo")}
                   </button>
                 </>
               )}
@@ -494,6 +461,7 @@ export function LandingNav() {
         onClose={() => setMobileOpen(false)}
         isLoggedIn={isLoggedIn}
         loading={loading}
+        navItems={navItems}
       />
     </nav>
   );

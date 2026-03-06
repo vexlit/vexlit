@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { FadeIn, ScrollReveal, StaggerContainer, StaggerItem } from "./motion-wrapper";
 import { LiveDemo } from "./live-demo";
@@ -68,6 +69,7 @@ export function LandingClient({
   features: Feature[];
 }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const t = useTranslations("landing");
 
   useEffect(() => {
     const supabase = createSupabaseBrowser();
@@ -85,22 +87,21 @@ export function LandingClient({
         <FadeIn>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            85+ SAST rules &middot; 200+ secret detectors
+            {t("badge")}
           </div>
         </FadeIn>
         <FadeIn delay={0.1}>
           <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
-            Find Critical Security
+            {t("heroTitle1")}
             <br />
             <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-              Vulnerabilities in Seconds
+              {t("heroTitle2")}
             </span>
           </h1>
         </FadeIn>
         <FadeIn delay={0.2}>
           <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Scan your code for security issues with static analysis
-            and AI-powered explanations developers can actually understand.
+            {t("heroDescription")}
           </p>
         </FadeIn>
         <FadeIn delay={0.3}>
@@ -109,7 +110,7 @@ export function LandingClient({
               href={ctaHref}
               className="px-8 py-3 bg-red-600 rounded-lg font-medium hover:bg-red-700 transition-all hover:shadow-lg hover:shadow-red-600/20"
             >
-              {isLoggedIn ? "Go to Dashboard" : "Start Scanning Free"}
+              {isLoggedIn ? t("goToDashboard") : t("startScanning")}
             </Link>
             <a
               href="https://github.com/vexlit/vexlit"
@@ -118,14 +119,14 @@ export function LandingClient({
               className="px-8 py-3 border border-gray-700 rounded-lg font-medium hover:border-gray-500 transition-colors flex items-center justify-center gap-2"
             >
               {ICONS.github && <span className="w-5 h-5">{ICONS.github}</span>}
-              View on GitHub
+              {t("viewOnGithub")}
             </a>
           </div>
         </FadeIn>
         <FadeIn delay={0.4}>
           <div id="scan-input" className="mt-10 pt-8 border-t border-gray-800/50 scroll-mt-24">
             <p className="text-gray-500 text-sm mb-3">
-              Scan any public GitHub repository — no sign-in required
+              {t("publicScanHint")}
             </p>
             <RepoScanInput />
           </div>
@@ -155,10 +156,10 @@ export function LandingClient({
       <section id="features" className="max-w-7xl mx-auto px-6 py-20 scroll-mt-20">
         <ScrollReveal>
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
-            Why VEXLIT?
+            {t("whyVexlit")}
           </h2>
           <p className="text-gray-400 text-center max-w-2xl mx-auto mb-12">
-            Enterprise-grade security scanning with the simplicity of a single command.
+            {t("whyVexlitDescription")}
           </p>
         </ScrollReveal>
 
@@ -185,10 +186,10 @@ export function LandingClient({
       <section id="rules" className="max-w-4xl mx-auto px-6 py-16 border-t border-gray-800 scroll-mt-20">
         <ScrollReveal>
           <h2 className="text-3xl font-bold text-center mb-3">
-            Security Rules
+            {t("securityRulesTitle")}
           </h2>
           <p className="text-gray-400 text-center mb-8">
-            Comprehensive coverage across injection, secrets, crypto, and more.
+            {t("securityRulesDescription")}
           </p>
         </ScrollReveal>
 
@@ -211,7 +212,7 @@ export function LandingClient({
         </StaggerContainer>
         <ScrollReveal>
           <p className="text-center text-gray-500 text-sm mt-4">
-            + 70 more SAST rules and 200+ secret detectors
+            {t("moreRules")}
           </p>
         </ScrollReveal>
       </section>
@@ -227,16 +228,16 @@ export function LandingClient({
         <ScrollReveal>
           <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 border border-red-500/20 rounded-2xl p-8 md:p-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Secure your code today
+              {t("ctaTitle")}
             </h2>
             <p className="text-gray-400 max-w-lg mx-auto mb-8">
-              Connect your GitHub repository and get a comprehensive security scan in seconds. Free to use.
+              {t("ctaDescription")}
             </p>
             <Link
               href={ctaHref}
               className="inline-block px-8 py-3 bg-red-600 rounded-lg font-medium hover:bg-red-700 transition-all hover:shadow-lg hover:shadow-red-600/20"
             >
-              {isLoggedIn ? "Go to Dashboard" : "Get Started Free"}
+              {isLoggedIn ? t("goToDashboard") : t("getStartedFree")}
             </Link>
           </div>
         </ScrollReveal>

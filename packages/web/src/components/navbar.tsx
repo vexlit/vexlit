@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationBell } from "./notification-bell";
+import { LanguageSelector } from "./language-selector";
 
 export function Navbar({ email }: { email: string }) {
   const router = useRouter();
+  const t = useTranslations("common");
 
   const handleSignOut = async () => {
     const supabase = createSupabaseBrowser();
@@ -24,13 +27,14 @@ export function Navbar({ email }: { email: string }) {
           </Link>
           <div className="flex items-center gap-3">
             <NotificationBell />
+            <LanguageSelector />
             <ThemeToggle />
             <span className="text-gray-400 text-sm hidden sm:inline">{email}</span>
             <button
               onClick={handleSignOut}
               className="text-gray-400 hover:text-white text-sm transition-colors"
             >
-              Sign out
+              {t("signOut")}
             </button>
           </div>
         </div>

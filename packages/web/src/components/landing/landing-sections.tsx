@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "./motion-wrapper";
 
 /* ─────────────────────────── Before / After Demo ─────────────────────────── */
@@ -85,15 +86,16 @@ function Comment({ text }) {
 export function BeforeAfterDemo() {
   const [activeTab, setActiveTab] = useState(0);
   const demo = DEMO_TABS[activeTab];
+  const t = useTranslations("sections");
 
   return (
     <section id="demo" className="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
-          See It in Action
+          {t("beforeAfterTitle")}
         </h2>
         <p className="text-gray-400 text-center max-w-2xl mx-auto mb-10">
-          VEXLIT detects vulnerabilities and shows you exactly how to fix them.
+          {t("beforeAfterDesc")}
         </p>
       </ScrollReveal>
 
@@ -199,14 +201,15 @@ const STEPS = [
 ];
 
 export function HowItWorks() {
+  const t = useTranslations("sections");
   return (
     <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
-          How It Works
+          {t("howItWorksTitle")}
         </h2>
         <p className="text-gray-400 text-center max-w-2xl mx-auto mb-12">
-          Three steps to secure your codebase.
+          {t("howItWorksDesc")}
         </p>
       </ScrollReveal>
 
@@ -272,14 +275,15 @@ const LANGUAGES = [
 ];
 
 export function SupportedLanguages() {
+  const t = useTranslations("sections");
   return (
     <section id="languages" className="max-w-4xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
-          Supported Languages
+          {t("languagesTitle")}
         </h2>
         <p className="text-gray-400 text-center max-w-2xl mx-auto mb-10">
-          Expanding language coverage for comprehensive security scanning.
+          {t("languagesDesc")}
         </p>
       </ScrollReveal>
 
@@ -343,14 +347,15 @@ function CrossIcon() {
 }
 
 export function ComparisonTable() {
+  const t = useTranslations("sections");
   return (
     <section id="comparison" className="max-w-4xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
-          Why Choose VEXLIT?
+          {t("comparisonTitle")}
         </h2>
         <p className="text-gray-400 text-center max-w-2xl mx-auto mb-10">
-          Enterprise-grade features, completely free.
+          {t("comparisonDesc")}
         </p>
       </ScrollReveal>
 
@@ -387,12 +392,13 @@ export function ComparisonTable() {
 /* ─────────────────────────── Usage Metrics ─────────────────────────── */
 
 export function UsageMetrics() {
+  const t = useTranslations("sections");
   return (
     <section className="border-t border-b border-gray-800 py-16 bg-gradient-to-b from-gray-950 to-gray-900/50">
       <ScrollReveal>
         <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
-            Built for Developers
+            {t("metricsTitle")}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-center">
             <div>
@@ -470,14 +476,15 @@ const SEVERITY_STYLES = {
 };
 
 export function ScanOutputPreview() {
+  const t = useTranslations("sections");
   return (
     <section className="max-w-4xl mx-auto px-6 py-20 border-t border-gray-800">
       <ScrollReveal>
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
-          Clear, Actionable Results
+          {t("scanOutputTitle")}
         </h2>
         <p className="text-gray-400 text-center max-w-2xl mx-auto mb-10">
-          See exactly what was found, where, and how to fix it.
+          {t("scanOutputDesc")}
         </p>
       </ScrollReveal>
 

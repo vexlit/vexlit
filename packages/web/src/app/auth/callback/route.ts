@@ -5,6 +5,9 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
+  const cookieLocale = request.headers.get("cookie")?.match(/NEXT_LOCALE=(\w+)/)?.[1];
+  const acceptLang = request.headers.get("accept-language")?.startsWith("ko") ? "ko" : "en";
+  const locale = cookieLocale || acceptLang;
   const code = searchParams.get("code");
 
   if (code) {
@@ -39,10 +42,10 @@ export async function GET(request: Request) {
       ]);
 
       if (!profile?.terms_accepted_at) {
-        return NextResponse.redirect(`${origin}/onboarding/terms`);
+        return NextResponse.redirect(`${origin}/${locale}/onboarding/terms`);
       }
     }
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`);
+  return NextResponse.redirect(`${origin}/${locale}/dashboard`);
 }

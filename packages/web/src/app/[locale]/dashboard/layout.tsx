@@ -3,15 +3,17 @@ import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
   const user = await getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect(`/${locale}/login`);
 
   // Check terms acceptance
   const admin = createSupabaseAdmin();
@@ -22,7 +24,7 @@ export default async function DashboardLayout({
     .single();
 
   if (!profile?.terms_accepted_at) {
-    redirect("/onboarding/terms");
+    redirect(`/${locale}/onboarding/terms`);
   }
 
   return (

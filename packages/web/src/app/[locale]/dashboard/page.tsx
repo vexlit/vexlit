@@ -4,6 +4,7 @@ import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { SeverityBadge } from "@/components/severity-badge";
 import { LazyTrendChart as TrendChart } from "@/components/charts/lazy-trend-chart";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import type { Scan, Vulnerability } from "@/lib/types";
 
 function computeSecurityScore(criticals: number, warnings: number): { score: number; grade: string; color: string } {
@@ -22,6 +23,7 @@ export default async function DashboardPage() {
   const user = await getUser();
   const supabase = await createSupabaseServer();
   const admin = createSupabaseAdmin();
+  const t = await getTranslations("dashboard");
 
   // Run all queries in parallel
   const [{ count: projectCount }, { data: recentScans }, { data: recentVulns }] =
@@ -85,40 +87,38 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Security overview across all projects
-          </p>
+          <h1 className="text-2xl font-bold text-white">{t("title")}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t("subtitle")}</p>
         </div>
         <Link
           href="/dashboard/new"
           className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-all hover:shadow-lg hover:shadow-red-600/20"
         >
-          New Scan
+          {t("newScan")}
         </Link>
       </div>
 
       {/* Security Overview Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-500 text-xs">Projects</p>
+          <p className="text-gray-500 text-xs">{t("projects")}</p>
           <p className="text-2xl font-bold text-white mt-1">{projectCount ?? 0}</p>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-500 text-xs">Active Vulnerabilities</p>
+          <p className="text-gray-500 text-xs">{t("activeVulnerabilities")}</p>
           <p className="text-2xl font-bold text-white mt-1">{totalVulns}</p>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-500 text-xs">Critical</p>
+          <p className="text-gray-500 text-xs">{t("critical")}</p>
           <p className="text-2xl font-bold text-red-400 mt-1">{totalCritical}</p>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-500 text-xs">Warning</p>
+          <p className="text-gray-500 text-xs">{t("warning")}</p>
           <p className="text-2xl font-bold text-yellow-400 mt-1">{totalWarning}</p>
         </div>
         <div className="col-span-2 lg:col-span-1 bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
           <div>
-            <p className="text-gray-500 text-xs">Security Score</p>
+            <p className="text-gray-500 text-xs">{t("securityScore")}</p>
             <p className={`text-3xl font-bold mt-1 ${color}`}>{grade}</p>
           </div>
           <div className={`w-12 h-12 rounded-full border-4 ${
@@ -137,11 +137,11 @@ export default async function DashboardPage() {
       {/* Recent Vulnerabilities */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Recent Vulnerabilities</h2>
+          <h2 className="text-lg font-semibold text-white">{t("recentVulnerabilities")}</h2>
         </div>
         {userVulns.length === 0 ? (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
-            <p className="text-gray-400 text-sm">No vulnerabilities found yet</p>
+            <p className="text-gray-400 text-sm">{t("noVulnerabilities")}</p>
           </div>
         ) : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LandingClient } from "@/components/landing/landing-client";
 import { LandingNav } from "@/components/landing/landing-nav";
+import { getTranslations } from "next-intl/server";
 
 const RULES_PREVIEW = [
   { id: "VEXLIT-001", name: "Hardcoded Secrets", severity: "critical" },
@@ -17,49 +18,22 @@ const RULES_PREVIEW = [
   { id: "VEXLIT-023", name: "Eval Injection", severity: "critical" },
 ];
 
-const FEATURES = [
-  {
-    title: "AST-Based Analysis",
-    description:
-      "Hybrid regex + AST scanning with tree-sitter for JavaScript, TypeScript, and Python reduces false positives by understanding code structure.",
-    icon: "tree",
-  },
-  {
-    title: "85+ SAST Rules",
-    description:
-      "Covers OWASP Top 10 including SQL Injection, XSS, SSRF, Command Injection, Prototype Pollution. Plus 200+ secret detectors.",
-    icon: "shield",
-  },
-  {
-    title: "GitHub Integration",
-    description:
-      "One-click repo scanning. SARIF output for GitHub Code Scanning. Results appear directly in your Security tab.",
-    icon: "github",
-  },
-  {
-    title: "AI Verification",
-    description:
-      "Claude AI secondary analysis filters false positives, explains vulnerabilities in detail, and suggests code fixes.",
-    icon: "ai",
-  },
-  {
-    title: "Scan History & Trends",
-    description:
-      "Track vulnerability trends over time with visual charts. See your security posture improve with each commit.",
-    icon: "chart",
-  },
-  {
-    title: "Free & Open Source",
-    description:
-      "CLI and core engine are open source. Use locally, in CI/CD, or through the web dashboard. MIT licensed.",
-    icon: "open",
-  },
-];
+export default async function HomePage() {
+  const t = await getTranslations("features");
+  const tLanding = await getTranslations("landing");
+  const tNav = await getTranslations("nav");
 
-export default function HomePage() {
+  const FEATURES = [
+    { title: t("astAnalysis"), description: t("astAnalysisDesc"), icon: "tree" },
+    { title: t("sastRules"), description: t("sastRulesDesc"), icon: "shield" },
+    { title: t("githubIntegration"), description: t("githubIntegrationDesc"), icon: "github" },
+    { title: t("aiVerification"), description: t("aiVerificationDesc"), icon: "ai" },
+    { title: t("scanHistory"), description: t("scanHistoryDesc"), icon: "chart" },
+    { title: t("freeOpenSource"), description: t("freeOpenSourceDesc"), icon: "open" },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Nav */}
       <LandingNav />
 
       <LandingClient
@@ -71,7 +45,7 @@ export default function HomePage() {
       <footer className="border-t border-gray-800 py-8">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <span className="text-gray-600 text-sm">
-            VEXLIT &mdash; AI-Powered Security Scanner
+            {tLanding("footer")}
           </span>
           <div className="flex gap-6">
             <a
@@ -86,7 +60,7 @@ export default function HomePage() {
               href="/login"
               className="text-gray-600 hover:text-gray-400 text-sm transition-colors"
             >
-              Dashboard
+              {tNav("dashboard")}
             </Link>
           </div>
         </div>
