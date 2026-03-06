@@ -2,12 +2,13 @@ import { Rule, Vulnerability, ScanContext } from "../types.js";
 import type { TSESTree } from "@typescript-eslint/typescript-estree";
 import { walkAST } from "../ast-parser.js";
 import type { AST } from "../ast-parser.js";
+import type { TreeSitterTree, TreeSitterNode } from "../tree-sitter.js";
+import { walkTreeSitter } from "../tree-sitter.js";
+
+// ── JS/TS detection ──
 
 const CMD_INJECTION_REGEX =
   /(?:exec|execSync|spawn|spawnSync|execFile|execFileSync|fork)\s*\(\s*(?:req\.|request\.|params\.|query\.|body\.|`)/;
-
-const PYTHON_CMD_REGEX =
-  /(?:os\.system|os\.popen|subprocess\.(?:call|run|Popen|check_output|check_call))\s*\(\s*(?:f["']|request\.|input)/;
 
 const SHELL_EXEC_METHODS = new Set([
   "exec", "execSync", "execFile", "execFileSync",
@@ -29,19 +30,16 @@ function hasCommandInjectionAST(ast: AST, line: number): boolean {
 
       const firstArg = node.arguments[0];
 
-      // exec(`rm ${req.query.file}`)
       if (firstArg.type === "TemplateLiteral" && firstArg.expressions.length > 0) {
         found = true;
         return;
       }
 
-      // exec(req.body.cmd)
       if (isUserInputExpression(firstArg)) {
         found = true;
         return;
       }
 
-      // exec("cmd " + userInput)
       if (firstArg.type === "BinaryExpression" && firstArg.operator === "+") {
         if (containsUserInput(firstArg)) {
           found = true;
@@ -92,6 +90,192 @@ function flattenMember(node: TSESTree.MemberExpression): string {
   return prop;
 }
 
+// ── Python detection ──
+
+const PYTHON_DANGEROUS_FUNCS = new Map<string, Set<string>>([
+  ["os", new Set(["system", "popen"])],
+  ["subprocess", new Set(["call", "run", "Popen", "check_output", "check_call"])],
+]);
+
+const PYTHON_CMD_BASELINE =
+  /\b(?:os\.(?:system|popen)|subprocess\.(?:call|run|Popen|check_output|check_call))\s*\(/;
+
+const PYTHON_USER_INPUT =
+  /\b(?:request\.\w+|input\s*\(|sys\.argv)/;
+
+/** Check if a tree-sitter node is a safe (non-injectable) argument */
+function isPySafeArg(node: TreeSitterNode): boolean {
+  // Pure string literal: "hardcoded"
+  if (node.type === "string") {
+    // f-strings contain interpolation children — not safe
+    return node.namedChildren.length === 0;
+  }
+  // List of string literals: ["cmd", "arg1", "arg2"]
+  if (node.type === "list") {
+    return node.namedChildren.every((c) => c.type === "string" && c.namedChildren.length === 0);
+  }
+  return false;
+}
+
+/** Check if a tree-sitter node contains tainted data */
+function isPyTainted(node: TreeSitterNode, tainted: Set<string>): boolean {
+  if (node.type === "identifier") return tainted.has(node.text);
+  if (PYTHON_USER_INPUT.test(node.text)) return true;
+  if (node.type === "binary_operator" || node.type === "concatenated_string") {
+    return node.namedChildren.some((c) => isPyTainted(c, tainted));
+  }
+  // f-string interpolation: f"echo {user_input}"
+  if (node.type === "string" || node.type === "interpolation") {
+    return node.namedChildren.some((c) => isPyTainted(c, tainted));
+  }
+  // Call expression: request.args.get("host")
+  if (node.type === "call") {
+    return PYTHON_USER_INPUT.test(node.text);
+  }
+  return false;
+}
+
+/** Check if a tree-sitter node references any tainted variable */
+function containsTaintedRef(node: TreeSitterNode, tainted: Set<string>): boolean {
+  if (node.type === "identifier" && tainted.has(node.text)) return true;
+  return node.namedChildren.some((c) => containsTaintedRef(c, tainted));
+}
+
+/** Collect variables assigned from user input (with 1-level transitive propagation) */
+function collectPyTaintedVars(tree: TreeSitterTree): Set<string> {
+  const tainted = new Set<string>();
+
+  // Pass 1: direct user input sources
+  walkTreeSitter(tree.rootNode, (node) => {
+    if (node.type !== "assignment") return;
+    const left = node.childForFieldName("left");
+    const right = node.childForFieldName("right");
+    if (!left || !right || left.type !== "identifier") return;
+    if (PYTHON_USER_INPUT.test(right.text)) {
+      tainted.add(left.text);
+    }
+  });
+
+  // Pass 2: transitive — variables derived from tainted vars
+  walkTreeSitter(tree.rootNode, (node) => {
+    if (node.type !== "assignment") return;
+    const left = node.childForFieldName("left");
+    const right = node.childForFieldName("right");
+    if (!left || !right || left.type !== "identifier") return;
+    if (tainted.has(left.text)) return;
+    if (containsTaintedRef(right, tainted)) {
+      tainted.add(left.text);
+    }
+  });
+
+  return tainted;
+}
+
+function makePyVuln(
+  ctx: ScanContext,
+  line: number,
+  isTainted: boolean,
+): Vulnerability {
+  return {
+    ruleId: "VEXLIT-022",
+    ruleName: "Command Injection",
+    severity: isTainted ? "critical" : "warning",
+    confidence: isTainted ? "high" : "medium",
+    message: isTainted
+      ? "Command injection — user input flows into shell command"
+      : "Potential command injection — dynamic value in shell command",
+    filePath: ctx.filePath,
+    line,
+    column: 1,
+    snippet: ctx.lines[line - 1]?.trim() ?? "",
+    cwe: "CWE-78",
+    owasp: "A03:2021",
+    suggestion:
+      "Never pass user input to shell commands. Use subprocess with argument arrays instead of shell=True. Validate and sanitize all inputs.",
+  };
+}
+
+/** Scan Python using tree-sitter AST */
+function scanPyTreeSitter(ctx: ScanContext): Vulnerability[] {
+  const tree = ctx.treeSitterTree as TreeSitterTree;
+  const tainted = collectPyTaintedVars(tree);
+  const vulns: Vulnerability[] = [];
+
+  walkTreeSitter(tree.rootNode, (node) => {
+    if (node.type !== "call") return;
+
+    const func = node.childForFieldName("function");
+    if (!func || func.type !== "attribute") return;
+
+    const obj = func.childForFieldName("object");
+    const attr = func.childForFieldName("attribute");
+    if (!obj || !attr || obj.type !== "identifier") return;
+
+    const methods = PYTHON_DANGEROUS_FUNCS.get(obj.text);
+    if (!methods || !methods.has(attr.text)) return;
+
+    const argsNode = node.childForFieldName("arguments");
+    if (!argsNode || argsNode.namedChildren.length === 0) return;
+
+    const firstArg = argsNode.namedChildren[0];
+    if (isPySafeArg(firstArg)) return;
+
+    const isTainted = isPyTainted(firstArg, tainted);
+    vulns.push(makePyVuln(ctx, node.startPosition.row + 1, isTainted));
+  });
+
+  return vulns;
+}
+
+/** Regex fallback for Python when tree-sitter is unavailable */
+function scanPyRegex(ctx: ScanContext): Vulnerability[] {
+  const vulns: Vulnerability[] = [];
+
+  // Collect tainted variable names
+  const tainted = new Set<string>();
+  for (const l of ctx.lines) {
+    const m = l.match(/^\s*(\w+)\s*=\s*.*\b(?:request\.\w+|input\s*\(|sys\.argv)/);
+    if (m) tainted.add(m[1]);
+  }
+  // Transitive: variables derived from tainted vars
+  for (const l of ctx.lines) {
+    const m = l.match(/^\s*(\w+)\s*=/);
+    if (!m || tainted.has(m[1])) continue;
+    const rhs = l.slice(l.indexOf("=") + 1);
+    for (const v of tainted) {
+      if (new RegExp(`\\b${v}\\b`).test(rhs)) {
+        tainted.add(m[1]);
+        break;
+      }
+    }
+  }
+
+  for (let i = 0; i < ctx.lines.length; i++) {
+    const line = ctx.lines[i];
+    if (!PYTHON_CMD_BASELINE.test(line)) continue;
+
+    // Safe: first argument is a list literal
+    if (/\(\s*\[/.test(line)) continue;
+    // Safe: first argument is a plain string literal (no concatenation or f-string)
+    if (/\(\s*["'][^"']*["']\s*[,)]/.test(line)) continue;
+
+    const isTainted =
+      PYTHON_USER_INPUT.test(line) ||
+      [...tainted].some((v) => new RegExp(`\\b${v}\\b`).test(line));
+
+    vulns.push(makePyVuln(ctx, i + 1, isTainted));
+  }
+
+  return vulns;
+}
+
+function scanPython(ctx: ScanContext): Vulnerability[] {
+  if (ctx.treeSitterTree) return scanPyTreeSitter(ctx);
+  return scanPyRegex(ctx);
+}
+
+// ── Rule export ──
+
 export const commandInjectionRule: Rule = {
   id: "VEXLIT-022",
   name: "Command Injection",
@@ -103,16 +287,21 @@ export const commandInjectionRule: Rule = {
   suggestion: "Never pass user input to shell commands. Use execFile/spawn with argument arrays instead of exec. Validate and sanitize all inputs against an allowlist.",
 
   scan(ctx: ScanContext): Vulnerability[] {
+    if (ctx.language === "python") {
+      return scanPython(ctx);
+    }
+
+    // JS/TS: existing AST-based detection
     const vulnerabilities: Vulnerability[] = [];
     const ast = ctx.ast as AST | null;
 
     for (let i = 0; i < ctx.lines.length; i++) {
       const line = ctx.lines[i];
-      if (!CMD_INJECTION_REGEX.test(line) && !PYTHON_CMD_REGEX.test(line)) continue;
+      if (!CMD_INJECTION_REGEX.test(line)) continue;
 
       const lineNum = i + 1;
 
-      if (ast && (ctx.language === "javascript" || ctx.language === "typescript")) {
+      if (ast) {
         if (!hasCommandInjectionAST(ast, lineNum)) continue;
       }
 
