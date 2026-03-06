@@ -126,8 +126,8 @@ const NAV_ITEMS: NavItem[] = [
       },
       {
         label: "Documentation",
-        description: "Getting started guides and API reference",
-        href: "https://github.com/vexlit/vexlit#readme",
+        description: "Installation, commands, and examples",
+        href: "/docs",
         icon: DROPDOWN_ICONS.docs,
       },
       {
