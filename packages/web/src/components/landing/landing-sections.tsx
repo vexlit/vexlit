@@ -409,10 +409,19 @@ export function UsageMetrics() {
 
 /* ─────────────────────────── Accuracy Benchmark ─────────────────────────── */
 
-const BENCHMARK_CATEGORIES = [
-  "SQL Injection", "XSS", "Command Injection", "Hardcoded Secrets",
-  "Eval Injection", "SSRF", "Path Traversal", "Prototype Pollution",
-  "Insecure Crypto", "NoSQL Injection", "Insecure Cookie", "Open Redirect",
+const BENCHMARK_RESULTS = [
+  { name: "SQL Injection", f1: 85.7, color: "text-yellow-400" },
+  { name: "XSS", f1: 100, color: "text-green-400" },
+  { name: "Command Injection", f1: 100, color: "text-green-400" },
+  { name: "Hardcoded Secrets", f1: 100, color: "text-green-400" },
+  { name: "Eval Injection", f1: 100, color: "text-green-400" },
+  { name: "SSRF", f1: 100, color: "text-green-400" },
+  { name: "Path Traversal", f1: 100, color: "text-green-400" },
+  { name: "Prototype Pollution", f1: 100, color: "text-green-400" },
+  { name: "Insecure Crypto", f1: 100, color: "text-green-400" },
+  { name: "NoSQL Injection", f1: 100, color: "text-green-400" },
+  { name: "Insecure Cookie", f1: 100, color: "text-green-400" },
+  { name: "Open Redirect", f1: 100, color: "text-green-400" },
 ];
 
 export function AccuracyBenchmark() {
@@ -421,7 +430,7 @@ export function AccuracyBenchmark() {
     <section id="accuracy" className="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
       <ScrollReveal>
         <div className="flex justify-center mb-4">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-800 border border-gray-700 text-gray-300 text-sm">
             <span className="w-2 h-2 rounded-full bg-green-500" />
             {t("benchmarkBadge")}
           </span>
@@ -434,50 +443,56 @@ export function AccuracyBenchmark() {
         </p>
       </ScrollReveal>
 
-      {/* Main metrics */}
+      {/* Main metrics — 3 key stats */}
       <ScrollReveal>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-green-500/30 transition-colors">
-            <AnimatedCounter end={98.6} suffix="%" decimals={1} label={t("benchmarkAccuracy")} />
-          </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-green-500/30 transition-colors">
-            <AnimatedCounter end={100} suffix="%" label={t("benchmarkPrecision")} />
-          </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-green-500/30 transition-colors">
+        <div className="grid grid-cols-3 gap-6 mb-12">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-gray-700 transition-colors">
             <AnimatedCounter end={97.4} suffix="%" decimals={1} label={t("benchmarkRecall")} />
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-green-500/30 transition-colors">
-            <AnimatedCounter end={0} suffix="%" label={t("benchmarkFPR")} />
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-gray-700 transition-colors">
+            <p className="text-4xl md:text-5xl font-bold text-white">&lt;1%</p>
+            <p className="text-gray-400 text-sm mt-2">{t("benchmarkFPR")}</p>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-gray-700 transition-colors">
+            <AnimatedCounter end={11100} suffix="+" label={t("benchmarkSamples")} />
           </div>
         </div>
       </ScrollReveal>
 
-      {/* Reduced Risk highlight */}
+      {/* What this means */}
       <ScrollReveal>
-        <div className="bg-gradient-to-br from-green-500/5 to-emerald-500/5 border border-green-500/20 rounded-2xl p-8 mb-12 text-center">
-          <p className="text-5xl md:text-6xl font-bold text-green-400 mb-2">98.6%</p>
-          <p className="text-white text-lg font-semibold mb-1">{t("reducedRisk")}</p>
-          <p className="text-gray-400 text-sm max-w-lg mx-auto">{t("reducedRiskDesc")}</p>
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 mb-12">
+          <h3 className="text-white font-semibold mb-3">{t("benchmarkWhatMeans")}</h3>
+          <div className="grid md:grid-cols-2 gap-4 text-sm">
+            <div className="flex items-start gap-3">
+              <span className="w-5 h-5 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">1</span>
+              <p className="text-gray-400">{t("benchmarkMeaning1")}</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="w-5 h-5 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">2</span>
+              <p className="text-gray-400">{t("benchmarkMeaning2")}</p>
+            </div>
+          </div>
         </div>
       </ScrollReveal>
 
-      {/* Category breakdown */}
+      {/* Category breakdown with actual F1 scores */}
       <ScrollReveal>
-        <h3 className="text-xl font-semibold text-center mb-6">{t("benchmarkCategories")}</h3>
+        <h3 className="text-lg font-semibold text-center mb-6">{t("benchmarkCategories")}</h3>
         <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {BENCHMARK_CATEGORIES.map((cat) => (
-            <StaggerItem key={cat}>
-              <div className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-3 hover:border-green-500/30 transition-colors">
-                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-white text-sm truncate">{cat}</p>
-                  <p className="text-green-400 text-xs font-mono">100% F1</p>
+          {BENCHMARK_RESULTS.map((cat) => (
+            <StaggerItem key={cat.name}>
+              <div className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-3 hover:border-gray-700 transition-colors">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cat.f1 === 100 ? "bg-green-500" : "bg-yellow-500"}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-white text-sm truncate">{cat.name}</p>
+                  <p className={`text-xs font-mono ${cat.color}`}>{cat.f1}% F1</p>
                 </div>
               </div>
             </StaggerItem>
           ))}
         </StaggerContainer>
-        <p className="text-center text-gray-500 text-xs mt-4">
+        <p className="text-center text-gray-500 text-xs mt-6 max-w-2xl mx-auto">
           {t("benchmarkFootnote")}
         </p>
       </ScrollReveal>

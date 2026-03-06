@@ -325,6 +325,44 @@ export const sqlInjectionRule: Rule = {
       }
     }
 
+    // Multiline template literal detection: AST walk for TemplateLiterals
+    // spanning multiple lines that the per-line regex missed
+    if (ast) {
+      const found = new Set(vulnerabilities.map((v) => v.line));
+      walkAST(ast, (node: TSESTree.Node) => {
+        if (
+          node.type === "TemplateLiteral" &&
+          node.loc &&
+          node.expressions.length > 0 &&
+          node.loc.start.line !== node.loc.end.line // multiline only
+        ) {
+          const startLine = node.loc.start.line;
+          if (found.has(startLine)) return; // already reported
+          const quasis = node.quasis.map((q) => q.value.raw).join("");
+          if (!SQL_KEYWORDS.test(quasis)) return;
+          const allSafe = node.expressions.every((expr) =>
+            isSqlSanitizedExpr(expr, sanitizedVars)
+          );
+          if (allSafe) return;
+          found.add(startLine);
+          vulnerabilities.push({
+            ruleId: "VEXLIT-002",
+            ruleName: "SQL Injection",
+            severity: "critical",
+            message: "Template literal in SQL query — possible SQL injection",
+            filePath: ctx.filePath,
+            line: startLine,
+            column: 1,
+            snippet: ctx.lines[startLine - 1]?.trim() ?? "",
+            cwe: "CWE-89",
+            owasp: "A03:2021",
+            suggestion: "Use parameterized queries or prepared statements instead of string concatenation",
+            confidence: "high",
+          });
+        }
+      });
+    }
+
     return vulnerabilities;
   },
 };
