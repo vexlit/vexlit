@@ -187,7 +187,7 @@ export async function POST(request: Request) {
       const reportUrl = `${appUrl}/dashboard/scans/${scan.id}`;
 
       let commentBody: string;
-      const marker = "<!-- VEXLIT-SCAN -->\n";
+      const marker = "<!-- VEXLIT-SCAN -->\n<!-- DO NOT EDIT -->\n";
       if (allVulns.length === 0) {
         commentBody = `${marker}## VEXLIT Security Report\n\nNo vulnerabilities found. Your code looks clean!\n\n[View Full Report](${reportUrl})`;
       } else {
