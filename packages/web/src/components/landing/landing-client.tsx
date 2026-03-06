@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { FadeIn, ScrollReveal, StaggerContainer, StaggerItem } from "./motion-wrapper";
 import { AnimatedCounter } from "./counter";
 import { LiveDemo } from "./live-demo";
@@ -58,6 +60,17 @@ export function LandingClient({
   rules: Rule[];
   features: Feature[];
 }) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowser();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+  }, []);
+
+  const ctaHref = isLoggedIn ? "/dashboard" : "/login";
+
   return (
     <>
       {/* Hero */}
@@ -86,10 +99,10 @@ export function LandingClient({
         <FadeIn delay={0.3}>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/login"
+              href={ctaHref}
               className="px-8 py-3 bg-red-600 rounded-lg font-medium hover:bg-red-700 transition-all hover:shadow-lg hover:shadow-red-600/20"
             >
-              Start Scanning Free
+              {isLoggedIn ? "Go to Dashboard" : "Start Scanning Free"}
             </Link>
             <a
               href="https://github.com/vexlit/vexlit"
@@ -205,10 +218,10 @@ export function LandingClient({
               Connect your GitHub repository and get a comprehensive security scan in seconds. Free to use.
             </p>
             <Link
-              href="/login"
+              href={ctaHref}
               className="inline-block px-8 py-3 bg-red-600 rounded-lg font-medium hover:bg-red-700 transition-all hover:shadow-lg hover:shadow-red-600/20"
             >
-              Get Started Free
+              {isLoggedIn ? "Go to Dashboard" : "Get Started Free"}
             </Link>
           </div>
         </ScrollReveal>
