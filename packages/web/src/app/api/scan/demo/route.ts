@@ -53,7 +53,9 @@ export async function POST(request: Request) {
   try {
     const { RuleEngine } = await import("@vexlit/core");
     const engine = new RuleEngine();
-    const vulns = await engine.execute("demo.js", code, lang);
+    const extForLang = { javascript: "js", typescript: "ts", python: "py" } as const;
+    const demoFile = `demo.${extForLang[lang]}`;
+    const vulns = await engine.execute(demoFile, code, lang);
 
     return NextResponse.json({
       vulnerabilities: vulns.map((v) => ({
