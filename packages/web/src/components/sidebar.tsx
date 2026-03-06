@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 
 const NAV_ICONS = {
@@ -40,10 +39,8 @@ export function Sidebar() {
   const t = useTranslations("sidebar");
 
   function isActive(href: string, exact?: boolean) {
-    // Strip locale prefix for matching (e.g. /en/dashboard -> /dashboard)
-    const stripped = pathname.replace(/^\/[a-z]{2}(?=\/)/, "");
-    if (exact) return stripped === href;
-    return stripped.startsWith(href);
+    if (exact) return pathname === href;
+    return pathname.startsWith(href);
   }
 
   return (

@@ -1,6 +1,6 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import type { Scan } from "@/lib/types";
 
 export default async function ScansPage() {

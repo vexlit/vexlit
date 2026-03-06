@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationBell } from "./notification-bell";

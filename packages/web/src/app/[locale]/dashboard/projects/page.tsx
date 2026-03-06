@@ -2,7 +2,7 @@ import { getUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { SeverityBadge } from "@/components/severity-badge";
 import { LazySeverityDonut as SeverityDonut } from "@/components/charts/lazy-severity-donut";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import type { Project, Scan } from "@/lib/types";
 
 export default async function ProjectsPage() {

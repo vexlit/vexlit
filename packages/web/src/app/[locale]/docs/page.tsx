@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { getTranslations } from "next-intl/server";
 

@@ -3,7 +3,7 @@ import { SeverityBadge } from "@/components/severity-badge";
 import { LazyTrendChart as TrendChart } from "@/components/charts/lazy-trend-chart";
 import { QuickRescan } from "@/components/quick-rescan";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { DeleteButton } from "@/components/delete-button";
 import { ProjectSchedule } from "@/components/project-schedule";
 import type { Scan } from "@/lib/types";

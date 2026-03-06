@@ -1,7 +1,7 @@
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { PublicScanClient } from "@/components/public-scan-client";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import type { Scan, Vulnerability } from "@/lib/types";
 
 export default async function PublicScanPage({

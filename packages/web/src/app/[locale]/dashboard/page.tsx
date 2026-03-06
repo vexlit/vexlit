@@ -3,7 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { SeverityBadge } from "@/components/severity-badge";
 import { LazyTrendChart as TrendChart } from "@/components/charts/lazy-trend-chart";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import type { Scan, Vulnerability } from "@/lib/types";
 

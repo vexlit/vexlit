@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { routing } from "@/i18n/routing";
@@ -9,7 +9,6 @@ export function LanguageSelector() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
-  const t = useTranslations("language");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -61,7 +60,7 @@ export function LanguageSelector() {
                   : "text-gray-400 hover:text-white hover:bg-gray-800/50"
               }`}
             >
-              {loc === "en" ? "🇺🇸" : "🇰🇷"} {t(loc)}
+              {loc === "en" ? "🇺🇸" : "🇰🇷"} {loc.toUpperCase()}
             </button>
           ))}
         </div>

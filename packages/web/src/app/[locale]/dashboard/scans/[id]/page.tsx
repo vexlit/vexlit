@@ -4,7 +4,7 @@ import { AiReportButton } from "@/components/ai-report-button";
 import { ScanResultsClient } from "@/components/scan-results-client";
 import { LazySeverityDonut as SeverityDonut } from "@/components/charts/lazy-severity-donut";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { DeleteButton } from "@/components/delete-button";
 import type { Scan, Vulnerability } from "@/lib/types";
 
