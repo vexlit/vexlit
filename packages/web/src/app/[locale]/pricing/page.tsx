@@ -12,7 +12,7 @@ export default async function PricingPage() {
       period: t("free.period"),
       description: t("free.description"),
       cta: t("free.cta"),
-      features: t.raw("free.features") as string[],
+      features: Object.values(t.raw("free.features")) as string[],
     },
     pro: {
       name: t("pro.name"),
@@ -22,7 +22,7 @@ export default async function PricingPage() {
       description: t("pro.description"),
       cta: t("pro.cta"),
       badge: t("pro.badge"),
-      features: t.raw("pro.features") as string[],
+      features: Object.values(t.raw("pro.features")) as string[],
     },
     team: {
       name: t("team.name"),
@@ -31,11 +31,11 @@ export default async function PricingPage() {
       yearlyPrice: t("team.yearlyPrice"),
       description: t("team.description"),
       cta: t("team.cta"),
-      features: t.raw("team.features") as string[],
+      features: Object.values(t.raw("team.features")) as string[],
     },
   };
 
-  const faq = t.raw("faq") as { q: string; a: string }[];
+  const faq = Object.values(t.raw("faq")) as { q: string; a: string }[];
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">

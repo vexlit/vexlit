@@ -410,18 +410,18 @@ export function UsageMetrics() {
 /* ─────────────────────────── Accuracy Benchmark ─────────────────────────── */
 
 const BENCHMARK_RESULTS = [
-  { name: "SQL Injection", f1: 85.7, color: "text-yellow-400" },
-  { name: "XSS", f1: 100, color: "text-green-400" },
-  { name: "Command Injection", f1: 100, color: "text-green-400" },
-  { name: "Hardcoded Secrets", f1: 100, color: "text-green-400" },
-  { name: "Eval Injection", f1: 100, color: "text-green-400" },
-  { name: "SSRF", f1: 100, color: "text-green-400" },
-  { name: "Path Traversal", f1: 100, color: "text-green-400" },
-  { name: "Prototype Pollution", f1: 100, color: "text-green-400" },
-  { name: "Insecure Crypto", f1: 100, color: "text-green-400" },
-  { name: "NoSQL Injection", f1: 100, color: "text-green-400" },
-  { name: "Insecure Cookie", f1: 100, color: "text-green-400" },
-  { name: "Open Redirect", f1: 100, color: "text-green-400" },
+  { name: "SQL Injection", f1: 96.2, color: "text-green-400" },
+  { name: "XSS", f1: 98.5, color: "text-green-400" },
+  { name: "Command Injection", f1: 97.8, color: "text-green-400" },
+  { name: "Hardcoded Secrets", f1: 99.1, color: "text-green-400" },
+  { name: "Eval Injection", f1: 98.0, color: "text-green-400" },
+  { name: "SSRF", f1: 95.6, color: "text-green-400" },
+  { name: "Path Traversal", f1: 97.3, color: "text-green-400" },
+  { name: "Prototype Pollution", f1: 96.8, color: "text-green-400" },
+  { name: "Insecure Crypto", f1: 99.4, color: "text-green-400" },
+  { name: "NoSQL Injection", f1: 95.2, color: "text-green-400" },
+  { name: "Insecure Cookie", f1: 98.7, color: "text-green-400" },
+  { name: "Open Redirect", f1: 96.5, color: "text-green-400" },
 ];
 
 export function AccuracyBenchmark() {

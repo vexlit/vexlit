@@ -140,6 +140,13 @@
     "repoClean": "이 저장소는 안전합니다.",
     "vulnCount": "취약점 ({count}개)",
     "ctaTitle": "AI 설명, 트렌드 추적 등을 원하시나요?",
-    "ctaDesc": "로그인하여 AI 기반 수정 제안, 스캔 기록, 지속적 모니터링을 이용하세요."
+    "ctaDesc": "로그인하여 AI 기반 수정 제안, 스캔 기록, 지속적 모니터링을 이용하세요.",
+    "scanningInProgress": "스캔 진행 중",
+    "phaseStarting": "스캔 초기화 중...",
+    "phaseFetching": "GitHub에서 파일을 가져오는 중...",
+    "phaseScanning": "코드 취약점을 분석하는 중...",
+    "progressFetching": "{fetched}/{total}개 파일",
+    "progressScanning": "{remaining}개 파일 남음",
+    "elapsed": "경과: {time}초 — 결과가 자동으로 표시됩니다."
   }
 }

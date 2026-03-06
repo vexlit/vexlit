@@ -140,6 +140,13 @@
     "repoClean": "This repository looks clean.",
     "vulnCount": "Vulnerabilities ({count})",
     "ctaTitle": "Want AI explanations, trend tracking, and more?",
-    "ctaDesc": "Sign in to get AI-powered fix suggestions, scan history, and continuous monitoring."
+    "ctaDesc": "Sign in to get AI-powered fix suggestions, scan history, and continuous monitoring.",
+    "scanningInProgress": "Scanning in progress",
+    "phaseStarting": "Initializing scan...",
+    "phaseFetching": "Fetching files from GitHub...",
+    "phaseScanning": "Analyzing code for vulnerabilities...",
+    "progressFetching": "{fetched}/{total} files",
+    "progressScanning": "{remaining} files remaining",
+    "elapsed": "Elapsed: {time}s — Results will appear automatically."
   }
 }
