@@ -1,6 +1,7 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { Navbar } from "@/components/navbar";
+import { Sidebar } from "@/components/sidebar";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
@@ -30,9 +31,12 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-gray-950">
       <Navbar email={user.email ?? ""} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-8 pb-20 lg:pb-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
