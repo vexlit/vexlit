@@ -46,9 +46,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, scanned: 0, message: "No projects due today" });
   }
 
+  // Limit per cron run to avoid GitHub API rate limits
+  const MAX_PROJECTS_PER_RUN = 5;
+  const batch = eligible.slice(0, MAX_PROJECTS_PER_RUN);
+
   const results: { project: string; status: string; scanId?: string }[] = [];
 
-  for (const project of eligible) {
+  for (const project of batch) {
     try {
       // Parse owner/repo from github_url
       const match = project.github_url?.match(/github\.com\/([^/]+)\/([^/\s#?]+)/);
@@ -214,7 +218,8 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, scanned: results.length, results });
+  const skipped = eligible.length - batch.length;
+  return NextResponse.json({ ok: true, scanned: results.length, skipped, results });
 }
 
 /** Validate webhook URL to prevent SSRF */
