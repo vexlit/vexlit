@@ -55,7 +55,9 @@
     "scanningInProgress": "스캔 진행 중...",
     "elapsed": "경과 시간: {seconds}초 — 결과가 자동으로 표시됩니다.",
     "policyViolated": "보안 정책 위반 — 아래 결과를 확인하세요",
-    "policyPassed": "모든 보안 정책을 통과했습니다"
+    "policyPassed": "모든 보안 정책을 통과했습니다",
+    "fixPriorityTitle": "이 {count}개 취약점을 먼저 수정하세요",
+    "fixPriorityDesc": "즉시 해결해야 하는 가장 위험한 이슈"
   },
   "scanResults": {
     "allTab": "전체 ({count})",

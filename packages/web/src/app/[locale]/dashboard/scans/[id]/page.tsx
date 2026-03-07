@@ -154,6 +154,46 @@ export default async function ScanDetailPage({
         </div>
       )}
 
+      {/* Fix priority list */}
+      {typedScan.status === "completed" && (() => {
+        const priority = vulns.filter(
+          (v) => v.severity === "critical" || (v.severity === "warning" && v.confidence === "high")
+        ).slice(0, 5);
+        if (priority.length === 0) return null;
+        return (
+          <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <h3 className="text-red-400 font-semibold text-sm">
+                {t("fixPriorityTitle", { count: priority.length })}
+              </h3>
+            </div>
+            <p className="text-gray-500 text-xs mb-3">{t("fixPriorityDesc")}</p>
+            <ul className="space-y-2">
+              {priority.map((v) => (
+                <li key={v.id} className="flex items-start gap-3 bg-gray-900/60 rounded-lg px-3 py-2">
+                  <span className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                    v.severity === "critical"
+                      ? "bg-red-500/20 text-red-400"
+                      : "bg-yellow-500/20 text-yellow-400"
+                  }`}>
+                    {v.severity === "critical" ? t("critical") : t("warning")}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-medium truncate">{v.rule_name}</p>
+                    <p className="text-gray-500 text-xs truncate">
+                      {v.file_path}:{v.line} {v.cwe ? `· ${v.cwe}` : ""}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
+
       {/* AI Report button */}
       {typedScan.status === "completed" && vulns.length > 0 && (
         <AiReportButton scanId={id} />

@@ -55,7 +55,9 @@
     "scanningInProgress": "Scanning in progress...",
     "elapsed": "Elapsed: {seconds}s — Results will appear automatically.",
     "policyViolated": "Security policy violated — review findings below",
-    "policyPassed": "All security policies passed"
+    "policyPassed": "All security policies passed",
+    "fixPriorityTitle": "Fix these {count} vulnerabilities first",
+    "fixPriorityDesc": "Highest risk issues that should be resolved immediately"
   },
   "scanResults": {
     "allTab": "All ({count})",

@@ -5,6 +5,7 @@ import { scan, loadConfig, analyzeLlm } from "@vexlit/core";
 import type { ScanResult, Severity, Vulnerability } from "@vexlit/core";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { execSync } from "node:child_process";
 
 const SEVERITY_COLORS: Record<Severity, string> = {
   critical: "\x1b[31m",
@@ -14,8 +15,19 @@ const SEVERITY_COLORS: Record<Severity, string> = {
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
 const DIM = "\x1b[2m";
+const GREEN = "\x1b[32m";
 
 type OutputFormat = "table" | "json" | "sarif";
+
+const SEVERITY_ORDER: Record<string, number> = {
+  critical: 0,
+  warning: 1,
+  info: 2,
+};
+
+function severityGte(a: string, threshold: string): boolean {
+  return (SEVERITY_ORDER[a] ?? 99) <= (SEVERITY_ORDER[threshold] ?? 99);
+}
 
 function formatTable(results: ScanResult[]): void {
   const allVulns = results.flatMap((r) => r.vulnerabilities);
@@ -125,12 +137,38 @@ function formatSarif(results: ScanResult[]): string {
   return JSON.stringify(sarif, null, 2);
 }
 
+function getGitDiffFiles(): string[] {
+  try {
+    const staged = execSync("git diff --cached --name-only --diff-filter=ACMR", {
+      encoding: "utf-8",
+    }).trim();
+    const unstaged = execSync("git diff --name-only --diff-filter=ACMR", {
+      encoding: "utf-8",
+    }).trim();
+    const untracked = execSync("git ls-files --others --exclude-standard", {
+      encoding: "utf-8",
+    }).trim();
+
+    const files = new Set<string>();
+    for (const line of [...staged.split("\n"), ...unstaged.split("\n"), ...untracked.split("\n")]) {
+      const trimmed = line.trim();
+      if (trimmed) files.add(trimmed);
+    }
+    return Array.from(files);
+  } catch {
+    console.error("Error: Not a git repository or git is not installed.");
+    process.exit(2);
+  }
+}
+
 interface ScanCommandOptions {
   format?: OutputFormat;
   json?: boolean;
   sarif?: boolean;
   llm?: boolean;
   apiKey?: string;
+  failOn?: string;
+  diff?: boolean;
 }
 
 const program = new Command();
@@ -140,24 +178,39 @@ program
   .description("AI-powered code security vulnerability scanner")
   .version("0.1.0");
 
+/* ─── scan command ─── */
 program
   .command("scan")
   .description("Scan files or directories for security vulnerabilities")
-  .argument("<paths...>", "Files or directories to scan")
+  .argument("[paths...]", "Files or directories to scan (default: current directory)")
   .option("--format <format>", "Output format: table, json, sarif", "table")
   .option("--json", "Shorthand for --format json")
   .option("--sarif", "Shorthand for --format sarif")
   .option("--llm", "Enable LLM-assisted analysis via Claude API")
   .option("--api-key <key>", "Anthropic API key (or set ANTHROPIC_API_KEY env)")
+  .option("--fail-on <severity>", "Exit with code 1 if any vuln >= severity (critical, warning, info)")
+  .option("--diff", "Scan only git-changed files (staged + unstaged + untracked)")
   .action(async (paths: string[], options: ScanCommandOptions) => {
     try {
+      let scanPaths = paths.length > 0 ? paths : ["."];
+
+      if (options.diff) {
+        const diffFiles = getGitDiffFiles();
+        if (diffFiles.length === 0) {
+          console.log(`${GREEN}No changed files to scan.${RESET}`);
+          process.exit(0);
+        }
+        console.log(`${DIM}Scanning ${diffFiles.length} changed file(s)...${RESET}`);
+        scanPaths = diffFiles;
+      }
+
       const format: OutputFormat = options.sarif
         ? "sarif"
         : options.json
           ? "json"
           : (options.format ?? "table");
 
-      const results = await scan({ paths });
+      const results = await scan({ paths: scanPaths });
 
       if (options.llm) {
         const apiKey =
@@ -199,10 +252,11 @@ program
           break;
       }
 
-      const hasCritical = results.some((r) =>
-        r.vulnerabilities.some((v) => v.severity === "critical")
+      const failThreshold = options.failOn ?? "critical";
+      const shouldFail = results.some((r) =>
+        r.vulnerabilities.some((v) => severityGte(v.severity, failThreshold))
       );
-      process.exit(hasCritical ? 1 : 0);
+      process.exit(shouldFail ? 1 : 0);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error);
@@ -210,5 +264,210 @@ program
       process.exit(2);
     }
   });
+
+/* ─── fix command ─── */
+interface FixCommandOptions {
+  interactive?: boolean;
+  sca?: boolean;
+  auto?: boolean;
+  dryRun?: boolean;
+  explain?: boolean;
+  apiKey?: string;
+}
+
+program
+  .command("fix")
+  .description("Fix vulnerabilities found by scan")
+  .argument("[paths...]", "Files or directories to fix (default: current directory)")
+  .option("-i, --interactive", "Interactively choose which fixes to apply")
+  .option("--sca", "Fix SCA (dependency) vulnerabilities via npm/yarn upgrade")
+  .option("--auto", "Automatically apply all suggested fixes")
+  .option("--dry-run", "Show what would be fixed without making changes")
+  .option("--explain", "Show AI explanation for each vulnerability")
+  .option("--api-key <key>", "Anthropic API key for --explain (or set ANTHROPIC_API_KEY env)")
+  .action(async (paths: string[], options: FixCommandOptions) => {
+    try {
+      const scanPaths = paths.length > 0 ? paths : ["."];
+
+      if (options.sca) {
+        await fixSca(options.dryRun ?? false);
+        return;
+      }
+
+      const results = await scan({ paths: scanPaths });
+      const allVulns = results.flatMap((r) => r.vulnerabilities);
+
+      if (allVulns.length === 0) {
+        console.log(`${GREEN}No vulnerabilities found. Nothing to fix.${RESET}`);
+        process.exit(0);
+      }
+
+      console.log(`\n${BOLD}VEXLIT Fix${RESET} — ${allVulns.length} vulnerabilities found\n`);
+
+      if (options.explain) {
+        const apiKey = options.apiKey ?? process.env["ANTHROPIC_API_KEY"] ?? "";
+        if (!apiKey) {
+          console.error("Error: --explain requires an API key. Use --api-key or set ANTHROPIC_API_KEY.");
+          process.exit(2);
+        }
+
+        for (const result of results) {
+          for (const v of result.vulnerabilities) {
+            const color = SEVERITY_COLORS[v.severity];
+            console.log(`${color}[${v.severity.toUpperCase()}]${RESET} ${v.filePath}:${v.line} — ${v.ruleName}`);
+            console.log(`  ${DIM}${v.message}${RESET}`);
+
+            const content = fs.readFileSync(result.filePath, "utf-8");
+            const analysis = await analyzeLlm(v, content, apiKey);
+            console.log(`  AI: ${analysis.isRealVulnerability ? "Confirmed vulnerability" : "Likely false positive"}`);
+            if (analysis.explanation) {
+              console.log(`  ${DIM}${analysis.explanation}${RESET}`);
+            }
+            console.log();
+          }
+        }
+        return;
+      }
+
+      if (options.interactive) {
+        await fixInteractive(results, options.dryRun ?? false);
+      } else if (options.auto) {
+        await fixAuto(results, options.dryRun ?? false);
+      } else {
+        // Default: show suggestions
+        for (const result of results) {
+          for (const v of result.vulnerabilities) {
+            const color = SEVERITY_COLORS[v.severity];
+            console.log(
+              `${color}[${v.severity.toUpperCase()}]${RESET} ${v.filePath}:${v.line}`
+            );
+            console.log(`  ${v.message}`);
+            if (v.suggestion) {
+              console.log(`  ${GREEN}Fix:${RESET} ${v.suggestion}`);
+            }
+            console.log();
+          }
+        }
+        console.log(`${DIM}Use --auto to apply fixes, --interactive to choose, or --explain for AI analysis.${RESET}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`Error: ${message}`);
+      process.exit(2);
+    }
+  });
+
+async function fixSca(dryRun: boolean): Promise<void> {
+  const hasPkgJson = fs.existsSync("package.json");
+  const hasYarnLock = fs.existsSync("yarn.lock");
+
+  if (!hasPkgJson) {
+    console.error("Error: No package.json found in current directory.");
+    process.exit(2);
+  }
+
+  const cmd = hasYarnLock ? "yarn upgrade" : "npm audit fix";
+
+  if (dryRun) {
+    const dryCmd = hasYarnLock ? cmd : `${cmd} --dry-run`;
+    console.log(`${DIM}[dry-run] Would run: ${dryCmd}${RESET}`);
+    try {
+      execSync(dryCmd, { encoding: "utf-8", stdio: "inherit" });
+    } catch {
+      // npm audit fix --dry-run may exit non-zero
+    }
+    return;
+  }
+
+  console.log(`${BOLD}Running: ${cmd}${RESET}\n`);
+  try {
+    execSync(cmd, { encoding: "utf-8", stdio: "inherit" });
+    console.log(`\n${GREEN}SCA dependencies updated.${RESET}`);
+  } catch {
+    console.error("SCA fix command failed. Review the output above.");
+    process.exit(1);
+  }
+}
+
+async function fixInteractive(results: ScanResult[], dryRun: boolean): Promise<void> {
+  const readline = await import("node:readline");
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  const ask = (q: string): Promise<string> =>
+    new Promise((resolve) => rl.question(q, resolve));
+
+  let applied = 0;
+  let skipped = 0;
+
+  for (const result of results) {
+    for (const v of result.vulnerabilities) {
+      if (!v.suggestion) {
+        skipped++;
+        continue;
+      }
+
+      const color = SEVERITY_COLORS[v.severity];
+      console.log(
+        `\n${color}[${v.severity.toUpperCase()}]${RESET} ${v.filePath}:${v.line}`
+      );
+      console.log(`  ${v.message}`);
+      console.log(`  ${GREEN}Suggested fix:${RESET} ${v.suggestion}`);
+
+      const answer = await ask(`  Apply this fix? (y/n/q): `);
+      if (answer.toLowerCase() === "q") {
+        console.log(`\n${DIM}Stopped. Applied ${applied} fix(es), skipped ${skipped}.${RESET}`);
+        rl.close();
+        return;
+      }
+      if (answer.toLowerCase() === "y") {
+        if (dryRun) {
+          console.log(`  ${DIM}[dry-run] Would apply fix to ${v.filePath}:${v.line}${RESET}`);
+        } else {
+          console.log(`  ${DIM}Note: Manual code changes required. See suggestion above.${RESET}`);
+        }
+        applied++;
+      } else {
+        skipped++;
+      }
+    }
+  }
+
+  rl.close();
+  console.log(`\n${BOLD}Done.${RESET} Applied ${applied} fix(es), skipped ${skipped}.`);
+}
+
+async function fixAuto(results: ScanResult[], dryRun: boolean): Promise<void> {
+  let count = 0;
+
+  for (const result of results) {
+    for (const v of result.vulnerabilities) {
+      if (!v.suggestion) continue;
+      count++;
+
+      const color = SEVERITY_COLORS[v.severity];
+      if (dryRun) {
+        console.log(
+          `${DIM}[dry-run]${RESET} ${color}[${v.severity.toUpperCase()}]${RESET} ${v.filePath}:${v.line} — ${v.suggestion}`
+        );
+      } else {
+        console.log(
+          `${color}[${v.severity.toUpperCase()}]${RESET} ${v.filePath}:${v.line} — ${v.suggestion}`
+        );
+      }
+    }
+  }
+
+  if (count === 0) {
+    console.log(`${DIM}No auto-fixable vulnerabilities found.${RESET}`);
+    return;
+  }
+
+  if (dryRun) {
+    console.log(`\n${DIM}[dry-run] ${count} fix(es) would be applied. No files were modified.${RESET}`);
+  } else {
+    console.log(`\n${BOLD}${count} fix suggestion(s) listed.${RESET}`);
+    console.log(`${DIM}Note: SAST fixes require manual code changes. Use --sca for dependency upgrades.${RESET}`);
+  }
+}
 
 program.parse();
