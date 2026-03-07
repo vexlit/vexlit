@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { getAiCache, setAiCache } from "@/lib/ai-cache";
 
 interface Props {
@@ -19,7 +19,8 @@ interface Props {
 
 export function AiExplainButton({ scanId, vulnId, ...props }: Props) {
   const t = useTranslations("aiExplain");
-  const cacheKey = `vexlit-ai-${scanId}-${vulnId}-explain`;
+  const locale = useLocale();
+  const cacheKey = `vexlit-ai-${scanId}-${vulnId}-explain-${locale}`;
   const [explanation, setExplanation] = useState<string | null>(() =>
     getAiCache(cacheKey)
   );
@@ -40,7 +41,7 @@ export function AiExplainButton({ scanId, vulnId, ...props }: Props) {
       const res = await fetch("/api/ai/explain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(props),
+        body: JSON.stringify({ ...props, locale }),
       });
       const data = await res.json();
 

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { ruleName, severity, message, filePath, line, snippet, cwe, owasp } =
+  const { ruleName, severity, message, filePath, line, snippet, cwe, owasp, locale: bodyLocale } =
     body as {
       ruleName: string;
       severity: string;
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       snippet: string | null;
       cwe: string | null;
       owasp: string | null;
+      locale?: string;
     };
 
   if (!ruleName || !message) {
@@ -38,9 +39,9 @@ export async function POST(request: Request) {
 
   const admin = createSupabaseAdmin();
 
-  // Detect language from Accept-Language header (handles "ko-KR,ko;q=0.9,en-US;q=0.8")
-  const acceptLang = request.headers.get("accept-language") ?? "";
-  const lang = /^ko\b|,\s*ko\b/.test(acceptLang) ? "ko" : "en";
+  // Use explicit locale from body (set by client useLocale()), fallback to Accept-Language
+  const lang = bodyLocale === "ko" ? "ko" : bodyLocale === "en" ? "en"
+    : /^ko\b|,\s*ko\b/.test(request.headers.get("accept-language") ?? "") ? "ko" : "en";
 
   // Normalize snippet for better cache reuse (trim whitespace, collapse spaces)
   const normalizedSnippet = snippet?.trim().replace(/\s+/g, " ") ?? null;

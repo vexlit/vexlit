@@ -16,7 +16,9 @@
     "ctaTitle": "Secure your code today",
     "ctaDescription": "Connect your GitHub repository and get a comprehensive security scan in seconds. Free to use.",
     "getStartedFree": "Get Started Free",
-    "footer": "VEXLIT — AI-Powered Security Scanner"
+    "footer": "VEXLIT — AI-Powered Security Scanner",
+    "liveDemoTitle": "See It in Action",
+    "liveDemoDesc": "Paste your code, pick an example, and watch VEXLIT find vulnerabilities and suggest fixes instantly."
   },
   "features": {
     "astAnalysis": "AST-Based Analysis",
@@ -122,7 +124,12 @@
     "clickScanCode": "Click \"Scan Code\" to analyze",
     "tooManyRequests": "Too many requests. Please wait a moment.",
     "fullScanUnavailable": "Full scan unavailable. Showing quick results.",
-    "pasteCodeHere": "Paste your code here..."
+    "pasteCodeHere": "Paste your code here...",
+    "tryExample": "Try an example:",
+    "suggestedFix": "AI Suggested Fix",
+    "aiSuggestedPatch": "Auto-generated patch",
+    "vulnerable": "Vulnerable",
+    "fixed": "Fixed"
   },
   "repoScan": {
     "invalidUrl": "Enter a valid GitHub repository URL",

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { getAiCache, setAiCache } from "@/lib/ai-cache";
 
 export function AiReportButton({ scanId }: { scanId: string }) {
   const t = useTranslations("aiReport");
-  const cacheKey = `vexlit-ai-${scanId}-report`;
+  const locale = useLocale();
+  const cacheKey = `vexlit-ai-${scanId}-report-${locale}`;
   const [report, setReport] = useState<string | null>(() =>
     getAiCache(cacheKey)
   );
@@ -27,7 +28,7 @@ export function AiReportButton({ scanId }: { scanId: string }) {
       const res = await fetch("/api/ai/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scanId }),
+        body: JSON.stringify({ scanId, locale }),
       });
       const data = await res.json();
 

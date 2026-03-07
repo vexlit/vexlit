@@ -16,7 +16,9 @@
     "ctaTitle": "지금 코드를 보호하세요",
     "ctaDescription": "GitHub 저장소를 연결하고 몇 초 만에 종합 보안 스캔을 받아보세요. 무료입니다.",
     "getStartedFree": "무료로 시작하기",
-    "footer": "VEXLIT — AI 기반 보안 스캐너"
+    "footer": "VEXLIT — AI 기반 보안 스캐너",
+    "liveDemoTitle": "직접 체험하기",
+    "liveDemoDesc": "코드를 붙여넣거나 예시를 선택하면 VEXLIT이 취약점을 찾고 수정 방법을 즉시 제안합니다."
   },
   "features": {
     "astAnalysis": "AST 기반 분석",
@@ -122,7 +124,12 @@
     "clickScanCode": "\"코드 스캔\"을 클릭하여 분석",
     "tooManyRequests": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
     "fullScanUnavailable": "전체 스캔을 사용할 수 없습니다. 빠른 결과를 표시합니다.",
-    "pasteCodeHere": "코드를 여기에 붙여넣으세요..."
+    "pasteCodeHere": "코드를 여기에 붙여넣으세요...",
+    "tryExample": "예시 선택:",
+    "suggestedFix": "AI 수정 제안",
+    "aiSuggestedPatch": "자동 생성 패치",
+    "vulnerable": "취약한 코드",
+    "fixed": "수정된 코드"
   },
   "repoScan": {
     "invalidUrl": "유효한 GitHub 저장소 URL을 입력하세요",
