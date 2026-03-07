@@ -1,10 +1,11 @@
 "use client";
 
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { LanguageSelector } from "../language-selector";
+import { ThemeToggle } from "../theme-toggle";
 import { VexlitLogo } from "../vexlit-logo";
 
 // ── Nav menu data ──
@@ -218,14 +219,19 @@ function MobileMenu({
   isLoggedIn,
   loading,
   navItems,
+  email,
+  onSignOut,
 }: {
   open: boolean;
   onClose: () => void;
   isLoggedIn: boolean;
   loading: boolean;
   navItems: NavItem[];
+  email: string;
+  onSignOut: () => void;
 }) {
   const t = useTranslations("nav");
+  const tc = useTranslations("common");
 
   useEffect(() => {
     if (open) {
@@ -310,13 +316,37 @@ function MobileMenu({
 
         <div className={`px-6 py-4 border-t border-gray-800 space-y-3 transition-opacity ${loading ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
           {isLoggedIn ? (
-            <Link
-              href="/dashboard"
-              className="block w-full text-center px-4 py-2.5 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
-              onClick={onClose}
-            >
-              {t("dashboard")}
-            </Link>
+            <>
+              <div className="flex items-center gap-3 pb-3 border-b border-gray-800">
+                <div className="w-8 h-8 rounded-full bg-purple-600 text-white text-sm font-medium flex items-center justify-center flex-shrink-0">
+                  {email ? email.charAt(0).toUpperCase() : "U"}
+                </div>
+                <p className="text-sm text-gray-300 truncate">{email}</p>
+                <div className="ml-auto">
+                  <ThemeToggle />
+                </div>
+              </div>
+              <Link
+                href="/dashboard"
+                className="block w-full text-center px-4 py-2.5 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
+                onClick={onClose}
+              >
+                {t("dashboard")}
+              </Link>
+              <Link
+                href="/dashboard/settings"
+                className="block w-full text-center px-4 py-2.5 border border-gray-700 rounded-lg text-sm font-medium text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
+                onClick={onClose}
+              >
+                {tc("settings")}
+              </Link>
+              <button
+                onClick={() => { onSignOut(); onClose(); }}
+                className="block w-full text-center px-4 py-2.5 border border-gray-700 rounded-lg text-sm font-medium text-gray-300 hover:border-gray-500 hover:text-white transition-colors"
+              >
+                {tc("signOut")}
+              </button>
+            </>
           ) : (
             <>
               <Link
@@ -354,20 +384,44 @@ function MobileMenu({
 // ── Main nav ──
 
 export function LandingNav() {
+  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
   const navItems = useNavItems();
   const t = useTranslations("nav");
+  const tc = useTranslations("common");
 
   useEffect(() => {
     const supabase = createSupabaseBrowser();
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsLoggedIn(!!session);
+      setEmail(session?.user?.email ?? "");
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSignOut = async () => {
+    const supabase = createSupabaseBrowser();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  const initial = email ? email.charAt(0).toUpperCase() : "U";
 
   return (
     <>
@@ -414,12 +468,50 @@ export function LandingNav() {
             <div className="hidden lg:flex items-center gap-3">
               <div className={`flex items-center gap-3 transition-opacity ${loading ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
                 {isLoggedIn ? (
-                  <Link
-                    href="/dashboard"
-                    className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
-                  >
-                    {t("dashboard")}
-                  </Link>
+                  <>
+                    <ThemeToggle />
+                    <Link
+                      href="/dashboard"
+                      className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors text-white"
+                    >
+                      {t("dashboard")}
+                    </Link>
+                    <div className="relative" ref={profileRef}>
+                      <button
+                        onClick={() => setProfileOpen(!profileOpen)}
+                        className="w-8 h-8 rounded-full bg-purple-600 text-white text-sm font-medium flex items-center justify-center hover:bg-purple-500 transition-colors"
+                      >
+                        {initial}
+                      </button>
+                      {profileOpen && (
+                        <div className="absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-800 rounded-xl shadow-lg py-2 z-50">
+                          <div className="px-4 py-2 border-b border-gray-800">
+                            <p className="text-sm text-gray-300 truncate">{email}</p>
+                          </div>
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setProfileOpen(false)}
+                            className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                          >
+                            {t("dashboard")}
+                          </Link>
+                          <Link
+                            href="/dashboard/settings"
+                            onClick={() => setProfileOpen(false)}
+                            className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                          >
+                            {tc("settings")}
+                          </Link>
+                          <button
+                            onClick={handleSignOut}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                          >
+                            {tc("signOut")}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 ) : (
                   <>
                     <Link
@@ -466,6 +558,8 @@ export function LandingNav() {
         isLoggedIn={isLoggedIn}
         loading={loading}
         navItems={navItems}
+        email={email}
+        onSignOut={handleSignOut}
       />
     </>
   );

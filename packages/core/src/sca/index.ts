@@ -6,3 +6,4 @@ export type { Dependency, Advisory, ScaDependencyResult, DepGraph } from "./type
 export { generateCycloneDxSbom } from "./sbom.js";
 export { analyzeLicenses, classifyLicense } from "./license.js";
 export type { LicenseRisk } from "./license.js";
+export { analyzeReachability } from "./reachability.js";

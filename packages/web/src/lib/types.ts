@@ -52,6 +52,7 @@ export interface Scan {
   deps_json: unknown | null;
   dep_graph_json: unknown | null;
   error_message: string | null;
+  policy_status: "passed" | "violated" | null;
   created_at: string;
   completed_at: string | null;
 }
@@ -71,6 +72,7 @@ export interface Vulnerability {
   owasp: string | null;
   suggestion: string | null;
   confidence: "high" | "medium" | "low";
+  reachable: boolean | null;
   created_at: string;
 }
 

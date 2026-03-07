@@ -51,7 +51,9 @@
     "deleteScan": "Delete Scan",
     "deleteScanConfirm": "Delete this scan and its results?",
     "scanningInProgress": "Scanning in progress...",
-    "elapsed": "Elapsed: {seconds}s — Results will appear automatically."
+    "elapsed": "Elapsed: {seconds}s — Results will appear automatically.",
+    "policyViolated": "Security policy violated — review findings below",
+    "policyPassed": "All security policies passed"
   },
   "scanResults": {
     "allTab": "All ({count})",
@@ -158,5 +160,30 @@
     "failedToConnectGithub": "Failed to connect to GitHub",
     "tokenNotAvailable": "GitHub token expired. Please re-login.",
     "ownerRepoRequired": "Repository information is required"
+  },
+  "policies": {
+    "title": "Security Policies",
+    "description": "Define rules to automatically evaluate scan results. Policies run after each scan completes.",
+    "addPolicy": "Add Policy",
+    "createPolicy": "Create Policy",
+    "editPolicy": "Edit Policy",
+    "policyName": "Policy Name",
+    "policyNamePlaceholder": "e.g., Block critical SCA vulnerabilities",
+    "action": "Action",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Optional description of what this policy checks",
+    "conditions": "Conditions",
+    "minSeverity": "Minimum Severity",
+    "source": "Source",
+    "reachableOnly": "Reachable only",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "update": "Update",
+    "create": "Create",
+    "policyCreated": "Policy created",
+    "policyUpdated": "Policy updated",
+    "policyDeleted": "Policy deleted",
+    "noPolicies": "No policies configured",
+    "noPoliciesDesc": "Add a policy to automatically evaluate scan results against your security requirements."
   }
 }

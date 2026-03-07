@@ -21,6 +21,19 @@ function ConfidenceBadge({ confidence }: { confidence: "high" | "medium" | "low"
   );
 }
 
+function ReachabilityBadge({ reachable }: { reachable: boolean | null }) {
+  if (reachable === null) return null;
+  return reachable ? (
+    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium border bg-red-900/40 text-red-400 border-red-800" title="This dependency is imported in your code">
+      reachable
+    </span>
+  ) : (
+    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium border bg-gray-800 text-gray-500 border-gray-700" title="This dependency is not directly imported in your code">
+      unreachable
+    </span>
+  );
+}
+
 const KEYWORDS = new Set([
   "const","let","var","function","return","if","else","for","while",
   "import","export","from","require","new","async","await","class","extends",
@@ -800,6 +813,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
                               {v.rule_name}
                             </span>
                             <ConfidenceBadge confidence={v.confidence} />
+                            {v.rule_id?.startsWith("SCA-") && <ReachabilityBadge reachable={v.reachable} />}
                             <span className="text-gray-600 text-xs">
                               {t("lineCol", { line: v.line, col: v.column })}
                             </span>

@@ -239,7 +239,7 @@ export async function POST(
       }
     }
 
-    const { RuleEngine, scaDependencies } = await import("@vexlit/core");
+    const { RuleEngine, scaDependencies, analyzeReachability } = await import("@vexlit/core");
     const engine = new RuleEngine();
 
     // Run SCA once — use SCA-META/SCA-SKIPPED marker to detect if SCA already ran
@@ -252,23 +252,43 @@ export async function POST(
 
     if ((scaAlreadyRan ?? 0) === 0) {
       const scaResult = await scaDependencies(files);
+
+      // Reachability analysis — determine which SCA deps are actually imported
+      let reachableKeys: Set<string> | null = null;
+      if (scaResult.depGraph && scaResult.dependencies.length > 0) {
+        reachableKeys = analyzeReachability(files, scaResult.depGraph, scaResult.dependencies);
+      }
+
       if (scaResult.vulnerabilities.length > 0) {
         await admin.from("vulnerabilities").insert(
-          scaResult.vulnerabilities.map((v) => ({
-            scan_id: id,
-            rule_id: v.ruleId,
-            rule_name: v.ruleName,
-            severity: v.severity,
-            confidence: v.confidence ?? "high",
-            message: v.message,
-            file_path: v.filePath,
-            line: v.line,
-            column: v.column,
-            snippet: v.snippet ?? null,
-            cwe: v.cwe ?? null,
-            owasp: v.owasp ?? null,
-            suggestion: v.suggestion ?? null,
-          }))
+          scaResult.vulnerabilities.map((v) => {
+            // Determine reachability for SCA vulns
+            let reachable: boolean | null = null;
+            if (reachableKeys && v.ruleId.startsWith("SCA-")) {
+              // Extract package key from snippet: [ecosystem] "name": "version"
+              const snippetMatch = v.snippet.match(/^\[(\w+)\]\s*"([^"]+)":\s*"([^"]+)"$/);
+              if (snippetMatch) {
+                const depKey = `${snippetMatch[1]}:${snippetMatch[2]}@${snippetMatch[3]}`;
+                reachable = reachableKeys.has(depKey);
+              }
+            }
+            return {
+              scan_id: id,
+              rule_id: v.ruleId,
+              rule_name: v.ruleName,
+              severity: v.severity,
+              confidence: v.confidence ?? "high",
+              message: v.message,
+              file_path: v.filePath,
+              line: v.line,
+              column: v.column,
+              snippet: v.snippet ?? null,
+              cwe: v.cwe ?? null,
+              owasp: v.owasp ?? null,
+              suggestion: v.suggestion ?? null,
+              reachable,
+            };
+          })
         );
       } else if (scaResult.skipped && scaResult.depCount > 0) {
         await admin.from("vulnerabilities").insert({
@@ -408,6 +428,78 @@ export async function POST(
       else info++;
     }
 
+    // ── Policy evaluation ──
+    let policyStatus: string | null = null;
+    try {
+      const { evaluatePolicies } = await import("@vexlit/core");
+
+      // Fetch user policies (project-specific + global)
+      const { data: policies } = await admin
+        .from("policies")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .eq("enabled", true)
+        .or(`project_id.eq.${scan.project_id},project_id.is.null`);
+
+      if (policies && policies.length > 0) {
+        // Fetch all vulns for policy evaluation
+        const { data: allVulns } = await admin
+          .from("vulnerabilities")
+          .select("rule_id, severity, cwe, rule_name, reachable, snippet")
+          .eq("scan_id", id)
+          .not("rule_id", "in", '("SCA-SKIPPED","SCA-META")');
+
+        const vulnsForPolicy = (allVulns ?? []).map((v) => {
+          // Extract package name from SCA rule_name: "Vulnerable dependency: lodash (dev)"
+          const pkgMatch = v.rule_name?.match(/^Vulnerable dependency:\s*(\S+)/);
+          const isDev = v.rule_name?.includes("(dev)") ?? false;
+          return {
+            ruleId: v.rule_id,
+            severity: v.severity as "critical" | "warning" | "info",
+            cwe: v.cwe ?? "",
+            packageName: pkgMatch?.[1],
+            isDev,
+            reachable: v.reachable ?? undefined,
+          };
+        });
+
+        const evaluations = evaluatePolicies(
+          policies.map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description ?? "",
+            enabled: true,
+            conditions: p.conditions ?? {},
+            action: p.action ?? "warn",
+          })),
+          vulnsForPolicy
+        );
+
+        // Store evaluation results
+        const evalRows = evaluations.map((ev) => ({
+          scan_id: id,
+          policy_id: ev.policyId,
+          status: ev.status,
+          matched_count: ev.matchedCount,
+          details: ev.matchedIndices,
+        }));
+        if (evalRows.length > 0) {
+          await admin.from("policy_evaluations").insert(evalRows);
+        }
+
+        // Determine overall policy status
+        const hasBlock = evaluations.some(
+          (e) => e.status === "violated" && e.action === "block"
+        );
+        const hasWarn = evaluations.some(
+          (e) => e.status === "violated" && e.action === "warn"
+        );
+        policyStatus = hasBlock ? "violated" : hasWarn ? "violated" : "passed";
+      }
+    } catch {
+      // Policy evaluation is non-critical — don't fail the scan
+    }
+
     await admin
       .from("scans")
       .update({
@@ -419,6 +511,7 @@ export async function POST(
         duration_ms: Date.now() - new Date(scan.created_at).getTime(),
         completed_at: new Date().toISOString(),
         file_contents: null,
+        ...(policyStatus !== null ? { policy_status: policyStatus } : {}),
       })
       .eq("id", id);
 

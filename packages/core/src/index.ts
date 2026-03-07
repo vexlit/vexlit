@@ -8,7 +8,7 @@ export { analyzeLlm } from "./llm.js";
 export { parseAST, walkAST, findNodes } from "./ast-parser.js";
 export { parseTreeSitter, walkTreeSitter, findTreeSitterNodes } from "./tree-sitter.js";
 export type { TreeSitterTree, TreeSitterNode } from "./tree-sitter.js";
-export { scaDependencies, isDependencyFile, parseDependencies, generateCycloneDxSbom, analyzeLicenses, classifyLicense } from "./sca/index.js";
+export { scaDependencies, isDependencyFile, parseDependencies, generateCycloneDxSbom, analyzeLicenses, classifyLicense, analyzeReachability } from "./sca/index.js";
 export type { Dependency, Advisory, ScaDependencyResult, ScaResult, LicenseRisk, DepGraph } from "./sca/index.js";
 export type {
   Vulnerability,
@@ -22,3 +22,5 @@ export type {
   Language,
   Rule,
 } from "./types.js";
+export { evaluatePolicies } from "./policy/index.js";
+export type { Policy, PolicyConditions, PolicyEvaluation, VulnForPolicy } from "./policy/index.js";

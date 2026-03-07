@@ -51,7 +51,9 @@
     "deleteScan": "스캔 삭제",
     "deleteScanConfirm": "이 스캔과 결과를 삭제하시겠습니까?",
     "scanningInProgress": "스캔 진행 중...",
-    "elapsed": "경과 시간: {seconds}초 — 결과가 자동으로 표시됩니다."
+    "elapsed": "경과 시간: {seconds}초 — 결과가 자동으로 표시됩니다.",
+    "policyViolated": "보안 정책 위반 — 아래 결과를 확인하세요",
+    "policyPassed": "모든 보안 정책을 통과했습니다"
   },
   "scanResults": {
     "allTab": "전체 ({count})",
@@ -158,5 +160,30 @@
     "failedToConnectGithub": "GitHub에 연결할 수 없습니다",
     "tokenNotAvailable": "GitHub 토큰이 만료되었습니다. 다시 로그인해 주세요.",
     "ownerRepoRequired": "저장소 정보가 필요합니다"
+  },
+  "policies": {
+    "title": "보안 정책",
+    "description": "스캔 결과를 자동으로 평가하는 규칙을 정의하세요. 정책은 각 스캔 완료 후 실행됩니다.",
+    "addPolicy": "정책 추가",
+    "createPolicy": "정책 생성",
+    "editPolicy": "정책 편집",
+    "policyName": "정책 이름",
+    "policyNamePlaceholder": "예: 치명적 SCA 취약점 차단",
+    "action": "작업",
+    "descriptionLabel": "설명",
+    "descriptionPlaceholder": "이 정책이 확인하는 내용에 대한 선택적 설명",
+    "conditions": "조건",
+    "minSeverity": "최소 심각도",
+    "source": "소스",
+    "reachableOnly": "도달 가능한 것만",
+    "cancel": "취소",
+    "saving": "저장 중...",
+    "update": "수정",
+    "create": "생성",
+    "policyCreated": "정책이 생성되었습니다",
+    "policyUpdated": "정책이 수정되었습니다",
+    "policyDeleted": "정책이 삭제되었습니다",
+    "noPolicies": "구성된 정책이 없습니다",
+    "noPoliciesDesc": "보안 요구사항에 따라 스캔 결과를 자동으로 평가하는 정책을 추가하세요."
   }
 }
