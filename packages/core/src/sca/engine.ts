@@ -63,8 +63,11 @@ export async function scaDependencies(
 
     for (const adv of advisories) {
       const cveAlias = adv.aliases.find((a) => a.startsWith("CVE-")) ?? adv.id;
+      const fixCmd = adv.fixedVersion
+        ? buildUpgradeCommand(dep.name, adv.fixedVersion, dep.ecosystem, dep.dev)
+        : null;
       const fixMsg = adv.fixedVersion
-        ? ` Upgrade to ${adv.fixedVersion} or later.`
+        ? ` Safe version: ${adv.fixedVersion}. ${fixCmd ?? ""}`
         : " Check the advisory for remediation steps.";
 
       const devLabel = dep.dev ? " (dev)" : "";
@@ -86,4 +89,27 @@ export async function scaDependencies(
   }
 
   return { vulnerabilities, depCount: uniqueDeps.length, skipped: false };
+}
+
+/** Build a package-manager-specific upgrade command */
+function buildUpgradeCommand(
+  name: string,
+  version: string,
+  ecosystem: string,
+  dev: boolean
+): string | null {
+  switch (ecosystem) {
+    case "npm": {
+      const flag = dev ? " --save-dev" : "";
+      return `Run: npm install ${name}@${version}${flag}`;
+    }
+    case "PyPI":
+      return `Run: pip install ${name}==${version}`;
+    case "Go":
+      return `Run: go get ${name}@${version}`;
+    case "crates.io":
+      return `Update Cargo.toml: ${name} = "${version}"`;
+    default:
+      return null;
+  }
 }

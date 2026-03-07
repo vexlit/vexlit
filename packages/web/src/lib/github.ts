@@ -41,6 +41,8 @@ const SUPPORTED_EXTENSIONS = [
 const SCA_FILES = new Set([
   "package.json",
   "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
   "requirements.txt",
   "Pipfile",
   "go.mod",

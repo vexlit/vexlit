@@ -5,7 +5,7 @@
 const GITHUB_API = "https://api.github.com";
 
 const SUPPORTED_EXTENSIONS = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py"];
-const SCA_FILES = new Set(["package.json", "package-lock.json", "requirements.txt", "Pipfile", "go.mod", "go.sum", "Cargo.toml", "Cargo.lock"]);
+const SCA_FILES = new Set(["package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "requirements.txt", "Pipfile", "go.mod", "go.sum", "Cargo.toml", "Cargo.lock"]);
 const MAX_FILE_SIZE = 1_000_000; // 1MB per file
 const MAX_SCANNABLE_FILES = 200;
 

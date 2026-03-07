@@ -4,6 +4,8 @@ import type { Dependency } from "./types.js";
 export const DEPENDENCY_FILES = new Set([
   "package.json",
   "package-lock.json",
+  "yarn.lock",
+  "pnpm-lock.yaml",
   "requirements.txt",
   "Pipfile",
   "go.mod",
@@ -27,6 +29,8 @@ export function parseDependencies(
 
   if (fileName === "package.json") return parsePackageJson(filePath, content);
   if (fileName === "package-lock.json") return parsePackageLockJson(filePath, content);
+  if (fileName === "yarn.lock") return parseYarnLock(filePath, content);
+  if (fileName === "pnpm-lock.yaml") return parsePnpmLock(filePath, content);
   if (fileName === "requirements.txt") return parseRequirementsTxt(filePath, content);
   if (fileName === "Pipfile") return parsePipfile(filePath, content);
   if (fileName === "go.mod") return parseGoMod(filePath, content);
@@ -342,6 +346,185 @@ function parsePackageLockJson(filePath: string, content: string): Dependency[] {
     }
   } catch {
     // Invalid JSON
+  }
+
+  return deps;
+}
+
+/** Parse yarn.lock (v1 and Berry/v2+) for exact resolved versions */
+function parseYarnLock(filePath: string, content: string): Dependency[] {
+  const deps: Dependency[] = [];
+  const seen = new Set<string>();
+  const lines = content.split("\n");
+
+  // Detect yarn.lock version
+  const isBerry = content.includes("__metadata:");
+
+  if (isBerry) {
+    // yarn Berry (v2+) format — YAML-like with quoted keys
+    // "pkg@npm:^1.0.0":
+    //   version: 1.2.3
+    //   resolution: "pkg@npm:1.2.3"
+    let currentName: string | null = null;
+    let currentVersion: string | null = null;
+    let blockLine = 0;
+
+    const flush = () => {
+      if (currentName && currentVersion) {
+        const key = `${currentName}@${currentVersion}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          deps.push({
+            name: currentName,
+            version: currentVersion,
+            ecosystem: "npm",
+            source: filePath,
+            line: blockLine,
+            dev: false,
+          });
+        }
+      }
+      currentName = null;
+      currentVersion = null;
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Block header: "pkg@npm:^1.0.0": or "pkg@npm:^1.0.0, pkg@npm:^2.0.0":
+      if (line.length > 0 && !line.startsWith(" ") && !line.startsWith("#") && line !== "__metadata:") {
+        flush();
+        // Extract package name from "name@npm:version":
+        const headerMatch = line.match(/^"?(@?[^@"]+)@/);
+        if (headerMatch) {
+          currentName = headerMatch[1];
+          blockLine = i + 1;
+        }
+        continue;
+      }
+
+      // version field
+      if (currentName && line.match(/^\s+version:\s*/)) {
+        const vMatch = line.match(/^\s+version:\s*"?([^"\s]+)"?/);
+        if (vMatch) currentVersion = vMatch[1];
+      }
+    }
+    flush();
+  } else {
+    // yarn v1 format
+    // pkg@^1.0.0:
+    //   version "1.2.3"
+    //   resolved "..."
+    let currentName: string | null = null;
+    let currentVersion: string | null = null;
+    let blockLine = 0;
+
+    const flush = () => {
+      if (currentName && currentVersion) {
+        const key = `${currentName}@${currentVersion}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          deps.push({
+            name: currentName,
+            version: currentVersion,
+            ecosystem: "npm",
+            source: filePath,
+            line: blockLine,
+            dev: false,
+          });
+        }
+      }
+      currentName = null;
+      currentVersion = null;
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Skip comments and empty lines
+      if (!line || line.startsWith("#")) continue;
+
+      // Block header: "pkg@^1.0.0": or pkg@^1.0.0:
+      if (!line.startsWith(" ")) {
+        flush();
+        // Extract name: "name@version": or name@version:
+        const headerMatch = line.match(/^"?(@?[^@"]+)@/);
+        if (headerMatch) {
+          currentName = headerMatch[1];
+          blockLine = i + 1;
+        }
+        continue;
+      }
+
+      // version "x.y.z"
+      if (currentName) {
+        const vMatch = line.match(/^\s+version\s+"([^"]+)"/);
+        if (vMatch) currentVersion = vMatch[1];
+      }
+    }
+    flush();
+  }
+
+  return deps;
+}
+
+/** Parse pnpm-lock.yaml for exact resolved versions */
+function parsePnpmLock(filePath: string, content: string): Dependency[] {
+  const deps: Dependency[] = [];
+  const seen = new Set<string>();
+  const lines = content.split("\n");
+
+  // pnpm-lock.yaml v6+ format:
+  // packages:
+  //   /pkg@1.2.3:
+  //     ...
+  // or pnpm v9+ (lockfileVersion: '9.0'):
+  // packages:
+  //   pkg@1.2.3:
+  //     ...
+  // or snapshots section (v9):
+  // snapshots:
+  //   pkg@1.2.3:
+  //     ...
+
+  let inPackages = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Detect sections
+    if (line === "packages:" || line === "snapshots:") {
+      inPackages = true;
+      continue;
+    }
+    // New top-level section ends packages
+    if (line.length > 0 && !line.startsWith(" ") && line !== "packages:" && line !== "snapshots:") {
+      if (inPackages) inPackages = false;
+      continue;
+    }
+
+    if (!inPackages) continue;
+
+    // Match package entry: "  /pkg@1.2.3:" or "  pkg@1.2.3:" or "  /@scope/pkg@1.2.3:"
+    // Indent is typically 2 spaces for the package key
+    const match = line.match(/^\s{2,4}\/?(@?[^@\s(][^@\s]*)@(\d+\.\d+[^:\s(]*)(?:\(.*?\))?:/);
+    if (!match) continue;
+
+    const name = match[1];
+    const version = match[2];
+    const key = `${name}@${version}`;
+
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    deps.push({
+      name,
+      version,
+      ecosystem: "npm",
+      source: filePath,
+      line: i + 1,
+      dev: false,
+    });
   }
 
   return deps;
