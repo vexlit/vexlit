@@ -147,10 +147,10 @@ function quickScan(code: string): DemoVuln[] {
       vulns.push({ line: i + 1, severity: "critical", rule: "Eval Injection", message: "Dynamic code execution via eval()", cwe: "CWE-95" });
     }
     if (/\.innerHTML\s*=|document\.write/.test(line)) {
-      vulns.push({ line: i + 1, severity: "critical", rule: "XSS", message: "Unsanitized DOM manipulation", cwe: "CWE-79" });
+      vulns.push({ line: i + 1, severity: "warning", rule: "Cross-Site Scripting (XSS)", message: "Unsanitized DOM manipulation", cwe: "CWE-79" });
     }
     if (/dangerouslySetInnerHTML/.test(line)) {
-      vulns.push({ line: i + 1, severity: "critical", rule: "XSS", message: "dangerouslySetInnerHTML — potential XSS vector", cwe: "CWE-79" });
+      vulns.push({ line: i + 1, severity: "warning", rule: "Cross-Site Scripting (XSS)", message: "dangerouslySetInnerHTML — potential XSS vector", cwe: "CWE-79" });
     }
   }
   // Multiline template literal SQL injection

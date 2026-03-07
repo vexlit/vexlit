@@ -40,7 +40,7 @@
     "before": "적용 전",
     "after": "적용 후",
     "vulnFound": "취약점 발견",
-    "scanOutputTitle": "VEXLIT이 코드에서 찾아내는 것들",
+    "scanOutputTitle": "VEXLIT이 코드에서 찾아내는 취약점",
     "scanOutputDesc": "Node.js 프로젝트의 실제 스캔 결과 — 모든 발견사항이 즉시 조치 가능합니다.",
     "howItWorksTitle": "작동 방식",
     "howItWorksDesc": "코드를 보호하기 위한 세 가지 간단한 단계.",
