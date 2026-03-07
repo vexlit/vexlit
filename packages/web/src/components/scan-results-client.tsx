@@ -376,13 +376,13 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
     [realVulns]
   );
 
-  // License summary from depsJson
+  // License summary from depsJson (exclude Unknown-only results)
   const licenseSummary = useMemo(() => {
     if (!depsJson) return [];
     const counts = new Map<string, number>();
     for (const d of depsJson) {
-      const lic = d.license || "Unknown";
-      counts.set(lic, (counts.get(lic) ?? 0) + 1);
+      const lic = d.license || "";
+      if (lic) counts.set(lic, (counts.get(lic) ?? 0) + 1);
     }
     return [...counts.entries()]
       .sort((a, b) => b[1] - a[1])
