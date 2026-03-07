@@ -175,6 +175,7 @@ export default async function ScanDetailPage({
           vulns={vulns}
           sarifJson={typedScan.sarif_json}
           depsJson={typedScan.deps_json as import("@/components/scan-results-client").DepEntry[] | null}
+          depGraphJson={typedScan.dep_graph_json as import("@/components/scan-results-client").DepGraphData | null}
           projectName={typedScan.projects?.name}
         />
       )}

@@ -1,4 +1,4 @@
-import type { Dependency } from "./types.js";
+import type { Dependency, DepGraph } from "./types.js";
 
 /** Files that contain dependency declarations */
 export const DEPENDENCY_FILES = new Set([
@@ -77,6 +77,7 @@ function parsePackageJson(filePath: string, content: string): Dependency[] {
           line,
           dev,
           license: projectLicense,
+          declaredRange: raw !== version ? raw : undefined,
         });
       }
     };
@@ -620,6 +621,110 @@ function parseCargoLock(filePath: string, content: string): Dependency[] {
   flush();
 
   return deps;
+}
+
+/**
+ * Build a dependency graph from lockfiles.
+ * Extracts edges (parent→children) and semver ranges from package.json + package-lock.json pairs.
+ */
+export function parseDepGraph(
+  files: { path: string; content: string }[],
+  deps: Dependency[]
+): DepGraph | null {
+  const edges: Record<string, string[]> = {};
+  const ranges: Record<string, string> = {};
+
+  // Collect declared ranges from parsed deps (package.json declaredRange)
+  for (const dep of deps) {
+    if (dep.declaredRange) {
+      const key = `${dep.ecosystem}:${dep.name}@${dep.version}`;
+      ranges[key] = dep.declaredRange;
+    }
+  }
+
+  // Extract edges from package-lock.json
+  for (const file of files) {
+    const fileName = file.path.split("/").pop() ?? "";
+    if (fileName !== "package-lock.json") continue;
+
+    try {
+      const lock = JSON.parse(file.content);
+
+      // lockfileVersion 2/3: "packages" field
+      if (lock.packages && typeof lock.packages === "object") {
+        for (const [pkgPath, info] of Object.entries(lock.packages)) {
+          if (!pkgPath) continue;
+          const meta = info as {
+            version?: string;
+            dependencies?: Record<string, string>;
+            devDependencies?: Record<string, string>;
+          };
+          if (!meta.version) continue;
+
+          const parentName = pkgPath.replace(/^.*node_modules\//, "");
+          if (!parentName) continue;
+          const parentKey = `npm:${parentName}@${meta.version}`;
+
+          const childDeps = { ...meta.dependencies, ...meta.devDependencies };
+          if (!childDeps || Object.keys(childDeps).length === 0) continue;
+
+          const children: string[] = [];
+          for (const [childName, childRange] of Object.entries(childDeps)) {
+            // Find the resolved version of this child from our deps list
+            const resolved = deps.find(
+              (d) => d.ecosystem === "npm" && d.name === childName
+            );
+            if (resolved) {
+              const childKey = `npm:${childName}@${resolved.version}`;
+              children.push(childKey);
+              // Store the range declared by the parent
+              if (!ranges[childKey]) ranges[childKey] = childRange;
+            }
+          }
+          if (children.length > 0) edges[parentKey] = children;
+        }
+      }
+      // lockfileVersion 1
+      else if (lock.dependencies && typeof lock.dependencies === "object") {
+        const walkEdges = (
+          depsObj: Record<string, { version?: string; requires?: Record<string, string>; dependencies?: Record<string, unknown> }>,
+        ) => {
+          for (const [name, info] of Object.entries(depsObj)) {
+            if (!info.version) continue;
+            const parentKey = `npm:${name}@${info.version}`;
+
+            if (info.requires) {
+              const children: string[] = [];
+              for (const [childName, childRange] of Object.entries(info.requires)) {
+                const resolved = deps.find(
+                  (d) => d.ecosystem === "npm" && d.name === childName
+                );
+                if (resolved) {
+                  const childKey = `npm:${childName}@${resolved.version}`;
+                  children.push(childKey);
+                  if (!ranges[childKey]) ranges[childKey] = childRange;
+                }
+              }
+              if (children.length > 0) edges[parentKey] = children;
+            }
+
+            if (info.dependencies) {
+              walkEdges(info.dependencies as typeof depsObj);
+            }
+          }
+        };
+        walkEdges(lock.dependencies);
+      }
+    } catch {
+      // Invalid JSON
+    }
+  }
+
+  if (Object.keys(edges).length === 0 && Object.keys(ranges).length === 0) {
+    return null;
+  }
+
+  return { edges, ranges };
 }
 
 /** Strip semver range characters to get a clean version */

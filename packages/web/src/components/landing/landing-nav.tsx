@@ -77,7 +77,7 @@ function useNavItems(): NavItem[] {
     {
       label: t("product"),
       children: [
-        { label: t("liveDemo"), description: "", href: "/#live-demo", icon: DROPDOWN_ICONS.sast },
+        { label: t("liveDemo"), description: "", href: "/#scan-input", icon: DROPDOWN_ICONS.sast },
         { label: t("secretDetection"), description: "", href: "/#rules", icon: DROPDOWN_ICONS.secret },
         { label: t("aiVerification"), description: "", href: "/#how-it-works", icon: DROPDOWN_ICONS.ai },
         { label: t("supportedLanguages"), description: "", href: "/#languages", icon: DROPDOWN_ICONS.languages },

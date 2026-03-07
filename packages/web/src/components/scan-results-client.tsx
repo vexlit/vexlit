@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { SeverityBadge } from "./severity-badge";
 import { AiExplainButton } from "./ai-explain-button";
@@ -71,6 +71,117 @@ export interface DepEntry {
   ecosystem: string;
   dev?: boolean;
   license?: string;
+  declaredRange?: string;
+}
+
+export interface DepGraphData {
+  edges: Record<string, string[]>;
+  ranges: Record<string, string>;
+}
+
+/** Trace reverse dependency chain: find how a package ended up in the project */
+function traceDepChain(
+  graph: DepGraphData,
+  targetKey: string,
+  maxDepth = 5
+): string[][] {
+  // Build reverse map: child -> parents
+  const reverseEdges = new Map<string, string[]>();
+  for (const [parent, children] of Object.entries(graph.edges)) {
+    for (const child of children) {
+      const parents = reverseEdges.get(child) ?? [];
+      parents.push(parent);
+      reverseEdges.set(child, parents);
+    }
+  }
+
+  // BFS upward from target to find paths to root (packages with no parents)
+  const paths: string[][] = [];
+  const queue: { key: string; path: string[] }[] = [{ key: targetKey, path: [targetKey] }];
+  const visited = new Set<string>();
+
+  while (queue.length > 0 && paths.length < 3) {
+    const item = queue.shift()!;
+    if (item.path.length > maxDepth) continue;
+
+    const parents = reverseEdges.get(item.key);
+    if (!parents || parents.length === 0) {
+      // Root — this is a direct dependency
+      paths.push(item.path);
+      continue;
+    }
+
+    for (const parent of parents) {
+      if (visited.has(parent)) continue;
+      visited.add(parent);
+      queue.push({ key: parent, path: [...item.path, parent] });
+    }
+  }
+
+  return paths;
+}
+
+function DepChain({ graph, ecosystem, name, version }: {
+  graph: DepGraphData;
+  ecosystem: string;
+  name: string;
+  version: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const targetKey = `${ecosystem}:${name}@${version}`;
+  const chains = useMemo(() => traceDepChain(graph, targetKey), [graph, targetKey]);
+  const range = graph.ranges[targetKey];
+
+  if (chains.length === 0 && !range) return null;
+
+  return (
+    <div className="mt-2">
+      {range && (
+        <p className="text-xs text-gray-500 mb-1">
+          <span className="text-gray-600">Declared:</span>{" "}
+          <span className="text-gray-400 font-mono">{range}</span>
+          <span className="text-gray-600 mx-1">&rarr;</span>
+          <span className="text-white font-mono">{version}</span>
+        </p>
+      )}
+      {chains.length > 0 && (
+        <>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+          >
+            <svg className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+            Dependency chain ({chains.length})
+          </button>
+          {expanded && (
+            <div className="mt-1.5 space-y-1.5">
+              {chains.map((chain, ci) => (
+                <div key={ci} className="text-xs font-mono pl-2 border-l border-gray-800">
+                  {[...chain].reverse().map((key, i) => {
+                    const depRange = graph.ranges[key];
+                    const depName = key.replace(/^[^:]+:/, "");
+                    const isTarget = i === chain.length - 1;
+                    return (
+                      <div key={key} className="flex items-center gap-1" style={{ paddingLeft: `${i * 12}px` }}>
+                        {i > 0 && <span className="text-gray-700">└─</span>}
+                        <span className={isTarget ? "text-red-400" : "text-gray-300"}>{depName}</span>
+                        {depRange && !isTarget && (
+                          <span className="text-gray-600">({depRange})</span>
+                        )}
+                        {i === 0 && <span className="text-gray-600 italic">(direct)</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 interface Props {
@@ -78,10 +189,11 @@ interface Props {
   vulns: Vulnerability[];
   sarifJson: unknown | null;
   depsJson?: DepEntry[] | null;
+  depGraphJson?: DepGraphData | null;
   projectName?: string;
 }
 
-export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, projectName }: Props) {
+export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraphJson, projectName }: Props) {
   const t = useTranslations("scanResults");
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
@@ -549,6 +661,16 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, projectN
                     <p className="text-green-400/80 text-xs mt-1.5 ml-7">
                       {t("fixAvailable", { pkg: pkgName, version: fixVersions[0] })}
                     </p>
+                  )}
+                  {depGraphJson && ecosystem && versions[0] && (
+                    <div className="ml-7 mt-1">
+                      <DepChain
+                        graph={depGraphJson}
+                        ecosystem={ecosystem}
+                        name={pkgName}
+                        version={versions[0]}
+                      />
+                    </div>
                   )}
                 </div>
 

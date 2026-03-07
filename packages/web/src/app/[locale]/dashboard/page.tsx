@@ -40,14 +40,13 @@ export default async function DashboardPage() {
       admin
         .from("vulnerabilities")
         .select("*, scans!inner(project_id, projects!inner(name, user_id))")
+        .eq("scans.projects.user_id", user!.id)
+        .not("rule_id", "in", '("SCA-META","SCA-SKIPPED")')
         .order("created_at", { ascending: false })
         .limit(10),
     ]);
 
-  // Filter to user's vulnerabilities
-  const userVulns = ((recentVulns ?? []) as (Vulnerability & { scans: { project_id: string; projects: { name: string; user_id: string } } })[]).filter(
-    (v) => v.scans?.projects?.user_id === user!.id
-  );
+  const userVulns = (recentVulns ?? []) as (Vulnerability & { scans: { project_id: string; projects: { name: string; user_id: string } } })[];
 
   // Build per-project latest scan map
   const projectScans = new Map<string, Scan>();

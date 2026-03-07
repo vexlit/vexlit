@@ -445,15 +445,15 @@ export function AccuracyBenchmark() {
 
       {/* Main metrics — 3 key stats */}
       <ScrollReveal>
-        <div className="grid grid-cols-3 gap-6 mb-12">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-gray-700 transition-colors">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-12">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 sm:p-6 text-center hover:border-gray-700 transition-colors">
             <AnimatedCounter end={97.4} suffix="%" decimals={1} label={t("benchmarkRecall")} />
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-gray-700 transition-colors">
-            <p className="text-4xl md:text-5xl font-bold text-white">&lt;1%</p>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 sm:p-6 text-center hover:border-gray-700 transition-colors">
+            <p className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">&lt;1%</p>
             <p className="text-gray-400 text-sm mt-2">{t("benchmarkFPR")}</p>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center hover:border-gray-700 transition-colors">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 sm:p-6 text-center hover:border-gray-700 transition-colors">
             <AnimatedCounter end={11100} suffix="+" label={t("benchmarkSamples")} />
           </div>
         </div>

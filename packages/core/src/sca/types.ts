@@ -12,6 +12,16 @@ export interface Dependency {
   dev: boolean;
   /** SPDX license identifier if available */
   license?: string;
+  /** Raw declared version range before resolution (e.g., "^4.17.0") */
+  declaredRange?: string;
+}
+
+/** Dependency graph — adjacency list + semver ranges */
+export interface DepGraph {
+  /** key = "ecosystem:name@version", value = list of child dependency keys */
+  edges: Record<string, string[]>;
+  /** key = "ecosystem:name@version", value = declared semver range */
+  ranges: Record<string, string>;
 }
 
 /** A known vulnerability from the OSV database */

@@ -37,10 +37,26 @@ export function Navbar({ email }: { email: string }) {
     <nav className="border-b border-gray-800 bg-gray-950 sticky top-0 z-50 backdrop-blur-sm bg-gray-950/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-14 items-center">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
-            <VexlitLogo size={28} />
-            VEXLIT
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
+              <VexlitLogo size={28} />
+              VEXLIT
+            </Link>
+            <div className="hidden lg:flex items-center gap-1">
+              <Link href="/" className="text-gray-400 hover:text-white text-sm font-medium transition-colors px-2.5 py-1.5 rounded-lg hover:bg-gray-800/50">
+                {t("home")}
+              </Link>
+              <Link href="/docs" className="text-gray-400 hover:text-white text-sm font-medium transition-colors px-2.5 py-1.5 rounded-lg hover:bg-gray-800/50">
+                Docs
+              </Link>
+              <Link href="/pricing" className="text-gray-400 hover:text-white text-sm font-medium transition-colors px-2.5 py-1.5 rounded-lg hover:bg-gray-800/50">
+                Pricing
+              </Link>
+              <a href="https://github.com/vexlit/vexlit" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-sm font-medium transition-colors px-2.5 py-1.5 rounded-lg hover:bg-gray-800/50">
+                {t("github")}
+              </a>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <NotificationBell />
             <LanguageSelector />

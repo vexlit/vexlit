@@ -1,6 +1,6 @@
 import type { Vulnerability } from "../types.js";
-import type { Dependency } from "./types.js";
-import { parseDependencies, isDependencyFile } from "./parser.js";
+import type { Dependency, DepGraph } from "./types.js";
+import { parseDependencies, isDependencyFile, parseDepGraph } from "./parser.js";
 import { queryOsv } from "./osv.js";
 import { analyzeLicenses } from "./license.js";
 
@@ -10,6 +10,8 @@ export interface ScaResult {
   dependencies: Dependency[];
   depCount: number;
   skipped: boolean;
+  /** Dependency graph for tree visualization */
+  depGraph: DepGraph | null;
 }
 
 /**
@@ -28,7 +30,7 @@ export async function scaDependencies(
     allDeps.push(...deps);
   }
 
-  if (!allDeps.length) return { vulnerabilities: [], dependencies: [], depCount: 0, skipped: false };
+  if (!allDeps.length) return { vulnerabilities: [], dependencies: [], depCount: 0, skipped: false, depGraph: null };
 
   // Step 2: Deduplicate — same package may appear in multiple manifests
   const seen = new Map<string, Dependency>();
@@ -53,7 +55,7 @@ export async function scaDependencies(
     advisoryMap = await queryOsv(uniqueDeps);
   } catch {
     // OSV unreachable after retries — skip SCA
-    return { vulnerabilities: [], dependencies: uniqueDeps, depCount: uniqueDeps.length, skipped: true };
+    return { vulnerabilities: [], dependencies: uniqueDeps, depCount: uniqueDeps.length, skipped: true, depGraph: null };
   }
 
   // Step 4: Convert to Vulnerability[] (report against all source files)
@@ -95,7 +97,10 @@ export async function scaDependencies(
   const licenseVulns = analyzeLicenses(uniqueDeps);
   vulnerabilities.push(...licenseVulns);
 
-  return { vulnerabilities, dependencies: uniqueDeps, depCount: uniqueDeps.length, skipped: false };
+  // Step 6: Build dependency graph
+  const depGraph = parseDepGraph(files, uniqueDeps);
+
+  return { vulnerabilities, dependencies: uniqueDeps, depCount: uniqueDeps.length, skipped: false, depGraph };
 }
 
 /** Build a package-manager-specific upgrade command */

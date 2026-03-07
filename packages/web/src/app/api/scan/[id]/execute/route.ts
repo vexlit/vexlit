@@ -302,11 +302,14 @@ export async function POST(
         });
       }
 
-      // Store parsed dependencies for SBOM export
+      // Store parsed dependencies for SBOM export + dep graph for tree visualization
       if (scaResult.dependencies.length > 0) {
         await admin
           .from("scans")
-          .update({ deps_json: scaResult.dependencies })
+          .update({
+            deps_json: scaResult.dependencies,
+            ...(scaResult.depGraph ? { dep_graph_json: scaResult.depGraph } : {}),
+          })
           .eq("id", id);
       }
     }

@@ -45,7 +45,7 @@ export function AnimatedCounter({
       viewport={{ once: true }}
       className="text-center"
     >
-      <p className="text-4xl md:text-5xl font-bold text-white">
+      <p className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
         {decimals > 0 ? count.toFixed(decimals) : count.toLocaleString()}
         {suffix}
       </p>
