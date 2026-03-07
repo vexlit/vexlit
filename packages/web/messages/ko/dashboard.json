@@ -97,7 +97,9 @@
     "sbomNotAvailable": "이 스캔에 대한 SBOM 데이터를 사용할 수 없습니다",
     "sbomDownloaded": "SBOM (CycloneDX) 파일이 다운로드되었습니다",
     "licenseWarning": "카피레프트 라이선스 이슈 {count}건 감지됨",
-    "andMore": "외 {count}건 더"
+    "andMore": "외 {count}건 더",
+    "exploitabilityHigh": "높은 악용 가능성 — 사용자 입력에서 도달 가능",
+    "exploitabilityContext": "이 취약점 패턴은 신뢰할 수 없는 입력을 처리할 때 일반적으로 악용될 수 있습니다."
   },
   "aiExplain": {
     "analyzing": "분석 중...",

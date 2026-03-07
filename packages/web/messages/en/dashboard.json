@@ -97,7 +97,9 @@
     "sbomNotAvailable": "SBOM data not available for this scan",
     "sbomDownloaded": "SBOM (CycloneDX) file downloaded",
     "licenseWarning": "{count} copyleft license issues detected",
-    "andMore": "and {count} more"
+    "andMore": "and {count} more",
+    "exploitabilityHigh": "High exploitability — reachable from user input",
+    "exploitabilityContext": "This vulnerability pattern is commonly exploitable when processing untrusted input."
   },
   "aiExplain": {
     "analyzing": "Analyzing...",

@@ -864,6 +864,18 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
                       {/* Expanded detail panel */}
                       {isExpanded && (
                         <div className="mt-4 ml-10 space-y-3 border-l-2 border-gray-800 pl-4">
+                          {/* Exploitability hint for critical + high confidence SAST */}
+                          {v.severity === "critical" && v.confidence === "high" && (
+                            <div className="flex items-start gap-2 bg-red-500/5 border border-red-500/15 rounded-lg px-3 py-2">
+                              <svg className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                              </svg>
+                              <div>
+                                <p className="text-red-400 text-xs font-medium">{t("exploitabilityHigh")}</p>
+                                <p className="text-gray-500 text-xs mt-0.5">{t("exploitabilityContext")}</p>
+                              </div>
+                            </div>
+                          )}
                           {v.suggestion && (
                             <div>
                               <p className="text-xs text-gray-500 uppercase font-medium mb-1">{t("fixSuggestion")}</p>
@@ -881,6 +893,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
                                   className="text-sm text-blue-400 hover:underline"
                                 >
                                   {v.cwe}
+                                  {CWE_DESCRIPTIONS[v.cwe] && <span className="text-gray-500 ml-1">({CWE_DESCRIPTIONS[v.cwe]})</span>}
                                 </a>
                               </div>
                             )}
