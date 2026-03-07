@@ -86,7 +86,11 @@
     "issueCount": "{count} issue",
     "issuesCount": "{count} issues",
     "sarifNotAvailable": "SARIF data not available for this scan",
-    "sarifDownloaded": "SARIF file downloaded"
+    "sarifDownloaded": "SARIF file downloaded",
+    "sbomNotAvailable": "SBOM data not available for this scan",
+    "sbomDownloaded": "SBOM (CycloneDX) file downloaded",
+    "licenseWarning": "{count} copyleft license issues detected",
+    "andMore": "and {count} more"
   },
   "aiExplain": {
     "analyzing": "Analyzing...",

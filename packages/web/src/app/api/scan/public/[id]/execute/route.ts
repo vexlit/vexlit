@@ -218,6 +218,14 @@ export async function POST(
           snippet: null, cwe: null, owasp: null, suggestion: null,
         });
       }
+
+      // Store parsed dependencies for SBOM export
+      if (scaResult.dependencies.length > 0) {
+        await admin
+          .from("scans")
+          .update({ deps_json: scaResult.dependencies })
+          .eq("id", id);
+      }
     }
 
     const chunk = files.slice(0, CHUNK_SIZE);

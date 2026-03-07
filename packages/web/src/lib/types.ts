@@ -49,6 +49,7 @@ export interface Scan {
   info_count: number;
   duration_ms: number | null;
   sarif_json: unknown | null;
+  deps_json: unknown | null;
   error_message: string | null;
   created_at: string;
   completed_at: string | null;

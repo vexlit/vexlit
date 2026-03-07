@@ -10,6 +10,8 @@ export interface Dependency {
   line: number;
   /** Whether this is a dev dependency */
   dev: boolean;
+  /** SPDX license identifier if available */
+  license?: string;
 }
 
 /** A known vulnerability from the OSV database */

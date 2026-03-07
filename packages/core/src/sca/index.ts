@@ -3,3 +3,6 @@ export { queryOsv } from "./osv.js";
 export { scaDependencies } from "./engine.js";
 export type { ScaResult } from "./engine.js";
 export type { Dependency, Advisory, ScaDependencyResult } from "./types.js";
+export { generateCycloneDxSbom } from "./sbom.js";
+export { analyzeLicenses, classifyLicense } from "./license.js";
+export type { LicenseRisk } from "./license.js";

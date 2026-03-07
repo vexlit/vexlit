@@ -26,11 +26,21 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const measure = () => setWidth(el.clientWidth);
-    measure();
-    const ro = new ResizeObserver(measure);
+
+    // Use ResizeObserver contentRect (more reliable than clientWidth in Opera)
+    const ro = new ResizeObserver((entries) => {
+      const w = Math.floor(entries[0]?.contentRect?.width ?? 0);
+      if (w > 0) setWidth(w);
+    });
     ro.observe(el);
-    return () => ro.disconnect();
+
+    // Fallback: rAF for first paint where ResizeObserver hasn't fired yet
+    const raf = requestAnimationFrame(() => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) setWidth(Math.floor(w));
+    });
+
+    return () => { ro.disconnect(); cancelAnimationFrame(raf); };
   }, []);
 
   if (data.length < 2) return null;

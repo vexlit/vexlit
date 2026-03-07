@@ -48,6 +48,10 @@ function parsePackageJson(filePath: string, content: string): Dependency[] {
   try {
     const pkg = JSON.parse(content);
 
+    // Extract project-level license
+    const projectLicense: string | undefined =
+      typeof pkg.license === "string" ? pkg.license : undefined;
+
     const addDeps = (
       depsObj: Record<string, string> | undefined,
       dev: boolean,
@@ -72,6 +76,7 @@ function parsePackageJson(filePath: string, content: string): Dependency[] {
           source: filePath,
           line,
           dev,
+          license: projectLicense,
         });
       }
     };
@@ -305,7 +310,7 @@ function parsePackageLockJson(filePath: string, content: string): Dependency[] {
     if (lock.packages && typeof lock.packages === "object") {
       for (const [pkgPath, info] of Object.entries(lock.packages)) {
         if (!pkgPath) continue; // skip root entry ""
-        const meta = info as { version?: string; dev?: boolean };
+        const meta = info as { version?: string; dev?: boolean; license?: string };
         if (!meta.version) continue;
         // Extract name from "node_modules/@scope/pkg" or "node_modules/pkg"
         const name = pkgPath.replace(/^.*node_modules\//, "");
@@ -318,6 +323,7 @@ function parsePackageLockJson(filePath: string, content: string): Dependency[] {
           source: filePath,
           line: 1,
           dev: meta.dev ?? false,
+          license: typeof meta.license === "string" ? meta.license : undefined,
         });
       }
     }

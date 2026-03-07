@@ -86,7 +86,11 @@
     "issueCount": "{count}개 이슈",
     "issuesCount": "{count}개 이슈",
     "sarifNotAvailable": "이 스캔에 대한 SARIF 데이터를 사용할 수 없습니다",
-    "sarifDownloaded": "SARIF 파일이 다운로드되었습니다"
+    "sarifDownloaded": "SARIF 파일이 다운로드되었습니다",
+    "sbomNotAvailable": "이 스캔에 대한 SBOM 데이터를 사용할 수 없습니다",
+    "sbomDownloaded": "SBOM (CycloneDX) 파일이 다운로드되었습니다",
+    "licenseWarning": "카피레프트 라이선스 이슈 {count}건 감지됨",
+    "andMore": "외 {count}건 더"
   },
   "aiExplain": {
     "analyzing": "분석 중...",

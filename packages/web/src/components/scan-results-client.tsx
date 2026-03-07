@@ -65,13 +65,23 @@ function CodeSnippet({ line, code }: { line: number; code: string }) {
   );
 }
 
+export interface DepEntry {
+  name: string;
+  version: string;
+  ecosystem: string;
+  dev?: boolean;
+  license?: string;
+}
+
 interface Props {
   scanId: string;
   vulns: Vulnerability[];
   sarifJson: unknown | null;
+  depsJson?: DepEntry[] | null;
+  projectName?: string;
 }
 
-export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
+export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, projectName }: Props) {
   const t = useTranslations("scanResults");
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
@@ -167,6 +177,52 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
     toast.success(t("sarifDownloaded"));
   };
 
+  const handleSbomDownload = () => {
+    if (!depsJson || depsJson.length === 0) {
+      toast.error(t("sbomNotAvailable"));
+      return;
+    }
+    const purlMap: Record<string, (n: string, v: string) => string> = {
+      npm: (n, v) => `pkg:npm/${n.startsWith("@") ? "%40" + n.slice(1) : n}@${v}`,
+      PyPI: (n, v) => `pkg:pypi/${n.toLowerCase()}@${v}`,
+      Go: (n, v) => `pkg:golang/${n}@${v}`,
+      "crates.io": (n, v) => `pkg:cargo/${n}@${v}`,
+    };
+    const sbom = {
+      bomFormat: "CycloneDX",
+      specVersion: "1.5",
+      serialNumber: `urn:uuid:${crypto.randomUUID()}`,
+      version: 1,
+      metadata: {
+        timestamp: new Date().toISOString(),
+        tools: [{ vendor: "Vexlit", name: "Vexlit SCA", version: "1.0.0" }],
+        ...(projectName ? { component: { type: "application", name: projectName } } : {}),
+      },
+      components: depsJson.map((d) => ({
+        type: "library",
+        name: d.name,
+        version: d.version,
+        purl: (purlMap[d.ecosystem] ?? purlMap.npm)(d.name, d.version),
+        ...(d.license ? { licenses: [{ license: { id: d.license } }] } : {}),
+        ...(d.dev ? { scope: "excluded" } : {}),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(sbom, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vexlit-sbom-${scanId.slice(0, 8)}.cdx.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("sbomDownloaded"));
+  };
+
+  // License vulns
+  const licenseVulns = useMemo(
+    () => realVulns.filter((v) => v.rule_id.startsWith("LICENSE-")),
+    [realVulns]
+  );
+
   return (
     <div className="space-y-4">
       {/* SAST / SCA tabs */}
@@ -221,6 +277,39 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                 <span className="text-green-400 ml-2 font-medium">{t("zeroVulnerable")}</span>
               )}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* License warnings */}
+      {licenseVulns.length > 0 && (
+        <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-5 h-5 text-orange-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            <span className="text-orange-400 text-sm font-medium">
+              {t("licenseWarning", { count: licenseVulns.length })}
+            </span>
+          </div>
+          <div className="space-y-1 ml-7">
+            {licenseVulns.slice(0, 5).map((v) => {
+              const licMatch = v.snippet?.match(/License: (.+)$/);
+              const lic = licMatch?.[1] ?? "";
+              const pkg = v.rule_name.replace("Copyleft license: ", "").replace(" (dev)", "");
+              return (
+                <p key={v.id} className="text-xs text-gray-400">
+                  <span className={v.severity === "critical" ? "text-red-400" : "text-yellow-400"}>
+                    {lic}
+                  </span>
+                  {" — "}
+                  <span className="text-gray-300">{pkg}</span>
+                </p>
+              );
+            })}
+            {licenseVulns.length > 5 && (
+              <p className="text-xs text-gray-500">{"..."}{t("andMore", { count: licenseVulns.length - 5 })}</p>
+            )}
           </div>
         </div>
       )}
@@ -326,6 +415,19 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
           </svg>
           SARIF
         </button>
+
+        {/* SBOM Download */}
+        {depsJson && depsJson.length > 0 && (
+          <button
+            onClick={handleSbomDownload}
+            className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 hover:border-gray-700 hover:text-white transition-colors flex items-center gap-2 whitespace-nowrap"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            SBOM
+          </button>
+        )}
       </div>
 
       {/* Result count */}

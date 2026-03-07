@@ -2,9 +2,12 @@ import type { Vulnerability } from "../types.js";
 import type { Dependency } from "./types.js";
 import { parseDependencies, isDependencyFile } from "./parser.js";
 import { queryOsv } from "./osv.js";
+import { analyzeLicenses } from "./license.js";
 
 export interface ScaResult {
   vulnerabilities: Vulnerability[];
+  /** All parsed dependencies (for SBOM generation) */
+  dependencies: Dependency[];
   depCount: number;
   skipped: boolean;
 }
@@ -25,7 +28,7 @@ export async function scaDependencies(
     allDeps.push(...deps);
   }
 
-  if (!allDeps.length) return { vulnerabilities: [], depCount: 0, skipped: false };
+  if (!allDeps.length) return { vulnerabilities: [], dependencies: [], depCount: 0, skipped: false };
 
   // Step 2: Deduplicate — same package may appear in multiple manifests
   const seen = new Map<string, Dependency>();
@@ -50,7 +53,7 @@ export async function scaDependencies(
     advisoryMap = await queryOsv(uniqueDeps);
   } catch {
     // OSV unreachable after retries — skip SCA
-    return { vulnerabilities: [], depCount: uniqueDeps.length, skipped: true };
+    return { vulnerabilities: [], dependencies: uniqueDeps, depCount: uniqueDeps.length, skipped: true };
   }
 
   // Step 4: Convert to Vulnerability[] (report against all source files)
@@ -88,7 +91,11 @@ export async function scaDependencies(
     }
   }
 
-  return { vulnerabilities, depCount: uniqueDeps.length, skipped: false };
+  // Step 5: Analyze licenses for copyleft risks
+  const licenseVulns = analyzeLicenses(uniqueDeps);
+  vulnerabilities.push(...licenseVulns);
+
+  return { vulnerabilities, dependencies: uniqueDeps, depCount: uniqueDeps.length, skipped: false };
 }
 
 /** Build a package-manager-specific upgrade command */
