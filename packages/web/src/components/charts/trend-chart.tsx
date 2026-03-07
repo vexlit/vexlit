@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import {
   AreaChart,
@@ -20,10 +20,6 @@ interface TrendPoint {
 
 export function TrendChart({ data }: { data: TrendPoint[] }) {
   const t = useTranslations("dashboard");
-  const uid = useId().replace(/:/g, "");
-  const critId = `crit${uid}`;
-  const warnId = `warn${uid}`;
-  const infoId = `info${uid}`;
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -47,20 +43,6 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
       <div className="h-48" ref={containerRef}>
         {width > 0 && (
           <AreaChart data={data} width={width} height={192}>
-            <defs>
-              <linearGradient id={critId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id={warnId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#eab308" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id={infoId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
             <XAxis
               dataKey="date"
               tick={{ fill: "#6b7280", fontSize: 11 }}
@@ -87,7 +69,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
               type="monotone"
               dataKey="critical"
               stroke="#ef4444"
-              fill={`url(#${critId})`}
+              fill="rgba(239,68,68,0.15)"
               strokeWidth={2}
               stackId="1"
             />
@@ -95,7 +77,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
               type="monotone"
               dataKey="warning"
               stroke="#eab308"
-              fill={`url(#${warnId})`}
+              fill="rgba(234,179,8,0.15)"
               strokeWidth={2}
               stackId="1"
             />
@@ -103,7 +85,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
               type="monotone"
               dataKey="info"
               stroke="#3b82f6"
-              fill={`url(#${infoId})`}
+              fill="rgba(59,130,246,0.15)"
               strokeWidth={2}
               stackId="1"
             />

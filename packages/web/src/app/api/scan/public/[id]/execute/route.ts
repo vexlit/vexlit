@@ -160,9 +160,15 @@ export async function POST(
     const { RuleEngine, scaDependencies } = await import("@vexlit/core");
     const engine = new RuleEngine();
 
-    // Run SCA once when all files are still available (before chunking removes them)
-    const isFirstScanChunk = scan.status !== "running";
-    if (isFirstScanChunk) {
+    // Run SCA once — use SCA-META/SCA-SKIPPED marker to detect if SCA already ran
+    // (status-based check is unreliable for GitHub scans because Phase 1 sets status to "running")
+    const { count: scaAlreadyRan } = await admin
+      .from("vulnerabilities")
+      .select("*", { count: "exact", head: true })
+      .eq("scan_id", id)
+      .in("rule_id", ["SCA-META", "SCA-SKIPPED"]);
+
+    if ((scaAlreadyRan ?? 0) === 0) {
       const scaResult = await scaDependencies(files);
       if (scaResult.vulnerabilities.length > 0) {
         await admin.from("vulnerabilities").insert(
