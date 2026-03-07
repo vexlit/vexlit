@@ -198,14 +198,18 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, projectN
         tools: [{ vendor: "Vexlit", name: "Vexlit SCA", version: "1.0.0" }],
         ...(projectName ? { component: { type: "application", name: projectName } } : {}),
       },
-      components: depsJson.map((d) => ({
-        type: "library",
-        name: d.name,
-        version: d.version,
-        purl: (purlMap[d.ecosystem] ?? purlMap.npm)(d.name, d.version),
-        ...(d.license ? { licenses: [{ license: { id: d.license } }] } : {}),
-        ...(d.dev ? { scope: "excluded" } : {}),
-      })),
+      components: depsJson.map((d) => {
+        const purl = (purlMap[d.ecosystem] ?? purlMap.npm)(d.name, d.version);
+        return {
+          type: "library",
+          "bom-ref": purl,
+          name: d.name,
+          version: d.version,
+          purl,
+          ...(d.license ? { licenses: [{ license: { id: d.license } }] } : {}),
+          ...(d.dev ? { scope: "excluded" } : {}),
+        };
+      }),
     };
     const blob = new Blob([JSON.stringify(sbom, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -222,6 +226,19 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, projectN
     () => realVulns.filter((v) => v.rule_id.startsWith("LICENSE-")),
     [realVulns]
   );
+
+  // License summary from depsJson
+  const licenseSummary = useMemo(() => {
+    if (!depsJson) return [];
+    const counts = new Map<string, number>();
+    for (const d of depsJson) {
+      const lic = d.license || "Unknown";
+      counts.set(lic, (counts.get(lic) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+  }, [depsJson]);
 
   return (
     <div className="space-y-4">
@@ -277,6 +294,15 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, projectN
                 <span className="text-green-400 ml-2 font-medium">{t("zeroVulnerable")}</span>
               )}
             </p>
+            {licenseSummary.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {licenseSummary.map(([lic, count]) => (
+                  <span key={lic} className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-800 text-gray-400 border border-gray-700">
+                    {lic}: {count}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -426,6 +452,9 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, projectN
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
             SBOM
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/15 text-blue-400">
+              {depsJson.length}
+            </span>
           </button>
         )}
       </div>

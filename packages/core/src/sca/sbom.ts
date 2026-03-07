@@ -2,6 +2,7 @@ import type { Dependency } from "./types.js";
 
 interface CycloneDxComponent {
   type: "library";
+  "bom-ref": string;
   name: string;
   version: string;
   purl: string;
@@ -52,11 +53,13 @@ export function generateCycloneDxSbom(
   projectName?: string
 ): CycloneDxBom {
   const components: CycloneDxComponent[] = dependencies.map((dep) => {
+    const purl = buildPurl(dep);
     const comp: CycloneDxComponent = {
       type: "library",
+      "bom-ref": purl,
       name: dep.name,
       version: dep.version,
-      purl: buildPurl(dep),
+      purl,
     };
     if (dep.license) {
       comp.licenses = [{ license: { id: dep.license } }];
