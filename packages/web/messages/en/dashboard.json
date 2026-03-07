@@ -49,7 +49,9 @@
     "noVulns": "No vulnerabilities found",
     "codeLooksClean": "Your code looks clean!",
     "deleteScan": "Delete Scan",
-    "deleteScanConfirm": "Delete this scan and its results?"
+    "deleteScanConfirm": "Delete this scan and its results?",
+    "scanningInProgress": "Scanning in progress...",
+    "elapsed": "Elapsed: {seconds}s — Results will appear automatically."
   },
   "scanResults": {
     "allTab": "All ({count})",

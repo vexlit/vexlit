@@ -49,7 +49,9 @@
     "noVulns": "취약점이 발견되지 않았습니다",
     "codeLooksClean": "코드가 안전합니다!",
     "deleteScan": "스캔 삭제",
-    "deleteScanConfirm": "이 스캔과 결과를 삭제하시겠습니까?"
+    "deleteScanConfirm": "이 스캔과 결과를 삭제하시겠습니까?",
+    "scanningInProgress": "스캔 진행 중...",
+    "elapsed": "경과 시간: {seconds}초 — 결과가 자동으로 표시됩니다."
   },
   "scanResults": {
     "allTab": "전체 ({count})",
@@ -92,7 +94,7 @@
   "aiFix": {
     "generating": "생성 중...",
     "hideFix": "수정 숨기기",
-    "generateFix": "수정 생성",
+    "generateFix": "AI 수정",
     "before": "수정 전",
     "after": "수정 후",
     "copy": "복사",

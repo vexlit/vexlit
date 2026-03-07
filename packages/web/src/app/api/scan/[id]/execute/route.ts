@@ -5,7 +5,7 @@ import { fetchRepoTree, fetchFileContentsBatch } from "@/lib/github";
 import { NextResponse } from "next/server";
 
 // Process files in chunks to stay within serverless timeout
-const CHUNK_SIZE = 10;
+const CHUNK_SIZE = 25;
 // Fetch files from GitHub in batches per execute call
 const GITHUB_FETCH_BATCH = 40;
 
@@ -37,7 +37,7 @@ export async function POST(
   const { data: scan } = await admin
     .from("scans")
     .select(
-      "id, status, file_contents, github_meta, project_id, projects(user_id)"
+      "id, status, file_contents, github_meta, project_id, created_at, projects(user_id)"
     )
     .eq("id", id)
     .single();
@@ -398,7 +398,7 @@ export async function POST(
         critical_count: critical,
         warning_count: warning,
         info_count: info,
-        duration_ms: Date.now() - startTime,
+        duration_ms: Date.now() - new Date(scan.created_at).getTime(),
         completed_at: new Date().toISOString(),
         file_contents: null,
       })

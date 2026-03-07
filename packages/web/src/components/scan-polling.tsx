@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 export function ScanPolling({
   scanId,
@@ -11,6 +12,7 @@ export function ScanPolling({
   createdAt: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("scanDetail");
   const executing = useRef(false);
   const [elapsed, setElapsed] = useState(() =>
     Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000))
@@ -93,10 +95,10 @@ export function ScanPolling({
     <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6 text-center">
       <div className="flex items-center justify-center gap-3 mb-2">
         <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-        <p className="text-blue-400 font-medium">Scanning in progress...</p>
+        <p className="text-blue-400 font-medium">{t("scanningInProgress")}</p>
       </div>
       <p className="text-gray-500 text-sm">
-        Elapsed: {elapsed}s — Results will appear automatically.
+        {t("elapsed", { seconds: elapsed })}
       </p>
     </div>
   );

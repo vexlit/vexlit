@@ -5,7 +5,7 @@ import {
 } from "@/lib/github-public";
 import { NextResponse } from "next/server";
 
-const CHUNK_SIZE = 10;
+const CHUNK_SIZE = 25;
 const GITHUB_FETCH_BATCH = 30;
 
 interface GithubMeta {
@@ -25,7 +25,7 @@ export async function POST(
 
   const { data: scan } = await admin
     .from("scans")
-    .select("id, status, file_contents, github_meta, project_id")
+    .select("id, status, file_contents, github_meta, project_id, created_at")
     .eq("id", id)
     .single();
 
@@ -292,7 +292,7 @@ export async function POST(
         critical_count: critical,
         warning_count: warning,
         info_count: info,
-        duration_ms: Date.now() - startTime,
+        duration_ms: Date.now() - new Date(scan.created_at).getTime(),
         completed_at: new Date().toISOString(),
         file_contents: null,
       })
