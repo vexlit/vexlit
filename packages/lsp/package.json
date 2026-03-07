@@ -1,0 +1,24 @@
+{
+  "name": "@vexlit/lsp",
+  "version": "0.1.0",
+  "description": "VEXLIT Language Server — real-time security diagnostics via LSP",
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@vexlit/core": "*",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

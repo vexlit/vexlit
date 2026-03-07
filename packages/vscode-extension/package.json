@@ -1,0 +1,68 @@
+{
+  "name": "vexlit",
+  "displayName": "VEXLIT — AI Security Scanner",
+  "description": "Real-time vulnerability detection with inline highlights, hover explanations, and AI-powered quick fixes.",
+  "version": "0.1.0",
+  "publisher": "vexlit",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Linters", "Programming Languages"],
+  "keywords": ["security", "vulnerability", "sast", "scanner", "ai", "fix"],
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vexlit/vexlit",
+    "directory": "packages/vscode-extension"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:python"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "vexlit.scanFile",
+        "title": "VEXLIT: Scan Current File"
+      },
+      {
+        "command": "vexlit.scanWorkspace",
+        "title": "VEXLIT: Scan Workspace"
+      }
+    ],
+    "configuration": {
+      "title": "VEXLIT",
+      "properties": {
+        "vexlit.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable VEXLIT security scanning"
+        },
+        "vexlit.severity": {
+          "type": "string",
+          "default": "all",
+          "enum": ["all", "critical", "warning"],
+          "description": "Minimum severity level to show"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node && esbuild ../lsp/dist/server.js --bundle --outfile=dist/server.js --format=cjs --platform=node",
+    "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "package": "npx @vscode/vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w packages/core && npm run build -w packages/cli",
+    "build": "npm run build -w packages/core && npm run build -w packages/cli && npm run build -w packages/lsp",
     "build:web": "npm run build -w packages/core && npm run build -w packages/web",
     "dev:web": "npm run dev -w packages/web",
     "clean": "npm run clean --workspaces"
