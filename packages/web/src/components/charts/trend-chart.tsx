@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useTheme } from "@/components/theme-provider";
 import {
   AreaChart,
   Area,
@@ -20,6 +21,8 @@ interface TrendPoint {
 
 export function TrendChart({ data }: { data: TrendPoint[] }) {
   const t = useTranslations("dashboard");
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -68,12 +71,14 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
             />
             <Tooltip
               contentStyle={{
-                background: "#111827",
-                border: "1px solid #374151",
+                background: isLight ? "#ffffff" : "#111827",
+                border: `1px solid ${isLight ? "#e5e7eb" : "#374151"}`,
                 borderRadius: "8px",
                 fontSize: "12px",
+                color: isLight ? "#111827" : "#e5e7eb",
               }}
-              labelStyle={{ color: "#9ca3af" }}
+              labelStyle={{ color: isLight ? "#6b7280" : "#9ca3af" }}
+              itemStyle={{ color: isLight ? "#374151" : "#e5e7eb" }}
             />
             <Area
               type="monotone"

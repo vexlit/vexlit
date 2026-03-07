@@ -25,8 +25,10 @@ body {
 
 /* Light mode overrides */
 .light .bg-gray-950 { background-color: #f9fafb !important; }
+.light .bg-gray-950\/80 { background-color: rgba(249,250,251,0.8) !important; }
 .light .bg-gray-900 { background-color: #ffffff !important; }
 .light .bg-gray-900\/50 { background-color: rgba(255,255,255,0.5) !important; }
+.light .bg-gray-900\/60 { background-color: rgba(255,255,255,0.6) !important; }
 .light .bg-gray-800 { background-color: #f3f4f6 !important; }
 .light .border-gray-800 { border-color: #e5e7eb !important; }
 .light .border-gray-700 { border-color: #d1d5db !important; }
@@ -35,11 +37,27 @@ body {
 .light .text-gray-400 { color: #6b7280 !important; }
 .light .text-gray-500 { color: #9ca3af !important; }
 .light .text-gray-600 { color: #d1d5db !important; }
+.light .text-gray-700 { color: #374151 !important; }
 .light .hover\:text-white:hover { color: #111827 !important; }
+.light .hover\:text-gray-300:hover { color: #374151 !important; }
+.light .hover\:text-gray-400:hover { color: #6b7280 !important; }
 .light .hover\:border-gray-500:hover { border-color: #9ca3af !important; }
 .light .hover\:border-gray-700:hover { border-color: #d1d5db !important; }
 .light .hover\:bg-gray-800:hover { background-color: #f3f4f6 !important; }
+.light .hover\:bg-gray-800\/30:hover { background-color: rgba(243,244,246,0.3) !important; }
+.light .hover\:bg-gray-800\/50:hover { background-color: rgba(243,244,246,0.5) !important; }
+.light .hover\:bg-gray-800\/60:hover { background-color: rgba(243,244,246,0.6) !important; }
 .light .divide-gray-800 > :not(:last-child) { border-color: #e5e7eb !important; }
+/* Gradients */
+.light .from-gray-950 { --tw-gradient-from: #f9fafb !important; }
+.light .to-gray-900\/50 { --tw-gradient-to: rgba(255,255,255,0.5) !important; }
+/* Status pill backgrounds */
+.light .bg-blue-900\/50 { background-color: rgba(219,234,254,0.7) !important; }
+.light .bg-green-900\/50 { background-color: rgba(220,252,231,0.7) !important; }
+.light .bg-red-900\/50 { background-color: rgba(254,226,226,0.7) !important; }
+/* Shadows */
+.light .shadow-black\/40 { --tw-shadow-color: rgba(0,0,0,0.08) !important; }
+.light .shadow-2xl { box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -57,4 +75,10 @@ html { scroll-behavior: smooth; }
 }
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out;
+}
+
+/* Scan line animation for Before/After demo */
+@keyframes scanLine {
+  0% { top: -1.5rem; }
+  100% { top: 100%; }
 }

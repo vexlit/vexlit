@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "./motion-wrapper";
 import { AnimatedCounter } from "./counter";
@@ -83,10 +83,48 @@ function Comment({ text }) {
   },
 ];
 
+type Phase = "vulnerable" | "scanning" | "detected" | "fixed";
+const PHASE_DURATION: Record<Phase, number> = {
+  vulnerable: 2000,
+  scanning: 1500,
+  detected: 2500,
+  fixed: 3000,
+};
+const PHASE_ORDER: Phase[] = ["vulnerable", "scanning", "detected", "fixed"];
+
 export function BeforeAfterDemo() {
   const [activeTab, setActiveTab] = useState(0);
+  const [phase, setPhase] = useState<Phase>("vulnerable");
+  const [paused, setPaused] = useState(false);
   const demo = DEMO_TABS[activeTab];
   const t = useTranslations("sections");
+
+  const advancePhase = useCallback(() => {
+    setPhase((prev) => {
+      const idx = PHASE_ORDER.indexOf(prev);
+      if (idx < PHASE_ORDER.length - 1) return PHASE_ORDER[idx + 1];
+      // End of cycle → next tab
+      setActiveTab((tab) => (tab + 1) % DEMO_TABS.length);
+      return "vulnerable";
+    });
+  }, []);
+
+  useEffect(() => {
+    if (paused) return;
+    const timer = setTimeout(advancePhase, PHASE_DURATION[phase]);
+    return () => clearTimeout(timer);
+  }, [phase, paused, advancePhase]);
+
+  // Reset phase when user clicks a tab
+  const handleTabClick = (i: number) => {
+    setActiveTab(i);
+    setPhase("vulnerable");
+  };
+
+  const showCode = phase === "vulnerable" || phase === "scanning" ? demo.vulnerable : demo.fixed;
+  const isScanning = phase === "scanning";
+  const showFinding = phase === "detected" || phase === "fixed";
+  const isFixed = phase === "fixed";
 
   return (
     <section id="demo" className="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800 scroll-mt-20">
@@ -100,12 +138,12 @@ export function BeforeAfterDemo() {
       </ScrollReveal>
 
       <ScrollReveal>
-        {/* Tabs */}
-        <div className="flex gap-2 justify-center mb-6">
+        {/* Tabs + pause button */}
+        <div className="flex gap-2 justify-center mb-6 items-center">
           {DEMO_TABS.map((tab, i) => (
             <button
               key={tab.label}
-              onClick={() => setActiveTab(i)}
+              onClick={() => handleTabClick(i)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 i === activeTab
                   ? "bg-red-600 text-white"
@@ -115,48 +153,97 @@ export function BeforeAfterDemo() {
               {tab.label}
             </button>
           ))}
+          <button
+            onClick={() => setPaused(!paused)}
+            className="ml-2 p-2 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors"
+            title={paused ? "Play" : "Pause"}
+          >
+            {paused ? (
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            ) : (
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+            )}
+          </button>
         </div>
 
-        {/* Code panels */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {/* Vulnerable */}
-          <div className="bg-gray-900 border border-red-500/30 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border-b border-red-500/20">
-              <span className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-red-400 text-xs font-medium">Vulnerable</span>
-            </div>
-            <pre className="p-4 text-sm text-gray-300 overflow-x-auto leading-relaxed">
-              <code>{demo.vulnerable}</code>
-            </pre>
-          </div>
-
-          {/* Fixed */}
-          <div className="bg-gray-900 border border-green-500/30 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border-b border-green-500/20">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-green-400 text-xs font-medium">Fixed</span>
-            </div>
-            <pre className="p-4 text-sm text-gray-300 overflow-x-auto leading-relaxed">
-              <code>{demo.fixed}</code>
-            </pre>
-          </div>
+        {/* Phase indicator */}
+        <div className="flex justify-center gap-1 mb-4">
+          {PHASE_ORDER.map((p) => (
+            <div
+              key={p}
+              className={`h-1 rounded-full transition-all duration-500 ${
+                PHASE_ORDER.indexOf(p) <= PHASE_ORDER.indexOf(phase)
+                  ? isFixed ? "bg-green-500 w-8" : "bg-red-500 w-8"
+                  : "bg-gray-800 w-4"
+              }`}
+            />
+          ))}
         </div>
 
-        {/* Finding card */}
-        <div className="mt-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${demo.finding.severity === "critical" ? "bg-red-500" : demo.finding.severity === "warning" ? "bg-yellow-500" : "bg-blue-500"}`} />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-white font-medium text-sm">{demo.finding.rule}</span>
-                <span className="text-gray-600 text-xs font-mono">{demo.finding.id}</span>
-                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${demo.finding.severity === "critical" ? "bg-red-500/10 text-red-400" : demo.finding.severity === "warning" ? "bg-yellow-500/10 text-yellow-400" : "bg-blue-500/10 text-blue-400"}`}>
-                  {demo.finding.severity}
-                </span>
-                <span className="text-gray-600 text-xs">{demo.finding.cwe}</span>
+        {/* Single code panel with animated state */}
+        <div
+          className={`bg-gray-900 border rounded-xl overflow-hidden transition-colors duration-500 ${
+            isFixed ? "border-green-500/30" : "border-red-500/30"
+          }`}
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          {/* Title bar */}
+          <div className={`flex items-center justify-between px-4 py-2 border-b transition-colors duration-500 ${
+            isFixed ? "bg-green-500/10 border-green-500/20" : "bg-red-500/10 border-red-500/20"
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full transition-colors duration-500 ${isFixed ? "bg-green-500" : "bg-red-500"}`} />
+              <span className={`text-xs font-medium transition-colors duration-500 ${isFixed ? "text-green-400" : "text-red-400"}`}>
+                {isFixed ? "✓ Fixed" : isScanning ? "Scanning..." : showFinding ? `${t("vulnFound")}` : t("before")}
+              </span>
+            </div>
+            {isScanning && (
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                <span className="text-gray-500 text-xs">VEXLIT</span>
               </div>
-              <p className="text-gray-400 text-sm mt-1">{demo.finding.message}</p>
-              <p className="text-gray-600 text-xs mt-1">Line {demo.finding.line}</p>
+            )}
+          </div>
+
+          {/* Code with optional highlight */}
+          <div className="relative">
+            <pre className="p-4 text-sm text-gray-300 overflow-x-auto leading-relaxed transition-opacity duration-300">
+              <code>{showCode}</code>
+            </pre>
+            {/* Scan line animation */}
+            {isScanning && (
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute left-0 right-0 h-6 bg-gradient-to-b from-red-500/10 to-transparent animate-[scanLine_1.5s_ease-in-out_infinite]" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Finding card — slides in when detected */}
+        <div className={`mt-4 transition-all duration-500 ${showFinding ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none h-0 mt-0 overflow-hidden"}`}>
+          <div className={`bg-gray-900 border rounded-xl p-4 transition-colors duration-500 ${isFixed ? "border-green-500/30" : "border-gray-800"}`}>
+            <div className="flex items-start gap-3">
+              <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${demo.finding.severity === "critical" ? "bg-red-500" : demo.finding.severity === "warning" ? "bg-yellow-500" : "bg-blue-500"}`} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white font-medium text-sm">{demo.finding.rule}</span>
+                  <span className="text-gray-600 text-xs font-mono">{demo.finding.id}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${demo.finding.severity === "critical" ? "bg-red-500/10 text-red-400" : demo.finding.severity === "warning" ? "bg-yellow-500/10 text-yellow-400" : "bg-blue-500/10 text-blue-400"}`}>
+                    {demo.finding.severity}
+                  </span>
+                  <span className="text-gray-600 text-xs">{demo.finding.cwe}</span>
+                </div>
+                <p className="text-gray-400 text-sm mt-1">{demo.finding.message}</p>
+                {isFixed && (
+                  <p className="text-green-400 text-sm mt-2 flex items-center gap-1.5">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    AI Fix applied
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

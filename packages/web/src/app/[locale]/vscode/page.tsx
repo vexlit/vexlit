@@ -6,14 +6,15 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "VSCode Extension — VEXLIT",
-  description: "Real-time security scanning inside your editor. Inline vulnerability detection, hover fix suggestions, and AI-powered remediation.",
+  description:
+    "Real-time security scanning inside your editor. Inline vulnerability detection, hover fix suggestions, and AI-powered remediation.",
 };
 
 const FEATURES = [
   { key: "feature1", icon: "underline" },
   { key: "feature2", icon: "hover" },
   { key: "feature3", icon: "ai" },
-  { key: "feature4", icon: "rules" },
+  { key: "feature4", icon: "lowfp" },
   { key: "feature5", icon: "secret" },
   { key: "feature6", icon: "zero" },
 ] as const;
@@ -34,7 +35,7 @@ const FEATURE_ICONS: Record<string, ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
     </svg>
   ),
-  rules: (
+  lowfp: (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
     </svg>
@@ -50,6 +51,8 @@ const FEATURE_ICONS: Record<string, ReactNode> = {
     </svg>
   ),
 };
+
+const COMPARE_ROWS = ["compareRow1", "compareRow2", "compareRow3", "compareRow4"] as const;
 
 export default async function VSCodePage() {
   const t = await getTranslations("vscode");
@@ -72,20 +75,36 @@ export default async function VSCodePage() {
             {t("heroTitle2")}
           </span>
         </h1>
+        <p className="text-gray-500 text-sm mb-4 italic">{t("problemLine")}</p>
         <p className="text-lg text-gray-400 max-w-2xl mb-8">{t("heroDescription")}</p>
         <div className="flex flex-wrap gap-3">
           <button
             disabled
-            className="px-5 py-2.5 bg-purple-600 rounded-lg text-sm font-medium opacity-60 cursor-not-allowed"
+            className="px-6 py-3 bg-purple-600 rounded-lg text-sm font-medium opacity-60 cursor-not-allowed flex items-center gap-2"
           >
-            {t("notifyMe")}
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" />
+            </svg>
+            {t("installExtension")}
           </button>
           <Link
             href="/docs"
-            className="px-5 py-2.5 border border-gray-700 rounded-lg text-sm font-medium hover:border-gray-500 transition-colors"
+            className="px-6 py-3 border border-gray-700 rounded-lg text-sm font-medium hover:border-gray-500 transition-colors"
           >
             {t("viewCli")}
           </Link>
+        </div>
+      </section>
+
+      {/* Social proof stats */}
+      <section className="max-w-4xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-3 gap-4">
+          {(["socialStat1", "socialStat2", "socialStat3"] as const).map((key) => (
+            <div key={key} className="text-center">
+              <p className="text-2xl md:text-3xl font-bold text-purple-400">{t(key)}</p>
+              <p className="text-gray-500 text-xs mt-1">{t(`${key}Label`)}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -99,23 +118,61 @@ export default async function VSCodePage() {
               <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
               <span className="w-3 h-3 rounded-full bg-green-500/80" />
             </div>
-            <span className="text-gray-500 text-xs font-mono ml-3">auth.ts — VEXLIT</span>
+            <span className="text-gray-500 text-xs font-mono ml-3">auth.ts &mdash; VEXLIT</span>
           </div>
           {/* Code with inline warnings */}
           <div className="p-4 font-mono text-sm leading-relaxed">
-            <div className="text-gray-500">1  <span className="text-purple-400">import</span> <span className="text-gray-300">express</span> <span className="text-purple-400">from</span> <span className="text-green-400">&quot;express&quot;</span>;</div>
+            <div className="text-gray-500">
+              1 <span className="text-purple-400">import</span>{" "}
+              <span className="text-gray-300">express</span>{" "}
+              <span className="text-purple-400">from</span>{" "}
+              <span className="text-green-400">&quot;express&quot;</span>;
+            </div>
             <div className="text-gray-500">2</div>
             <div className="text-gray-500 relative">
-              3  <span className="text-purple-400">const</span> <span className="text-gray-300">API_KEY</span> = <span className="text-green-400 underline decoration-wavy decoration-red-500">&quot;sk-secret-12345&quot;</span>;
-              <span className="absolute right-0 top-0 text-[10px] text-red-400 bg-red-500/10 px-2 py-0.5 rounded-l">VEXLIT-001 Hardcoded Secret</span>
+              3 <span className="text-purple-400">const</span>{" "}
+              <span className="text-gray-300">API_KEY</span> ={" "}
+              <span className="text-green-400 underline decoration-wavy decoration-red-500">
+                &quot;sk-secret-12345&quot;
+              </span>
+              ;
+              <span className="absolute right-0 top-0 text-[10px] text-red-400 bg-red-500/10 px-2 py-0.5 rounded-l">
+                VEXLIT-001 Hardcoded Secret
+              </span>
             </div>
             <div className="text-gray-500">4</div>
-            <div className="text-gray-500">5  app.<span className="text-yellow-300">get</span>(<span className="text-green-400">&quot;/user&quot;</span>, (<span className="text-orange-300">req</span>, <span className="text-orange-300">res</span>) =&gt; {"{"}</div>
-            <div className="text-gray-500 relative">
-              6    <span className="text-purple-400">const</span> q = <span className="text-gray-300 underline decoration-wavy decoration-red-500">`SELECT * FROM users WHERE id=${"{"}<span className="text-orange-300">req</span>.query.id{"}"}`</span>;
-              <span className="absolute right-0 top-0 text-[10px] text-red-400 bg-red-500/10 px-2 py-0.5 rounded-l">VEXLIT-002 SQL Injection</span>
+            <div className="text-gray-500">
+              5 app.<span className="text-yellow-300">get</span>(
+              <span className="text-green-400">&quot;/user&quot;</span>, (
+              <span className="text-orange-300">req</span>,{" "}
+              <span className="text-orange-300">res</span>) =&gt; {"{"}
             </div>
-            <div className="text-gray-500">7  {"}"});</div>
+            <div className="text-gray-500 relative">
+              6{" "}
+              <span className="text-purple-400">const</span> q ={" "}
+              <span className="text-gray-300 underline decoration-wavy decoration-red-500">
+                {"`SELECT * FROM users WHERE id=${"}
+                <span className="text-orange-300">req</span>.query.id{"}`"}
+              </span>
+              ;
+              <span className="absolute right-0 top-0 text-[10px] text-red-400 bg-red-500/10 px-2 py-0.5 rounded-l">
+                VEXLIT-002 SQL Injection
+              </span>
+            </div>
+            <div className="text-gray-500">7 {"}"});</div>
+          </div>
+          {/* AI Fix suggestion overlay */}
+          <div className="mx-4 mb-4 bg-green-500/5 border border-green-500/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              <span className="text-green-400 text-xs font-medium">AI Fix Suggestion</span>
+              <span className="ml-auto text-[10px] text-gray-500 bg-green-500/10 px-2 py-0.5 rounded">Apply Fix</span>
+            </div>
+            <pre className="text-xs text-green-300/80 font-mono">
+              {`db.query("SELECT * FROM users WHERE id = ?", [req.query.id]);`}
+            </pre>
           </div>
         </div>
       </section>
@@ -131,7 +188,10 @@ export default async function VSCodePage() {
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map((f) => (
-            <div key={f.key} className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors">
+            <div
+              key={f.key}
+              className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors"
+            >
               <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4">
                 {FEATURE_ICONS[f.icon]}
               </div>
@@ -142,14 +202,65 @@ export default async function VSCodePage() {
         </div>
       </section>
 
-      {/* How it works */}
+      {/* Demo CTA — Try in 10 seconds */}
       <section className="max-w-4xl mx-auto px-6 py-12 border-t border-gray-800">
-        <div className="mb-8">
+        <div className="bg-gradient-to-br from-purple-500/5 to-blue-500/5 border border-purple-500/20 rounded-2xl p-8 text-center">
+          <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-medium mb-4">
+            {t("demoBadge")}
+          </span>
+          <h2 className="text-2xl font-bold mb-3">{t("demoTitle")}</h2>
+          <p className="text-gray-400 max-w-lg mx-auto mb-6">{t("demoDesc")}</p>
+          <Link
+            href="/#demo"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+            </svg>
+            {t("demoButton")}
+          </Link>
+        </div>
+      </section>
+
+      {/* CLI vs VSCode Comparison */}
+      <section className="max-w-4xl mx-auto px-6 py-12 border-t border-gray-800">
+        <div className="mb-8 text-center">
+          <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-medium mb-4">
+            {t("compareBadge")}
+          </span>
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{t("compareTitle")}</h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">{t("compareDesc")}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="grid grid-cols-2 text-center border-b border-gray-800">
+            <div className="py-3 text-sm font-medium text-gray-300 border-r border-gray-800">
+              {t("compareCli")}
+            </div>
+            <div className="py-3 text-sm font-medium text-purple-400">
+              {t("compareVscode")}
+            </div>
+          </div>
+          {COMPARE_ROWS.map((row) => (
+            <div key={row} className="grid grid-cols-2 border-b border-gray-800 last:border-b-0">
+              <div className="px-4 py-3 text-sm text-gray-400 border-r border-gray-800">
+                {t(row)}
+              </div>
+              <div className="px-4 py-3 text-sm text-gray-300">
+                {t(`${row}Vscode`)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* How it works — 3 steps */}
+      <section className="max-w-4xl mx-auto px-6 py-12 border-t border-gray-800">
+        <div className="mb-8 text-center">
           <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-medium mb-4">
             {t("howBadge")}
           </span>
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{t("howTitle")}</h2>
-          <p className="text-gray-400 max-w-2xl">{t("howDesc")}</p>
+          <p className="text-gray-400 max-w-2xl mx-auto">{t("howDesc")}</p>
         </div>
         <div className="flex flex-col md:flex-row gap-4">
           {[1, 2, 3].map((i) => (
