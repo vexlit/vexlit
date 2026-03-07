@@ -103,8 +103,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to create scan" }, { status: 500 });
     }
 
-    // Run scan engine
-    const { RuleEngine } = await import("@vexlit/core");
+    // Run scan engine (SAST + SCA)
+    const { RuleEngine, scaDependencies } = await import("@vexlit/core");
     const engine = new RuleEngine();
     const startTime = Date.now();
 
@@ -155,13 +155,34 @@ export async function POST(request: Request) {
       }
     }
 
+    // Run SCA on changed dependency files
+    const scaResult = await scaDependencies(files);
+    for (const v of scaResult.vulnerabilities) {
+      allVulns.push({
+        scan_id: scan.id,
+        rule_id: v.ruleId,
+        rule_name: v.ruleName,
+        severity: v.severity,
+        confidence: v.confidence ?? "high",
+        message: v.message,
+        file_path: v.filePath,
+        line: v.line,
+        column: v.column,
+        snippet: v.snippet ?? null,
+        cwe: v.cwe ?? null,
+        owasp: v.owasp ?? null,
+        suggestion: v.suggestion ?? null,
+      });
+    }
+
     if (allVulns.length > 0) {
       await admin.from("vulnerabilities").insert(allVulns);
     }
 
-    // Count by severity
+    // Count by severity (exclude SCA markers)
+    const realVulns = allVulns.filter((v) => v.rule_id !== "SCA-META" && v.rule_id !== "SCA-SKIPPED");
     let critical = 0, warning = 0, info = 0;
-    for (const v of allVulns) {
+    for (const v of realVulns) {
       if (v.severity === "critical") critical++;
       else if (v.severity === "warning") warning++;
       else info++;
@@ -172,7 +193,7 @@ export async function POST(request: Request) {
       .from("scans")
       .update({
         status: "completed",
-        total_vulnerabilities: allVulns.length,
+        total_vulnerabilities: realVulns.length,
         critical_count: critical,
         warning_count: warning,
         info_count: info,
@@ -188,23 +209,30 @@ export async function POST(request: Request) {
 
       let commentBody: string;
       const marker = "<!-- VEXLIT-SCAN -->\n<!-- DO NOT EDIT -->\n";
-      if (allVulns.length === 0) {
+      if (realVulns.length === 0) {
         commentBody = `${marker}## VEXLIT Security Report\n\nNo vulnerabilities found. Your code looks clean!\n\n[View Full Report](${reportUrl})`;
       } else {
-        const criticalList = allVulns
+        const scaVulnCount = realVulns.filter((v) => v.rule_id.startsWith("SCA-")).length;
+        const sastVulnCount = realVulns.length - scaVulnCount;
+
+        const criticalList = realVulns
           .filter((v) => v.severity === "critical")
           .slice(0, 5)
           .map((v) => `- **${v.rule_name}** in \`${v.file_path}:${v.line}\``)
           .join("\n");
 
-        const warningList = allVulns
+        const warningList = realVulns
           .filter((v) => v.severity === "warning")
           .slice(0, 5)
           .map((v) => `- ${v.rule_name} in \`${v.file_path}:${v.line}\``)
           .join("\n");
 
         commentBody = `${marker}## VEXLIT Security Report\n\n`;
-        commentBody += `**${allVulns.length} vulnerabilities** found (${critical} critical, ${warning} warning, ${info} info)\n\n`;
+        commentBody += `**${realVulns.length} vulnerabilities** found (${critical} critical, ${warning} warning, ${info} info)`;
+        if (scaVulnCount > 0 && sastVulnCount > 0) {
+          commentBody += ` — SAST: ${sastVulnCount}, SCA: ${scaVulnCount}`;
+        }
+        commentBody += `\n\n`;
 
         if (criticalList) {
           commentBody += `### Critical\n${criticalList}\n\n`;
@@ -212,8 +240,8 @@ export async function POST(request: Request) {
         if (warningList) {
           commentBody += `### Warning\n${warningList}\n\n`;
         }
-        if (allVulns.length > 10) {
-          commentBody += `*...and ${allVulns.length - 10} more*\n\n`;
+        if (realVulns.length > 10) {
+          commentBody += `*...and ${realVulns.length - 10} more*\n\n`;
         }
 
         commentBody += `[View Full Report](${reportUrl})`;
@@ -256,13 +284,13 @@ export async function POST(request: Request) {
       user_id: project.user_id,
       type: "pr_scan",
       title: `PR #${prNumber} scanned: ${project.name}`,
-      message: allVulns.length > 0
-        ? `Found ${allVulns.length} vulnerabilities (${critical} critical)`
+      message: realVulns.length > 0
+        ? `Found ${realVulns.length} vulnerabilities (${critical} critical)`
         : "No vulnerabilities found",
       link: `/dashboard/scans/${scan.id}`,
     });
 
-    return NextResponse.json({ ok: true, scanId: scan.id, vulnerabilities: allVulns.length });
+    return NextResponse.json({ ok: true, scanId: scan.id, vulnerabilities: realVulns.length });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },
@@ -272,8 +300,12 @@ export async function POST(request: Request) {
 }
 
 const SCANNABLE_EXTS = new Set([".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py"]);
+const SCA_FILES = new Set([
+  "package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml",
+  "requirements.txt", "Pipfile", "go.mod", "go.sum", "Cargo.toml", "Cargo.lock",
+]);
 
-/** Fetch only changed file paths from a PR */
+/** Fetch only changed file paths from a PR (code + SCA files) */
 async function fetchPRChangedFiles(
   owner: string,
   repo: string,
@@ -298,7 +330,9 @@ async function fetchPRChangedFiles(
     .filter((f) => f.status !== "removed")
     .map((f) => f.filename)
     .filter((p) => {
-      const ext = "." + p.split(".").pop()?.toLowerCase();
+      const fileName = p.split("/").pop() ?? "";
+      if (SCA_FILES.has(fileName)) return true;
+      const ext = "." + fileName.split(".").pop()?.toLowerCase();
       return SCANNABLE_EXTS.has(ext);
     });
 }
