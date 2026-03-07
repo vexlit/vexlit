@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 export function QuickRescan({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const t = useTranslations("quickRescan");
 
   const handleRescan = async () => {
     setLoading(true);
@@ -18,13 +20,14 @@ export function QuickRescan({ projectId }: { projectId: string }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "Failed to start rescan");
+        const code = data.errorCode;
+        toast.error(code ? t(code) : (data.error ?? t("failed")));
         return;
       }
-      toast.success("Scan started");
-      router.push(`/dashboard/scans/${data.id}`);
+      toast.success(t("started"));
+      router.push(`/dashboard/scans/${data.scanId}`);
     } catch {
-      toast.error("Network error");
+      toast.error(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -35,7 +38,7 @@ export function QuickRescan({ projectId }: { projectId: string }) {
       onClick={handleRescan}
       disabled={loading}
       className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
-      title="Quick rescan"
+      title={t("title")}
     >
       {loading ? (
         <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

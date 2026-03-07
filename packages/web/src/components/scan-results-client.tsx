@@ -152,7 +152,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
 
   const handleSarifDownload = () => {
     if (!sarifJson) {
-      toast.error("SARIF data not available for this scan");
+      toast.error(t("sarifNotAvailable"));
       return;
     }
     const blob = new Blob([JSON.stringify(sarifJson, null, 2)], {
@@ -164,7 +164,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
     a.download = `vexlit-scan-${scanId.slice(0, 8)}.sarif`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("SARIF file downloaded");
+    toast.success(t("sarifDownloaded"));
   };
 
   return (

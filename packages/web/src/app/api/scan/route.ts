@@ -30,15 +30,50 @@ export async function POST(request: Request) {
   if (isJson) {
     // GitHub repo scan — store metadata only, defer file fetching to execute
     const body = await request.json();
-    const { owner, repo, branch: selectedBranch } = body as {
+    let { owner, repo, branch: selectedBranch } = body as {
       owner: string;
       repo: string;
       branch?: string;
+      projectId?: string;
     };
+
+    // Quick rescan: look up owner/repo from existing project
+    if (!owner && !repo && body.projectId) {
+      const { data: project } = await admin
+        .from("projects")
+        .select("github_url, user_id")
+        .eq("id", body.projectId)
+        .single();
+
+      if (!project || project.user_id !== user.id) {
+        return NextResponse.json(
+          { error: "Project not found", errorCode: "projectNotFound" },
+          { status: 404 }
+        );
+      }
+
+      if (!project.github_url) {
+        return NextResponse.json(
+          { error: "Project has no GitHub URL", errorCode: "noGithubUrl" },
+          { status: 400 }
+        );
+      }
+
+      // Extract owner/repo from "https://github.com/owner/repo"
+      const match = project.github_url.match(/github\.com\/([^/]+)\/([^/]+)/);
+      if (!match) {
+        return NextResponse.json(
+          { error: "Invalid GitHub URL in project", errorCode: "invalidGithubUrl" },
+          { status: 400 }
+        );
+      }
+      owner = match[1];
+      repo = match[2];
+    }
 
     if (!owner || !repo) {
       return NextResponse.json(
-        { error: "owner and repo are required" },
+        { error: "owner and repo are required", errorCode: "ownerRepoRequired" },
         { status: 400 }
       );
     }
@@ -59,7 +94,7 @@ export async function POST(request: Request) {
 
     if (!providerToken) {
       return NextResponse.json(
-        { error: "GitHub token not available. Please re-login." },
+        { error: "GitHub token not available. Please re-login.", errorCode: "tokenNotAvailable" },
         { status: 401 }
       );
     }

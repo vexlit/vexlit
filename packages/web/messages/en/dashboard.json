@@ -84,7 +84,9 @@
     "fixSuggestion": "Fix Suggestion",
     "lineCol": "Line {line}:{col}",
     "issueCount": "{count} issue",
-    "issuesCount": "{count} issues"
+    "issuesCount": "{count} issues",
+    "sarifNotAvailable": "SARIF data not available for this scan",
+    "sarifDownloaded": "SARIF file downloaded"
   },
   "aiExplain": {
     "analyzing": "Analyzing...",
@@ -111,5 +113,46 @@
     "title": "Notifications",
     "markAllRead": "Mark all read",
     "empty": "No notifications yet"
+  },
+  "quickRescan": {
+    "title": "Quick rescan",
+    "started": "Scan started",
+    "failed": "Failed to start rescan",
+    "networkError": "Network error",
+    "projectNotFound": "Project not found",
+    "noGithubUrl": "Project has no linked GitHub repository",
+    "tokenNotAvailable": "GitHub token expired. Please re-login.",
+    "ownerRepoRequired": "Repository information is required",
+    "invalidGithubUrl": "Invalid GitHub URL in project"
+  },
+  "newScan": {
+    "title": "New Scan",
+    "githubRepo": "GitHub Repository",
+    "uploadFiles": "Upload Files",
+    "githubRepoUrl": "GitHub Repository URL",
+    "anyPublicRepo": "(any public repo)",
+    "orSelectRepo": "or select your repository",
+    "yourRepos": "Your Repositories",
+    "searchRepos": "Search repositories...",
+    "loadingRepos": "Loading repositories...",
+    "noMatchingRepos": "No matching repositories",
+    "noReposFound": "No repositories found",
+    "branch": "Branch",
+    "loadingBranches": "Loading branches...",
+    "startScan": "Start Scan",
+    "fetchingScanning": "Fetching & Scanning...",
+    "scanning": "Scanning...",
+    "projectName": "Project Name",
+    "uploadCodeFiles": "Upload Code Files",
+    "scanFailed": "Scan failed",
+    "networkError": "Network error",
+    "projectNameRequired": "Project name is required",
+    "uploadAtLeastOne": "Upload at least one file",
+    "selectRepoOrUrl": "Select a repository or enter a GitHub URL",
+    "invalidGithubUrl": "Invalid GitHub URL. Use: https://github.com/owner/repo",
+    "failedToLoadRepos": "Failed to load repositories",
+    "failedToConnectGithub": "Failed to connect to GitHub",
+    "tokenNotAvailable": "GitHub token expired. Please re-login.",
+    "ownerRepoRequired": "Repository information is required"
   }
 }
