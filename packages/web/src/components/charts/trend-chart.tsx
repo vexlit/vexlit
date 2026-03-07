@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+import { useTranslations } from "next-intl";
 import {
   AreaChart,
   Area,
@@ -18,26 +20,32 @@ interface TrendPoint {
 }
 
 export function TrendChart({ data }: { data: TrendPoint[] }) {
+  const t = useTranslations("dashboard");
+  const uid = useId().replace(/:/g, "");
+  const critId = `crit${uid}`;
+  const warnId = `warn${uid}`;
+  const infoId = `info${uid}`;
+
   if (data.length < 2) return null;
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <h3 className="text-sm font-medium text-gray-400 mb-4">
-        Vulnerability Trend
+        {t("trendChart")}
       </h3>
       <div className="h-48">
-        <ResponsiveContainer>
+        <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
-              <linearGradient id="criticalGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={critId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
                 <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="warningGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={warnId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#eab308" stopOpacity={0.3} />
                 <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="infoGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={infoId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
@@ -68,7 +76,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
               type="monotone"
               dataKey="critical"
               stroke="#ef4444"
-              fill="url(#criticalGrad)"
+              fill={`url(#${critId})`}
               strokeWidth={2}
               stackId="1"
             />
@@ -76,7 +84,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
               type="monotone"
               dataKey="warning"
               stroke="#eab308"
-              fill="url(#warningGrad)"
+              fill={`url(#${warnId})`}
               strokeWidth={2}
               stackId="1"
             />
@@ -84,7 +92,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
               type="monotone"
               dataKey="info"
               stroke="#3b82f6"
-              fill="url(#infoGrad)"
+              fill={`url(#${infoId})`}
               strokeWidth={2}
               stackId="1"
             />

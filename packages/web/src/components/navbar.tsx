@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -11,12 +12,26 @@ import { VexlitLogo } from "./vexlit-logo";
 export function Navbar({ email }: { email: string }) {
   const router = useRouter();
   const t = useTranslations("common");
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSignOut = async () => {
     const supabase = createSupabaseBrowser();
     await supabase.auth.signOut();
     router.push("/login");
   };
+
+  const initial = email.charAt(0).toUpperCase();
 
   return (
     <nav className="border-b border-gray-800 bg-gray-950 sticky top-0 z-50 backdrop-blur-sm bg-gray-950/80">
@@ -30,13 +45,34 @@ export function Navbar({ email }: { email: string }) {
             <NotificationBell />
             <LanguageSelector />
             <ThemeToggle />
-            <span className="text-gray-400 text-sm hidden sm:inline">{email}</span>
-            <button
-              onClick={handleSignOut}
-              className="text-gray-400 hover:text-white text-sm transition-colors"
-            >
-              {t("signOut")}
-            </button>
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="w-8 h-8 rounded-full bg-purple-600 text-white text-sm font-medium flex items-center justify-center hover:bg-purple-500 transition-colors"
+              >
+                {initial}
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-800 rounded-xl shadow-lg py-2 z-50">
+                  <div className="px-4 py-2 border-b border-gray-800">
+                    <p className="text-sm text-gray-300 truncate">{email}</p>
+                  </div>
+                  <Link
+                    href="/dashboard/settings"
+                    onClick={() => setProfileOpen(false)}
+                    className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                  >
+                    {t("settings")}
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                  >
+                    {t("signOut")}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

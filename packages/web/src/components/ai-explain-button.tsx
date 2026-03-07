@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { getAiCache, setAiCache } from "@/lib/ai-cache";
 
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function AiExplainButton({ scanId, vulnId, ...props }: Props) {
+  const t = useTranslations("aiExplain");
   const cacheKey = `vexlit-ai-${scanId}-${vulnId}-explain`;
   const [explanation, setExplanation] = useState<string | null>(() =>
     getAiCache(cacheKey)
@@ -67,12 +69,12 @@ export function AiExplainButton({ scanId, vulnId, ...props }: Props) {
         {loading ? (
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 border border-purple-400 border-t-transparent rounded-full animate-spin" />
-            Analyzing...
+            {t("analyzing")}
           </span>
         ) : open ? (
-          "Hide Explanation"
+          t("hideExplanation")
         ) : (
-          "Explain with AI"
+          t("explainWithAi")
         )}
       </button>
 

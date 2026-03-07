@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { getAiCache, setAiCache } from "@/lib/ai-cache";
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function AiFixButton({ scanId, vulnId, ...props }: Props) {
+  const t = useTranslations("aiFix");
   const cacheKey = `vexlit-ai-${scanId}-${vulnId}-fix`;
   const [fix, setFix] = useState<string | null>(() => getAiCache(cacheKey));
   const [loading, setLoading] = useState(false);
@@ -76,12 +78,12 @@ export function AiFixButton({ scanId, vulnId, ...props }: Props) {
         {loading ? (
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 border border-green-400 border-t-transparent rounded-full animate-spin" />
-            Generating...
+            {t("generating")}
           </span>
         ) : open ? (
-          "Hide Fix"
+          t("hideFix")
         ) : (
-          "Generate Fix"
+          t("generateFix")
         )}
       </button>
 
@@ -92,7 +94,7 @@ export function AiFixButton({ scanId, vulnId, ...props }: Props) {
           {/* Before */}
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs text-red-400 font-medium">Before</span>
+              <span className="text-xs text-red-400 font-medium">{t("before")}</span>
             </div>
             <pre className="px-3 py-2 bg-red-500/5 border border-red-500/20 rounded text-sm font-mono text-gray-300 overflow-x-auto">
               {props.snippet}
@@ -102,12 +104,12 @@ export function AiFixButton({ scanId, vulnId, ...props }: Props) {
           {/* After */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-green-400 font-medium">After</span>
+              <span className="text-xs text-green-400 font-medium">{t("after")}</span>
               <button
                 onClick={handleCopy}
                 className="text-xs px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
               >
-                {copied ? "Copied!" : "Copy"}
+                {copied ? t("copied") : t("copy")}
               </button>
             </div>
             <pre className="px-3 py-2 bg-green-500/5 border border-green-500/20 rounded text-sm font-mono text-gray-300 overflow-x-auto">

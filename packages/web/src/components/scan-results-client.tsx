@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { SeverityBadge } from "./severity-badge";
 import { AiExplainButton } from "./ai-explain-button";
 import { AiFixButton } from "./ai-fix-button";
@@ -71,6 +72,7 @@ interface Props {
 }
 
 export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
+  const t = useTranslations("scanResults");
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [fileFilter, setFileFilter] = useState<string>("all");
@@ -171,7 +173,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
       {scaVulns.length > 0 && (
         <div className="flex items-center gap-2">
           {(["all", "sast", "sca"] as const).map((tab) => {
-            const label = tab === "all" ? `All (${realVulns.length})` : tab === "sast" ? `SAST (${sastVulns.length})` : `SCA (${scaVulns.length})`;
+            const label = tab === "all" ? t("allTab", { count: realVulns.length }) : tab === "sast" ? t("sastTab", { count: sastVulns.length }) : t("scaTab", { count: scaVulns.length });
             return (
               <button
                 key={tab}
@@ -197,7 +199,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                   : "text-gray-500 border border-gray-800 hover:text-gray-300"
               }`}
             >
-              {hideDevDeps ? "Dev deps hidden" : "Hide dev deps"}
+              {hideDevDeps ? t("devDepsHidden") : t("hideDevDeps")}
             </button>
           )}
         </div>
@@ -211,12 +213,12 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
           </svg>
           <div>
             <p className="text-gray-300 text-sm">
-              <span className="font-medium">{depCount}</span> dependencies scanned
+              {t("depScanned", { count: depCount })}
               {scaVulns.length > 0 && (
-                <span className="text-red-400 ml-2 font-medium">{scaVulns.length} vulnerable</span>
+                <span className="text-red-400 ml-2 font-medium">{t("vulnerable", { count: scaVulns.length })}</span>
               )}
               {scaVulns.length === 0 && (
-                <span className="text-green-400 ml-2 font-medium">0 vulnerable</span>
+                <span className="text-green-400 ml-2 font-medium">{t("zeroVulnerable")}</span>
               )}
             </p>
           </div>
@@ -230,7 +232,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
           <div>
-            <p className="text-yellow-400 text-sm font-medium">SCA Skipped</p>
+            <p className="text-yellow-400 text-sm font-medium">{t("scaSkipped")}</p>
             <p className="text-gray-400 text-xs">{scaSkipped.message}</p>
           </div>
         </div>
@@ -249,7 +251,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
-          Show exploitable only ({exploitableCount})
+          {t("showExploitable", { count: exploitableCount })}
         </button>
       )}
 
@@ -270,8 +272,8 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search vulnerabilities..."
-            aria-label="Search vulnerabilities"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchPlaceholder")}
             className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-700"
           />
         </div>
@@ -282,10 +284,10 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
           onChange={(e) => setSeverityFilter(e.target.value)}
           className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-gray-700"
         >
-          <option value="all">All Severities</option>
-          <option value="critical">Critical</option>
-          <option value="warning">Warning</option>
-          <option value="info">Info</option>
+          <option value="all">{t("allSeverities")}</option>
+          <option value="critical">{t("critical")}</option>
+          <option value="warning">{t("warning")}</option>
+          <option value="info">{t("info")}</option>
         </select>
 
         {/* File filter */}
@@ -294,7 +296,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
           onChange={(e) => setFileFilter(e.target.value)}
           className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-gray-700 max-w-48"
         >
-          <option value="all">All Files</option>
+          <option value="all">{t("allFiles")}</option>
           {files.map((f) => (
             <option key={f} value={f}>
               {f.split("/").pop()}
@@ -308,7 +310,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
           onChange={(e) => setRuleFilter(e.target.value)}
           className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-gray-700 max-w-48"
         >
-          <option value="all">All Rules</option>
+          <option value="all">{t("allRules")}</option>
           {rules.map((r) => (
             <option key={r} value={r}>{r}</option>
           ))}
@@ -328,21 +330,21 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
 
       {/* Result count */}
       <p className="text-gray-500 text-sm">
-        Showing {filtered.length} of {realVulns.length} vulnerabilities
+        {t("showing", { filtered: filtered.length, total: realVulns.length })}
       </p>
 
       {/* Results */}
       {filtered.length === 0 && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-          <p className="text-gray-400">No vulnerabilities match your filters.</p>
+          <p className="text-gray-400">{t("noMatch")}</p>
         </div>
       )}
 
       {/* Empty SCA message */}
       {activeTab === "sca" && filteredSca.length === 0 && !scaSkipped && (
         <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-6 text-center">
-          <p className="text-green-400 text-sm font-medium">No dependency vulnerabilities found</p>
-          <p className="text-gray-500 text-xs mt-1">All scanned dependencies are free of known vulnerabilities.</p>
+          <p className="text-green-400 text-sm font-medium">{t("noDepVulns")}</p>
+          <p className="text-gray-500 text-xs mt-1">{t("noDepVulnsDesc")}</p>
         </div>
       )}
 
@@ -355,7 +357,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
               <span className="text-sm font-medium text-gray-300">
-                SCA — Vulnerable Dependencies ({filteredSca.length})
+                {t("scaHeader", { count: filteredSca.length })}
               </span>
             </div>
           )}
@@ -409,12 +411,12 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                       )}
                     </div>
                     <span className="text-gray-600 text-xs">
-                      {pkgVulns.length} CVE{pkgVulns.length > 1 ? "s" : ""}
+                      {pkgVulns.length > 1 ? t("cvesCount", { count: pkgVulns.length }) : t("cveCount", { count: pkgVulns.length })}
                     </span>
                   </div>
                   {fixVersions.length > 0 && (
                     <p className="text-green-400/80 text-xs mt-1.5 ml-7">
-                      Fix available: {pkgName} {fixVersions[0]}
+                      {t("fixAvailable", { pkg: pkgName, version: fixVersions[0] })}
                     </p>
                   )}
                 </div>
@@ -449,7 +451,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                           <div className="mt-3 ml-10 space-y-3 border-l-2 border-gray-800 pl-4">
                             {v.suggestion && (
                               <div>
-                                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Remediation</p>
+                                <p className="text-xs text-gray-500 uppercase font-medium mb-1">{t("remediation")}</p>
                                 <p className="text-sm text-green-400/80">{v.suggestion}</p>
                               </div>
                             )}
@@ -511,7 +513,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
               </svg>
               <span className="text-sm font-medium text-gray-300">
-                SAST — Code Vulnerabilities ({filteredSast.length})
+                {t("sastHeader", { count: filteredSast.length })}
               </span>
             </div>
           )}
@@ -524,7 +526,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                 <div>
                   <span className="text-gray-300 text-sm font-mono">{filePath}</span>
                   <span className="text-gray-600 text-xs ml-2">
-                    {fileVulns.length} issue{fileVulns.length > 1 ? "s" : ""}
+                    {fileVulns.length > 1 ? t("issuesCount", { count: fileVulns.length }) : t("issueCount", { count: fileVulns.length })}
                   </span>
                 </div>
               </div>
@@ -546,7 +548,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                             </span>
                             <ConfidenceBadge confidence={v.confidence} />
                             <span className="text-gray-600 text-xs">
-                              Line {v.line}:{v.column}
+                              {t("lineCol", { line: v.line, col: v.column })}
                             </span>
                             <svg
                               className={`w-4 h-4 text-gray-500 transition-transform ml-auto ${isExpanded ? "rotate-180" : ""}`}
@@ -569,7 +571,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                         <div className="mt-4 ml-10 space-y-3 border-l-2 border-gray-800 pl-4">
                           {v.suggestion && (
                             <div>
-                              <p className="text-xs text-gray-500 uppercase font-medium mb-1">Fix Suggestion</p>
+                              <p className="text-xs text-gray-500 uppercase font-medium mb-1">{t("fixSuggestion")}</p>
                               <p className="text-sm text-green-400/80">{v.suggestion}</p>
                             </div>
                           )}

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { getAiCache, setAiCache } from "@/lib/ai-cache";
 
 export function AiReportButton({ scanId }: { scanId: string }) {
+  const t = useTranslations("aiReport");
   const cacheKey = `vexlit-ai-${scanId}-report`;
   const [report, setReport] = useState<string | null>(() =>
     getAiCache(cacheKey)
@@ -65,12 +67,12 @@ export function AiReportButton({ scanId }: { scanId: string }) {
         {loading ? (
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-            Generating AI Report...
+            {t("generatingReport")}
           </span>
         ) : open ? (
-          "Hide Report"
+          t("hideReport")
         ) : (
-          "Generate AI Report"
+          t("generateReport")
         )}
       </button>
 
@@ -80,13 +82,13 @@ export function AiReportButton({ scanId }: { scanId: string }) {
         <div className="mt-4 bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
             <span className="text-sm font-medium text-white">
-              AI Security Report
+              {t("reportTitle")}
             </span>
             <button
               onClick={handleDownload}
               className="text-xs px-3 py-1 rounded bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
             >
-              Download .md
+              {t("download")}
             </button>
           </div>
           <div className="p-4 prose prose-invert prose-sm max-w-none text-gray-300">
