@@ -121,21 +121,42 @@ export default async function PublicScanPage({
               {t("vulnCount", { count: vulns.length })}
             </h2>
 
-            {/* SCA skipped banner */}
+            {/* Dependency scan summary */}
             {(() => {
+              const meta = vulns.find((v) => v.rule_id === "SCA-META");
               const skipped = vulns.find((v) => v.rule_id === "SCA-SKIPPED");
-              if (!skipped) return null;
+              const dc = meta ? parseInt(meta.message, 10) || 0 : 0;
+              const scaCount = vulns.filter((v) => v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED" && v.rule_id !== "SCA-META").length;
               return (
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3">
-                  <p className="text-yellow-400 text-sm font-medium">SCA Skipped</p>
-                  <p className="text-gray-400 text-xs">{skipped.message}</p>
-                </div>
+                <>
+                  {dc > 0 && !skipped && (
+                    <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 flex items-center gap-3">
+                      <svg className="w-5 h-5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                      <p className="text-gray-300 text-sm">
+                        <span className="font-medium">{dc}</span> dependencies scanned
+                        {scaCount > 0 ? (
+                          <span className="text-red-400 ml-2 font-medium">{scaCount} vulnerable</span>
+                        ) : (
+                          <span className="text-green-400 ml-2 font-medium">0 vulnerable</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {skipped && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3">
+                      <p className="text-yellow-400 text-sm font-medium">SCA Skipped</p>
+                      <p className="text-gray-400 text-xs">{skipped.message}</p>
+                    </div>
+                  )}
+                </>
               );
             })()}
 
             {/* SCA results grouped by package */}
             {(() => {
-              const scaVulns = vulns.filter((v) => v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED");
+              const scaVulns = vulns.filter((v) => v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED" && v.rule_id !== "SCA-META");
               if (!scaVulns.length) return null;
 
               const pkgGroups = new Map<string, Vulnerability[]>();
@@ -161,12 +182,25 @@ export default async function PublicScanPage({
                       }
                       return null;
                     })();
+                    const ecoMatch = pvulns[0]?.snippet?.match(/^\[([^\]]+)\]/);
+                    const ecosystem = ecoMatch?.[1] ?? null;
                     return (
                       <div key={pkg} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                         <div className="px-4 py-2.5 border-b border-gray-800 bg-gray-900/50">
                           <div className="flex items-center gap-2">
                             <SeverityDot severity={pvulns.some((v) => v.severity === "critical") ? "critical" : pvulns.some((v) => v.severity === "warning") ? "warning" : "info"} />
                             <span className="text-gray-200 text-sm font-medium">{pkg}</span>
+                            {ecosystem && (
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                ecosystem === "npm" ? "bg-red-900/30 text-red-400 border-red-800" :
+                                ecosystem === "PyPI" ? "bg-blue-900/30 text-blue-400 border-blue-800" :
+                                ecosystem === "Go" ? "bg-cyan-900/30 text-cyan-400 border-cyan-800" :
+                                ecosystem === "crates.io" ? "bg-orange-900/30 text-orange-400 border-orange-800" :
+                                "bg-gray-800 text-gray-400 border-gray-700"
+                              }`}>
+                                {ecosystem}
+                              </span>
+                            )}
                             {isDev && <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-900/40 text-purple-400 border border-purple-800">dev</span>}
                             <span className="text-gray-600 text-xs ml-auto">{pvulns.length} CVE{pvulns.length > 1 ? "s" : ""}</span>
                           </div>
@@ -194,7 +228,7 @@ export default async function PublicScanPage({
 
             {/* SAST results */}
             {(() => {
-              const sastVulns = vulns.filter((v) => !v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED");
+              const sastVulns = vulns.filter((v) => !v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED" && v.rule_id !== "SCA-META");
               if (!sastVulns.length) return null;
 
               const scaExists = vulns.some((v) => v.rule_id.startsWith("SCA-") && v.rule_id !== "SCA-SKIPPED");

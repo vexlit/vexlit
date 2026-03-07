@@ -38,6 +38,12 @@ export async function scaDependencies(
     }
   }
 
+  // Step 2.5: Cap at 1500 packages to protect against huge repos
+  const MAX_PACKAGES = 1500;
+  if (uniqueDeps.length > MAX_PACKAGES) {
+    uniqueDeps.length = MAX_PACKAGES;
+  }
+
   // Step 3: Query OSV for known vulnerabilities (deduplicated)
   let advisoryMap: Map<string, import("./types.js").Advisory[]>;
   try {
@@ -71,7 +77,7 @@ export async function scaDependencies(
         filePath: dep.source,
         line: dep.line,
         column: 1,
-        snippet: `"${dep.name}": "${dep.version}"`,
+        snippet: `[${dep.ecosystem}] "${dep.name}": "${dep.version}"`,
         cwe: "CWE-1395",
         owasp: "A06:2021",
         suggestion: `Upgrade ${dep.name} to a non-vulnerable version.${fixMsg}`,

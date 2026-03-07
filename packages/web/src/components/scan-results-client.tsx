@@ -80,9 +80,11 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
   const [activeTab, setActiveTab] = useState<"all" | "sast" | "sca">("all");
   const [hideDevDeps, setHideDevDeps] = useState(false);
 
-  // Separate SCA and SAST vulns (exclude SCA-SKIPPED marker from vuln lists)
+  // Separate SCA and SAST vulns (exclude SCA-SKIPPED and SCA-META markers from vuln lists)
   const scaSkipped = useMemo(() => vulns.find((v) => v.rule_id === "SCA-SKIPPED"), [vulns]);
-  const realVulns = useMemo(() => vulns.filter((v) => v.rule_id !== "SCA-SKIPPED"), [vulns]);
+  const scaMeta = useMemo(() => vulns.find((v) => v.rule_id === "SCA-META"), [vulns]);
+  const depCount = scaMeta ? parseInt(scaMeta.message, 10) || 0 : 0;
+  const realVulns = useMemo(() => vulns.filter((v) => v.rule_id !== "SCA-SKIPPED" && v.rule_id !== "SCA-META"), [vulns]);
   const scaVulns = useMemo(() => realVulns.filter((v) => v.rule_id.startsWith("SCA-")), [realVulns]);
   const sastVulns = useMemo(() => realVulns.filter((v) => !v.rule_id.startsWith("SCA-")), [realVulns]);
 
@@ -198,6 +200,26 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
               {hideDevDeps ? "Dev deps hidden" : "Hide dev deps"}
             </button>
           )}
+        </div>
+      )}
+
+      {/* Dependency scan summary */}
+      {depCount > 0 && !scaSkipped && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 flex items-center gap-3">
+          <svg className="w-5 h-5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          <div>
+            <p className="text-gray-300 text-sm">
+              <span className="font-medium">{depCount}</span> dependencies scanned
+              {scaVulns.length > 0 && (
+                <span className="text-red-400 ml-2 font-medium">{scaVulns.length} vulnerable</span>
+              )}
+              {scaVulns.length === 0 && (
+                <span className="text-green-400 ml-2 font-medium">0 vulnerable</span>
+              )}
+            </p>
+          </div>
         </div>
       )}
 
@@ -346,6 +368,10 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
             const maxSeverity = pkgVulns.some((v) => v.severity === "critical") ? "critical"
               : pkgVulns.some((v) => v.severity === "warning") ? "warning" : "info";
 
+            // Extract ecosystem from snippet: "[npm] ..." or "[PyPI] ..."
+            const ecoMatch = pkgVulns[0]?.snippet?.match(/^\[([^\]]+)\]/);
+            const ecosystem = ecoMatch?.[1] ?? null;
+
             // Extract fix version from suggestion (e.g. "Upgrade to 4.17.21 or later.")
             const fixVersions = [...new Set(pkgVulns.map((v) => {
               const m = v.suggestion?.match(/Upgrade to ([^\s]+) or later/);
@@ -362,6 +388,17 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                     <div className="flex items-center gap-2">
                       <SeverityBadge severity={maxSeverity} />
                       <span className="text-gray-200 text-sm font-medium">{pkgName}</span>
+                      {ecosystem && (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                          ecosystem === "npm" ? "bg-red-900/30 text-red-400 border-red-800" :
+                          ecosystem === "PyPI" ? "bg-blue-900/30 text-blue-400 border-blue-800" :
+                          ecosystem === "Go" ? "bg-cyan-900/30 text-cyan-400 border-cyan-800" :
+                          ecosystem === "crates.io" ? "bg-orange-900/30 text-orange-400 border-orange-800" :
+                          "bg-gray-800 text-gray-400 border-gray-700"
+                        }`}>
+                          {ecosystem}
+                        </span>
+                      )}
                       {versions.length > 0 && (
                         <span className="text-gray-500 text-xs font-mono">@{versions.join(", @")}</span>
                       )}
@@ -436,6 +473,22 @@ export function ScanResultsClient({ scanId, vulns, sarifJson }: Props) {
                                   <span className="text-sm text-gray-300">{v.owasp}</span>
                                 </div>
                               )}
+                            </div>
+
+                            {/* AI Explain for SCA */}
+                            <div className="flex gap-2 pt-2">
+                              <AiExplainButton
+                                scanId={scanId}
+                                vulnId={v.id}
+                                ruleName={v.rule_name}
+                                severity={v.severity}
+                                message={v.message}
+                                filePath={v.file_path}
+                                line={v.line}
+                                snippet={v.snippet}
+                                cwe={v.cwe}
+                                owasp={v.owasp}
+                              />
                             </div>
                           </div>
                         )}

@@ -278,6 +278,22 @@ export async function POST(
           suggestion: "Re-run the scan to retry SCA analysis.",
         });
       }
+
+      // Store dep count marker so UI can display "X dependencies scanned"
+      if (scaResult.depCount > 0) {
+        await admin.from("vulnerabilities").insert({
+          scan_id: id,
+          rule_id: "SCA-META",
+          rule_name: "SCA metadata",
+          severity: "info",
+          confidence: "low",
+          message: `${scaResult.depCount}`,
+          file_path: "-",
+          line: 0,
+          column: 1,
+          snippet: null, cwe: null, owasp: null, suggestion: null,
+        });
+      }
     }
 
     const chunk = files.slice(0, CHUNK_SIZE);

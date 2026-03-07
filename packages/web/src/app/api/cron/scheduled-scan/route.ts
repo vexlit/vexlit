@@ -203,6 +203,21 @@ export async function GET(request: Request) {
         });
       }
 
+      if (scaResult.depCount > 0) {
+        allVulns.push({
+          scan_id: scan.id,
+          rule_id: "SCA-META",
+          rule_name: "SCA metadata",
+          severity: "info",
+          confidence: "low",
+          message: `${scaResult.depCount}`,
+          file_path: "-",
+          line: 0,
+          column: 1,
+          snippet: null, cwe: null, owasp: null, suggestion: null,
+        });
+      }
+
       if (allVulns.length > 0) {
         await admin.from("vulnerabilities").insert(allVulns);
       }

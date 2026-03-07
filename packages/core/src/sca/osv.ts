@@ -5,6 +5,30 @@ const OSV_VULN_URL = "https://api.osv.dev/v1/vulns";
 const BATCH_SIZE = 100;
 const TIMEOUT_MS = 5_000;
 const MAX_RETRIES = 1;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX_ENTRIES = 5000;
+
+/** In-memory cache for OSV advisory results keyed by "ecosystem:name@version" */
+const osvCache = new Map<string, { advisories: Advisory[]; ts: number }>();
+
+function getCached(key: string): Advisory[] | null {
+  const entry = osvCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) {
+    osvCache.delete(key);
+    return null;
+  }
+  return entry.advisories;
+}
+
+function setCache(key: string, advisories: Advisory[]): void {
+  // Evict oldest entries when cache exceeds max size
+  if (osvCache.size >= CACHE_MAX_ENTRIES) {
+    const firstKey = osvCache.keys().next().value;
+    if (firstKey !== undefined) osvCache.delete(firstKey);
+  }
+  osvCache.set(key, { advisories, ts: Date.now() });
+}
 
 interface OsvQuery {
   package: { name: string; ecosystem: string };
@@ -61,13 +85,27 @@ export async function queryOsv(
   const result = new Map<string, Advisory[]>();
   if (!deps.length) return result;
 
+  // Check cache first — separate cached from uncached deps
+  const uncachedDeps: Dependency[] = [];
+  for (const d of deps) {
+    const key = `${d.ecosystem}:${d.name}@${d.version}`;
+    const cached = getCached(key);
+    if (cached !== null) {
+      if (cached.length > 0) result.set(key, cached);
+    } else {
+      uncachedDeps.push(d);
+    }
+  }
+
+  if (!uncachedDeps.length) return result;
+
   let successCount = 0;
   let totalBatches = 0;
 
-  // Process in batches
-  for (let i = 0; i < deps.length; i += BATCH_SIZE) {
+  // Process uncached deps in batches
+  for (let i = 0; i < uncachedDeps.length; i += BATCH_SIZE) {
     totalBatches++;
-    const batch = deps.slice(i, i + BATCH_SIZE);
+    const batch = uncachedDeps.slice(i, i + BATCH_SIZE);
     const queries: OsvQuery[] = batch.map((d) => ({
       package: { name: d.name, ecosystem: d.ecosystem },
       version: d.version,
@@ -105,6 +143,8 @@ export async function queryOsv(
         vulnIdsToFetch.map((v) => v.vulnId)
       );
 
+      // Group advisories per dep key for caching
+      const batchAdvisories = new Map<string, Advisory[]>();
       for (const { depKey, vulnId } of vulnIdsToFetch) {
         const detail = details.get(vulnId);
         if (!detail) continue;
@@ -112,6 +152,16 @@ export async function queryOsv(
         const existing = result.get(depKey) ?? [];
         existing.push(detail);
         result.set(depKey, existing);
+
+        const ba = batchAdvisories.get(depKey) ?? [];
+        ba.push(detail);
+        batchAdvisories.set(depKey, ba);
+      }
+
+      // Cache results (including deps with zero vulns)
+      for (const dep of batch) {
+        const key = `${dep.ecosystem}:${dep.name}@${dep.version}`;
+        setCache(key, batchAdvisories.get(key) ?? []);
       }
     } catch {
       // Network error — skip this batch
