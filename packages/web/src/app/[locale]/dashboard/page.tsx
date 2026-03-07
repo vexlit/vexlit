@@ -143,8 +143,12 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold text-white">{t("recentVulnerabilities")}</h2>
         </div>
         {userVulns.length === 0 ? (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
+            <svg className="w-12 h-12 text-gray-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
             <p className="text-gray-400 text-sm">{t("noVulnerabilities")}</p>
+            <p className="text-gray-600 text-xs mt-1">{t("noVulnerabilitiesDesc")}</p>
           </div>
         ) : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">
@@ -154,10 +158,15 @@ export default async function DashboardPage() {
                 href={`/dashboard/scans/${v.scan_id}`}
                 className="flex items-start gap-3 px-4 py-3 hover:bg-gray-800/30 transition-colors"
               >
-                <span className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${
-                  v.severity === "critical" ? "bg-red-500" :
-                  v.severity === "warning" ? "bg-yellow-500" : "bg-blue-500"
-                }`} />
+                <span
+                  className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${
+                    v.severity === "critical" ? "bg-red-500" :
+                    v.severity === "warning" ? "bg-yellow-500" : "bg-blue-500"
+                  }`}
+                  role="img"
+                  aria-label={v.severity}
+                  title={v.severity}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-white text-sm font-medium truncate">{v.rule_name}</span>

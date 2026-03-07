@@ -34,6 +34,30 @@ function ReachabilityBadge({ reachable }: { reachable: boolean | null }) {
   );
 }
 
+const CWE_DESCRIPTIONS: Record<string, string> = {
+  "CWE-22": "Path Traversal",
+  "CWE-78": "OS Command Injection",
+  "CWE-79": "Cross-site Scripting (XSS)",
+  "CWE-89": "SQL Injection",
+  "CWE-94": "Code Injection",
+  "CWE-116": "Improper Encoding",
+  "CWE-200": "Information Exposure",
+  "CWE-250": "Unnecessary Privileges",
+  "CWE-295": "Improper Certificate Validation",
+  "CWE-312": "Cleartext Storage",
+  "CWE-327": "Broken Crypto",
+  "CWE-338": "Weak PRNG",
+  "CWE-400": "Resource Consumption",
+  "CWE-502": "Unsafe Deserialization",
+  "CWE-601": "Open Redirect",
+  "CWE-611": "XML External Entity (XXE)",
+  "CWE-614": "Insecure Cookie",
+  "CWE-798": "Hardcoded Credentials",
+  "CWE-915": "Mass Assignment",
+  "CWE-918": "Server-Side Request Forgery",
+  "CWE-1321": "Prototype Pollution",
+};
+
 const KEYWORDS = new Set([
   "const","let","var","function","return","if","else","for","while",
   "import","export","from","require","new","async","await","class","extends",
@@ -372,6 +396,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
         <div className="flex items-center gap-2">
           {(["all", "sast", "sca"] as const).map((tab) => {
             const label = tab === "all" ? t("allTab", { count: realVulns.length }) : tab === "sast" ? t("sastTab", { count: sastVulns.length }) : t("scaTab", { count: scaVulns.length });
+            const desc = tab === "all" ? t("allTabDesc") : tab === "sast" ? t("sastTabDesc") : t("scaTabDesc");
             return (
               <button
                 key={tab}
@@ -381,8 +406,10 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
                     ? "bg-white/10 text-white"
                     : "text-gray-500 hover:text-gray-300"
                 }`}
+                title={desc}
               >
-                {label}
+                <span>{label}</span>
+                <span className={`block text-[10px] font-normal ${activeTab === tab ? "text-gray-400" : "text-gray-600"}`}>{desc}</span>
               </button>
             );
           })}
@@ -732,6 +759,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
                                     className="text-sm text-blue-400 hover:underline"
                                   >
                                     {v.cwe}
+                                    {CWE_DESCRIPTIONS[v.cwe] && <span className="text-gray-500 ml-1">({CWE_DESCRIPTIONS[v.cwe]})</span>}
                                   </a>
                                 </div>
                               )}

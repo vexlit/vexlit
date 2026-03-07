@@ -36,11 +36,18 @@ export default async function ScansPage() {
 
       {scanList.length === 0 ? (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
+          <svg className="w-12 h-12 text-gray-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
           <p className="text-gray-400">{t("noScans")}</p>
+          <p className="text-gray-600 text-xs mt-1">{t("noScansDesc")}</p>
           <Link
             href="/dashboard/new"
-            className="text-red-400 hover:text-red-300 text-sm mt-2 inline-block"
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
           >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
             {t("startFirst")}
           </Link>
         </div>
