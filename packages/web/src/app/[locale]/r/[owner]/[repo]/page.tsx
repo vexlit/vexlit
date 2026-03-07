@@ -159,7 +159,7 @@ export default async function RepoScanPage({ params }: PageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-4.243a4.5 4.5 0 00-1.242-7.244l4.5-4.5a4.5 4.5 0 016.364 6.364l-1.757 1.757" />
             </svg>
             <code className="text-gray-400 text-xs font-mono truncate">
-              vexlit.com/scan/{owner}/{repo}
+              vexlit.com/r/{owner}/{repo}
             </code>
           </div>
           <span className="text-gray-600 text-xs flex-shrink-0">{t("shareableLink")}</span>
