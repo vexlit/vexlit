@@ -7,6 +7,9 @@ import { PublicScanClient } from "@/components/public-scan-client";
 import { StartScanButton } from "@/components/start-scan-button";
 import type { Metadata } from "next";
 
+/** ISR: cache page for 5 minutes to reduce DB load and prevent abuse */
+export const revalidate = 300;
+
 const ANON_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 interface PageProps {

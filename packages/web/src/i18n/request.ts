@@ -2,12 +2,14 @@ import { getRequestConfig } from "next-intl/server";
 import { routing } from "./routing";
 
 async function loadMessages(locale: string) {
-  const [common, landing, dashboard, settings, docs] = await Promise.all([
+  const [common, landing, dashboard, settings, docs, pricing, vscode] = await Promise.all([
     import(`../../messages/${locale}/common.json`),
     import(`../../messages/${locale}/landing.json`),
     import(`../../messages/${locale}/dashboard.json`),
     import(`../../messages/${locale}/settings.json`),
     import(`../../messages/${locale}/docs.json`),
+    import(`../../messages/${locale}/pricing.json`),
+    import(`../../messages/${locale}/vscode.json`),
   ]);
   return {
     ...common.default,
@@ -15,6 +17,8 @@ async function loadMessages(locale: string) {
     ...dashboard.default,
     ...settings.default,
     ...docs.default,
+    ...pricing.default,
+    ...vscode.default,
   };
 }
 
