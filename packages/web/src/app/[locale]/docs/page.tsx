@@ -48,12 +48,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: vexlit/vexlit@v1
         with:
-          paths: "."
-          fail-on: "critical"
-          upload-sarif: "true"`;
+          fetch-depth: 0
+
+      - name: Install VEXLIT
+        run: npm install -g @vexlit/cli
+
+      - name: Full scan (push to main)
+        if: github.event_name == 'push'
+        run: vexlit scan . --sarif > results.sarif --fail-on critical
+
+      - name: Diff scan (pull request)
+        if: github.event_name == 'pull_request'
+        run: vexlit scan --diff --sarif > results.sarif --fail-on warning
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif`;
 
 const API_EXAMPLE = `import { scan, scanFile, RuleEngine } from "@vexlit/core";
 
@@ -148,7 +161,14 @@ export default async function DocsPage() {
     { command: "vexlit scan src/ lib/utils.ts", description: t("scanSpecific") },
     { command: "vexlit scan . --json", description: t("outputJson") },
     { command: "vexlit scan . --sarif > results.sarif", description: t("exportSarif") },
+    { command: "vexlit scan . --fail-on warning", description: t("failOnSeverity") },
+    { command: "vexlit scan --diff", description: t("diffScan") },
     { command: "vexlit scan . --llm --api-key sk-ant-...", description: t("enableAi") },
+    { command: "vexlit fix", description: t("fixDefault") },
+    { command: "vexlit fix -i", description: t("fixInteractive") },
+    { command: "vexlit fix --sca", description: t("fixSca") },
+    { command: "vexlit fix --auto --dry-run", description: t("fixAutoDryRun") },
+    { command: "vexlit fix --explain --api-key sk-ant-...", description: t("fixExplain") },
   ];
 
   return (
@@ -240,10 +260,10 @@ export default async function DocsPage() {
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
             <p className="text-white text-sm font-medium mb-3">{t("inputs")}</p>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><code className="text-gray-400 font-mono">paths</code><span className="text-gray-600">.</span></div>
-              <div className="flex justify-between"><code className="text-gray-400 font-mono">format</code><span className="text-gray-600">sarif</span></div>
-              <div className="flex justify-between"><code className="text-gray-400 font-mono">fail-on</code><span className="text-gray-600">critical</span></div>
-              <div className="flex justify-between"><code className="text-gray-400 font-mono">upload-sarif</code><span className="text-gray-600">true</span></div>
+              <div className="flex justify-between"><code className="text-gray-400 font-mono">--fail-on</code><span className="text-gray-600">critical | warning | info</span></div>
+              <div className="flex justify-between"><code className="text-gray-400 font-mono">--diff</code><span className="text-gray-600">{t("diffScanShort")}</span></div>
+              <div className="flex justify-between"><code className="text-gray-400 font-mono">--sarif</code><span className="text-gray-600">SARIF output</span></div>
+              <div className="flex justify-between"><code className="text-gray-400 font-mono">--format</code><span className="text-gray-600">table | json | sarif</span></div>
             </div>
           </div>
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">

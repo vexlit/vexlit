@@ -56,8 +56,8 @@
     "elapsed": "경과 시간: {seconds}초 — 결과가 자동으로 표시됩니다.",
     "policyViolated": "보안 정책 위반 — 아래 결과를 확인하세요",
     "policyPassed": "모든 보안 정책을 통과했습니다",
-    "fixPriorityTitle": "이 {count}개 취약점을 먼저 수정하세요",
-    "fixPriorityDesc": "즉시 해결해야 하는 가장 위험한 이슈"
+    "fixPriorityTitle": "이 {count}개 취약점을 수정하여 프로젝트를 보호하세요",
+    "fixPriorityDesc": "가장 위험한 이슈 — 먼저 해결하여 공격 표면을 줄이세요"
   },
   "scanResults": {
     "allTab": "전체 ({count})",

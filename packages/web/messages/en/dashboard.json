@@ -56,8 +56,8 @@
     "elapsed": "Elapsed: {seconds}s — Results will appear automatically.",
     "policyViolated": "Security policy violated — review findings below",
     "policyPassed": "All security policies passed",
-    "fixPriorityTitle": "Fix these {count} vulnerabilities first",
-    "fixPriorityDesc": "Highest risk issues that should be resolved immediately"
+    "fixPriorityTitle": "Fix these {count} vulnerabilities to secure your project",
+    "fixPriorityDesc": "Highest risk issues — resolve these first to reduce your attack surface"
   },
   "scanResults": {
     "allTab": "All ({count})",
