@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useRef, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import {
   AreaChart,
@@ -8,7 +8,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
 } from "recharts";
 
 interface TrendPoint {
@@ -25,6 +24,18 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
   const critId = `crit${uid}`;
   const warnId = `warn${uid}`;
   const infoId = `info${uid}`;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => setWidth(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   if (data.length < 2) return null;
 
@@ -33,9 +44,9 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
       <h3 className="text-sm font-medium text-gray-400 mb-4">
         {t("trendChart")}
       </h3>
-      <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
+      <div className="h-48" ref={containerRef}>
+        {width > 0 && (
+          <AreaChart data={data} width={width} height={192}>
             <defs>
               <linearGradient id={critId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -97,7 +108,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
               stackId="1"
             />
           </AreaChart>
-        </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
