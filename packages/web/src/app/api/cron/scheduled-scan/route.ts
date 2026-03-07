@@ -222,9 +222,10 @@ export async function GET(request: Request) {
         await admin.from("vulnerabilities").insert(allVulns);
       }
 
-      // Count by severity
+      // Count by severity (exclude SCA marker rows)
+      const realVulns = allVulns.filter((v) => v.rule_id !== "SCA-SKIPPED" && v.rule_id !== "SCA-META");
       let critical = 0, warning = 0, info = 0;
-      for (const v of allVulns) {
+      for (const v of realVulns) {
         if (v.severity === "critical") critical++;
         else if (v.severity === "warning") warning++;
         else info++;
@@ -235,7 +236,7 @@ export async function GET(request: Request) {
         .from("scans")
         .update({
           status: "completed",
-          total_vulnerabilities: allVulns.length,
+          total_vulnerabilities: realVulns.length,
           critical_count: critical,
           warning_count: warning,
           info_count: info,
@@ -250,8 +251,8 @@ export async function GET(request: Request) {
         user_id: project.user_id,
         type: "scheduled_scan",
         title: `Scheduled scan: ${project.name}`,
-        message: allVulns.length > 0
-          ? `Found ${allVulns.length} vulnerabilities (${critical} critical)`
+        message: realVulns.length > 0
+          ? `Found ${realVulns.length} vulnerabilities (${critical} critical)`
           : "No vulnerabilities found",
         link: `/dashboard/scans/${scan.id}`,
       });

@@ -268,11 +268,12 @@ export async function POST(
       });
     }
 
-    // Finalize
+    // Finalize (exclude SCA marker rows from counts)
     const { data: severityCounts } = await admin
       .from("vulnerabilities")
       .select("severity")
-      .eq("scan_id", id);
+      .eq("scan_id", id)
+      .not("rule_id", "in", '("SCA-SKIPPED","SCA-META")');
 
     let critical = 0, warning = 0, info = 0;
     for (const v of severityCounts ?? []) {

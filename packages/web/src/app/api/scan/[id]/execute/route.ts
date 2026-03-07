@@ -368,16 +368,18 @@ export async function POST(
       });
     }
 
-    // All files processed — finalize scan
+    // All files processed — finalize scan (exclude SCA marker rows from counts)
     const { count: totalCount } = await admin
       .from("vulnerabilities")
       .select("*", { count: "exact", head: true })
-      .eq("scan_id", id);
+      .eq("scan_id", id)
+      .not("rule_id", "in", '("SCA-SKIPPED","SCA-META")');
 
     const { data: severityCounts } = await admin
       .from("vulnerabilities")
       .select("severity")
-      .eq("scan_id", id);
+      .eq("scan_id", id)
+      .not("rule_id", "in", '("SCA-SKIPPED","SCA-META")');
 
     let critical = 0,
       warning = 0,
