@@ -218,6 +218,10 @@ export function LiveDemo() {
       if (!controller.signal.aborted) {
         if (res.ok && data.vulnerabilities) {
           setFullResults(data.vulnerabilities);
+          // Auto-open fix panel when full engine completes (preset selected)
+          if (data.vulnerabilities.length > 0) {
+            setShowFix(true);
+          }
         } else if (res.status === 429) {
           setScanError(t("tooManyRequests"));
         } else {

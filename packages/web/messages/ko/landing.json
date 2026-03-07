@@ -17,8 +17,8 @@
     "ctaDescription": "GitHub 저장소를 연결하고 몇 초 만에 종합 보안 스캔을 받아보세요. 무료입니다.",
     "getStartedFree": "무료로 시작하기",
     "footer": "VEXLIT — AI 기반 보안 스캐너",
-    "liveDemoTitle": "직접 체험하기",
-    "liveDemoDesc": "코드를 붙여넣거나 예시를 선택하면 VEXLIT이 취약점을 찾고 수정 방법을 즉시 제안합니다."
+    "liveDemoTitle": "코드를 넣으면 취약점을 찾고 수정까지.",
+    "liveDemoDesc": "예시를 선택하거나 코드를 직접 붙여넣어 보세요 — 보안 취약점을 찾고 수정 코드를 바로 제안합니다."
   },
   "features": {
     "astAnalysis": "오탐 최소화",

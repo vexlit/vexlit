@@ -17,8 +17,8 @@
     "ctaDescription": "Connect your GitHub repository and get a comprehensive security scan in seconds. Free to use.",
     "getStartedFree": "Get Started Free",
     "footer": "VEXLIT — AI-Powered Security Scanner",
-    "liveDemoTitle": "See It in Action",
-    "liveDemoDesc": "Paste your code, pick an example, and watch VEXLIT find vulnerabilities and suggest fixes instantly."
+    "liveDemoTitle": "Paste Code. Find Vulnerabilities. Get a Fix.",
+    "liveDemoDesc": "Try an example or paste your own code — VEXLIT detects security issues and suggests a fix instantly."
   },
   "features": {
     "astAnalysis": "Fewer False Positives",
