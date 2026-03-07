@@ -33,7 +33,8 @@
     "signIn": "로그인",
     "getStarted": "시작하기",
     "signInForFeatures": "로그인하여 전체 기능 사용",
-    "signInFree": "무료 로그인"
+    "signInFree": "무료 로그인",
+    "vscodeExtension": "VSCode 확장"
   },
   "sidebar": {
     "overview": "개요",

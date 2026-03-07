@@ -33,7 +33,8 @@
     "signIn": "Sign in",
     "getStarted": "Get Started",
     "signInForFeatures": "Sign in for full features",
-    "signInFree": "Sign In Free"
+    "signInFree": "Sign In Free",
+    "vscodeExtension": "VSCode Extension"
   },
   "sidebar": {
     "overview": "Overview",

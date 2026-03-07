@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { LandingNav } from "@/components/landing/landing-nav";
+import { CopyButton } from "@/components/copy-button";
 import { getTranslations } from "next-intl/server";
 
 /* ── Data ── */
@@ -84,7 +85,7 @@ const vulns = await engine.execute("app.ts", code, "typescript");`;
 
 function CodeBlock({ code, lang, filename }: { code: string; lang?: string; filename?: string }) {
   return (
-    <div className="bg-gray-950 border border-gray-800 rounded-xl overflow-hidden">
+    <div className="bg-gray-950 border border-gray-800 rounded-xl overflow-hidden relative group">
       {filename && (
         <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-800 bg-gray-900/50">
           <div className="flex gap-1.5">
@@ -93,6 +94,14 @@ function CodeBlock({ code, lang, filename }: { code: string; lang?: string; file
             <span className="w-3 h-3 rounded-full bg-gray-700" />
           </div>
           <span className="text-gray-500 text-xs font-mono ml-2">{filename}</span>
+          <div className="ml-auto">
+            <CopyButton text={code} />
+          </div>
+        </div>
+      )}
+      {!filename && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <CopyButton text={code} />
         </div>
       )}
       <pre className="p-4 overflow-x-auto">
@@ -213,15 +222,23 @@ export default async function DocsPage() {
         <SectionHeading badge={t("quickstartBadge")} title={t("quickstartTitle")} description={t("quickstartDesc")} />
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <div className="space-y-4">
-            <div>
-              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{t("quickstartOption1")}</p>
-              <code className="text-green-400 text-sm font-mono">npx @vexlit/cli scan .</code>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{t("quickstartOption1")}</p>
+                <code className="text-green-400 text-sm font-mono">npx @vexlit/cli scan .</code>
+              </div>
+              <CopyButton text="npx @vexlit/cli scan ." />
             </div>
             <div className="border-t border-gray-800 pt-4">
-              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{t("quickstartOption2")}</p>
-              <div className="space-y-1">
-                <code className="block text-green-400 text-sm font-mono">npm install -g @vexlit/cli</code>
-                <code className="block text-green-400 text-sm font-mono">vexlit scan .</code>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{t("quickstartOption2")}</p>
+                  <div className="space-y-1">
+                    <code className="block text-green-400 text-sm font-mono">npm install -g @vexlit/cli</code>
+                    <code className="block text-green-400 text-sm font-mono">vexlit scan .</code>
+                  </div>
+                </div>
+                <CopyButton text={"npm install -g @vexlit/cli\nvexlit scan ."} />
               </div>
             </div>
           </div>
@@ -233,9 +250,12 @@ export default async function DocsPage() {
         <SectionHeading badge={t("installBadge")} title={t("installTitle")} description={t("installDesc")} />
         <div className="grid md:grid-cols-2 gap-4">
           {INSTALL_METHODS.map((m) => (
-            <div key={m.label} className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors">
-              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-3">{m.label}</p>
-              <code className="text-green-400 text-sm font-mono">{m.command}</code>
+            <div key={m.label} className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors flex items-start justify-between gap-3">
+              <div>
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-3">{m.label}</p>
+                <code className="text-green-400 text-sm font-mono">{m.command}</code>
+              </div>
+              <CopyButton text={m.command} />
             </div>
           ))}
         </div>
@@ -246,9 +266,12 @@ export default async function DocsPage() {
         <SectionHeading badge={t("commandsBadge")} title={t("commandsTitle")} description={t("commandsDesc")} />
         <div className="space-y-3">
           {COMMANDS.map((c) => (
-            <div key={c.command} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 hover:border-gray-700 transition-colors">
-              <code className="text-green-400 text-sm font-mono whitespace-nowrap flex-shrink-0">$ {c.command}</code>
-              <span className="text-gray-500 text-sm">{c.description}</span>
+            <div key={c.command} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center gap-2 sm:gap-6 hover:border-gray-700 transition-colors">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 flex-1 min-w-0">
+                <code className="text-green-400 text-sm font-mono whitespace-nowrap flex-shrink-0">$ {c.command}</code>
+                <span className="text-gray-500 text-sm">{c.description}</span>
+              </div>
+              <CopyButton text={c.command} />
             </div>
           ))}
         </div>
@@ -309,8 +332,9 @@ export default async function DocsPage() {
           <h2 className="text-2xl md:text-3xl font-bold mb-4">{t("ctaTitle")}</h2>
           <p className="text-gray-400 max-w-lg mx-auto mb-8">{t("ctaDesc")}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <div className="px-6 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-sm text-green-400">
+            <div className="px-6 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-sm text-green-400 flex items-center gap-3">
               npm install -g @vexlit/cli
+              <CopyButton text="npm install -g @vexlit/cli" />
             </div>
             <Link href="/login" className="px-6 py-3 bg-red-600 rounded-lg font-medium text-sm hover:bg-red-700 transition-colors">
               {t("tryDashboard")}
