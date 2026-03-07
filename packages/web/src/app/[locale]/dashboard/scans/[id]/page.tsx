@@ -173,8 +173,8 @@ export default async function ScanDetailPage({
             <p className="text-gray-500 text-xs mb-3">{t("fixPriorityDesc")}</p>
             <ul className="space-y-2">
               {priority.map((v) => (
-                <li key={v.id} className="flex items-start gap-3 bg-gray-900/60 rounded-lg px-3 py-2">
-                  <span className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                <li key={v.id} className="flex items-start gap-3 bg-gray-900/60 rounded-lg px-3 py-2.5">
+                  <span className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
                     v.severity === "critical"
                       ? "bg-red-500/20 text-red-400"
                       : "bg-yellow-500/20 text-yellow-400"
@@ -183,7 +183,12 @@ export default async function ScanDetailPage({
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-medium truncate">{v.rule_name}</p>
-                    <p className="text-gray-500 text-xs truncate">
+                    {v.suggestion && (
+                      <p className="text-green-400/70 text-xs mt-0.5 truncate">
+                        Fix: {v.suggestion}
+                      </p>
+                    )}
+                    <p className="text-gray-500 text-xs truncate mt-0.5">
                       {v.file_path}:{v.line} {v.cwe ? `· ${v.cwe}` : ""}
                     </p>
                   </div>

@@ -233,13 +233,24 @@ interface Props {
 export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraphJson, projectName }: Props) {
   const t = useTranslations("scanResults");
   const [search, setSearch] = useState("");
-  const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [severityFilters, setSeverityFilters] = useState<Set<string>>(new Set());
   const [fileFilter, setFileFilter] = useState<string>("all");
   const [ruleFilter, setRuleFilter] = useState<string>("all");
   const [exploitableOnly, setExploitableOnly] = useState(false);
   const [expandedVuln, setExpandedVuln] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "sast" | "sca">("all");
   const [hideDevDeps, setHideDevDeps] = useState(false);
+  const [scaCollapsed, setScaCollapsed] = useState(false);
+  const [sastCollapsed, setSastCollapsed] = useState(false);
+
+  const toggleSeverity = useCallback((sev: string) => {
+    setSeverityFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(sev)) next.delete(sev);
+      else next.add(sev);
+      return next;
+    });
+  }, []);
 
   // Separate SCA and SAST vulns (exclude SCA-SKIPPED and SCA-META markers from vuln lists)
   const scaSkipped = useMemo(() => vulns.find((v) => v.rule_id === "SCA-SKIPPED"), [vulns]);
@@ -258,12 +269,22 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
     [realVulns]
   );
 
+  // Severity counts for quick filter
+  const severityCounts = useMemo(() => {
+    const base = activeTab === "sast" ? sastVulns : activeTab === "sca" ? scaVulns : realVulns;
+    return {
+      critical: base.filter((v) => v.severity === "critical").length,
+      warning: base.filter((v) => v.severity === "warning").length,
+      info: base.filter((v) => v.severity === "info").length,
+    };
+  }, [realVulns, sastVulns, scaVulns, activeTab]);
+
   // Filtered + searched vulns
   const filtered = useMemo(() => {
     const base = activeTab === "sast" ? sastVulns : activeTab === "sca" ? scaVulns : realVulns;
     return base.filter((v) => {
       if (exploitableOnly && (v.severity !== "critical" || v.confidence !== "high")) return false;
-      if (severityFilter !== "all" && v.severity !== severityFilter) return false;
+      if (severityFilters.size > 0 && !severityFilters.has(v.severity)) return false;
       if (fileFilter !== "all" && v.file_path !== fileFilter) return false;
       if (ruleFilter !== "all" && v.rule_name !== ruleFilter) return false;
       if (hideDevDeps && v.rule_id.startsWith("SCA-") && v.rule_name.includes("(dev)")) return false;
@@ -280,7 +301,7 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
       }
       return true;
     });
-  }, [realVulns, sastVulns, scaVulns, activeTab, severityFilter, fileFilter, ruleFilter, search, exploitableOnly, hideDevDeps]);
+  }, [realVulns, sastVulns, scaVulns, activeTab, severityFilters, fileFilter, ruleFilter, search, exploitableOnly, hideDevDeps]);
 
   // Split filtered into SAST (group by file) and SCA (group by package)
   const filteredSast = useMemo(() => filtered.filter((v) => !v.rule_id.startsWith("SCA-")), [filtered]);
@@ -505,22 +526,62 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
         </div>
       )}
 
-      {/* Exploitable only toggle */}
-      {exploitableCount > 0 && (
-        <button
-          onClick={() => setExploitableOnly(!exploitableOnly)}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all w-fit ${
-            exploitableOnly
-              ? "bg-red-600 text-white shadow-lg shadow-red-600/20"
-              : "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-          </svg>
-          {t("showExploitable", { count: exploitableCount })}
-        </button>
-      )}
+      {/* Severity quick filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        {([
+          { key: "critical", color: "red", icon: "bg-red-500" },
+          { key: "warning", color: "yellow", icon: "bg-yellow-500" },
+          { key: "info", color: "blue", icon: "bg-blue-500" },
+        ] as const).map(({ key, color, icon }) => {
+          const count = severityCounts[key];
+          const active = severityFilters.has(key);
+          return (
+            <button
+              key={key}
+              onClick={() => toggleSeverity(key)}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                active
+                  ? `bg-${color}-500/20 text-${color}-400 border border-${color}-500/40`
+                  : "text-gray-400 border border-gray-800 hover:border-gray-700 hover:text-gray-300"
+              }`}
+              style={active ? {
+                backgroundColor: color === "red" ? "rgba(239,68,68,0.2)" : color === "yellow" ? "rgba(234,179,8,0.2)" : "rgba(59,130,246,0.2)",
+                borderColor: color === "red" ? "rgba(239,68,68,0.4)" : color === "yellow" ? "rgba(234,179,8,0.4)" : "rgba(59,130,246,0.4)",
+                color: color === "red" ? "rgb(248,113,113)" : color === "yellow" ? "rgb(250,204,21)" : "rgb(96,165,250)",
+              } : undefined}
+            >
+              <span className={`w-2 h-2 rounded-full ${icon}`} />
+              {t(key)} ({count})
+            </button>
+          );
+        })}
+
+        {severityFilters.size > 0 && (
+          <button
+            onClick={() => setSeverityFilters(new Set())}
+            className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1"
+          >
+            {t("allSeverities")}
+          </button>
+        )}
+
+        {/* Exploitable only toggle */}
+        {exploitableCount > 0 && (
+          <button
+            onClick={() => setExploitableOnly(!exploitableOnly)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ml-auto ${
+              exploitableOnly
+                ? "bg-red-600 text-white shadow-lg shadow-red-600/20"
+                : "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            {t("showExploitable", { count: exploitableCount })}
+          </button>
+        )}
+      </div>
 
       {/* Filter bar */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -544,18 +605,6 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
             className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-700"
           />
         </div>
-
-        {/* Severity filter */}
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
-          className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-gray-700"
-        >
-          <option value="all">{t("allSeverities")}</option>
-          <option value="critical">{t("critical")}</option>
-          <option value="warning">{t("warning")}</option>
-          <option value="info">{t("info")}</option>
-        </select>
 
         {/* File filter */}
         <select
@@ -635,16 +684,22 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
       {filteredSca.length > 0 && (activeTab === "all" || activeTab === "sca") && (
         <>
           {activeTab === "all" && filteredSast.length > 0 && (
-            <div className="flex items-center gap-2 pt-2">
+            <button
+              onClick={() => setScaCollapsed(!scaCollapsed)}
+              className="flex items-center gap-2 pt-2 w-full text-left group"
+            >
+              <svg className={`w-4 h-4 text-gray-500 transition-transform ${scaCollapsed ? "" : "rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
               <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
-              <span className="text-sm font-medium text-gray-300">
+              <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
                 {t("scaHeader", { count: filteredSca.length })}
               </span>
-            </div>
+            </button>
           )}
-          {Array.from(scaPackageGroups.entries()).map(([pkgName, pkgVulns]) => {
+          {!scaCollapsed && Array.from(scaPackageGroups.entries()).map(([pkgName, pkgVulns]) => {
             const isDev = pkgVulns.some((v) => v.rule_name.includes("(dev)"));
             const versions = [...new Set(pkgVulns.map((v) => {
               const match = v.message.match(/^[^@]+@([^\s(]+)/);
@@ -802,16 +857,22 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
       {filteredSast.length > 0 && (activeTab === "all" || activeTab === "sast") && (
         <>
           {activeTab === "all" && filteredSca.length > 0 && (
-            <div className="flex items-center gap-2 pt-2">
+            <button
+              onClick={() => setSastCollapsed(!sastCollapsed)}
+              className="flex items-center gap-2 pt-2 w-full text-left group"
+            >
+              <svg className={`w-4 h-4 text-gray-500 transition-transform ${sastCollapsed ? "" : "rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
               <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
               </svg>
-              <span className="text-sm font-medium text-gray-300">
+              <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
                 {t("sastHeader", { count: filteredSast.length })}
               </span>
-            </div>
+            </button>
           )}
-          {Array.from(fileGroups.entries()).map(([filePath, fileVulns]) => (
+          {!sastCollapsed && Array.from(fileGroups.entries()).map(([filePath, fileVulns]) => (
             <div
               key={filePath}
               className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden"
@@ -842,6 +903,11 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
                             </span>
                             <ConfidenceBadge confidence={v.confidence} />
                             {v.rule_id?.startsWith("SCA-") && <ReachabilityBadge reachable={v.reachable} />}
+                            {v.suggestion && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-900/40 text-green-400 border border-green-800">
+                                Fix available
+                              </span>
+                            )}
                             <span className="text-gray-600 text-xs">
                               {t("lineCol", { line: v.line, col: v.column })}
                             </span>
@@ -856,6 +922,11 @@ export function ScanResultsClient({ scanId, vulns, sarifJson, depsJson, depGraph
                             </svg>
                           </div>
                           <p className="text-gray-400 text-sm mt-1">{v.message}</p>
+                          {v.suggestion && !isExpanded && (
+                            <p className="text-green-400/70 text-xs mt-1">
+                              Fix: {v.suggestion}
+                            </p>
+                          )}
 
                           {v.snippet && <CodeSnippet line={v.line} code={v.snippet} />}
                         </div>

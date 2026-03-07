@@ -208,6 +208,26 @@ export default async function DocsPage() {
         </div>
       </section>
 
+      {/* Quickstart */}
+      <section className="max-w-4xl mx-auto px-6 py-12 border-t border-gray-800">
+        <SectionHeading badge={t("quickstartBadge")} title={t("quickstartTitle")} description={t("quickstartDesc")} />
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <div className="space-y-4">
+            <div>
+              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{t("quickstartOption1")}</p>
+              <code className="text-green-400 text-sm font-mono">npx @vexlit/cli scan .</code>
+            </div>
+            <div className="border-t border-gray-800 pt-4">
+              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{t("quickstartOption2")}</p>
+              <div className="space-y-1">
+                <code className="block text-green-400 text-sm font-mono">npm install -g @vexlit/cli</code>
+                <code className="block text-green-400 text-sm font-mono">vexlit scan .</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Installation */}
       <section className="max-w-4xl mx-auto px-6 py-12 border-t border-gray-800">
         <SectionHeading badge={t("installBadge")} title={t("installTitle")} description={t("installDesc")} />
